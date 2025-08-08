@@ -2,6 +2,8 @@
 
 A powerful chat application built with modern web technologies.
 
+[简体中文](./README.zh-CN.md)
+
 ![ChatX Application](public/images/chatx.png)
 
 ChatX is a modern chat application designed for seamless communication and collaboration.
@@ -60,19 +62,13 @@ Start the server
   pnpm run dev
 ```
 
-## Sponsoring this project ❤️
-
-If you find this project helpful or use this in your own work, consider [sponsoring me](https://github.com/sponsors/satnaing) to support development and maintenance. You can [buy me a coffee](https://buymeacoffee.com/satnaing) as well. Don’t worry, every penny helps. Thank you! 🙏
-
-For questions or sponsorship inquiries, feel free to reach out at [contact@satnaing.dev](mailto:contact@satnaing.dev).
-
 ### Current Sponsor
 
 - [Clerk](https://go.clerk.com/GttUAaK) - for backing the implementation of Clerk in this project
 
 ## Author
 
-Crafted with 🤍 by [@satnaing](https://github.com/satnaing)
+Crafted with 🤍 by [@Leon](https://github.com/Luohao-Yan)
 
 ## License
 
