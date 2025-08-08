@@ -20,10 +20,11 @@ import {
   IconUsers,
 } from '@tabler/icons-react'
 import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
+import { TFunction } from 'i18next'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
 
-export const sidebarData: SidebarData = {
+export const getSidebarData = (t: TFunction): SidebarData => ({
   user: {
     name: 'satnaing',
     email: 'satnaingdev@gmail.com',
@@ -48,48 +49,48 @@ export const sidebarData: SidebarData = {
   ],
   navGroups: [
     {
-      title: 'General',
+      title: t('nav.general'),
       items: [
         {
-          title: 'Dashboard',
+          title: t('nav.dashboard'),
           url: '/',
           icon: IconLayoutDashboard,
         },
         {
-          title: 'Tasks',
+          title: t('nav.tasks'),
           url: '/tasks',
           icon: IconChecklist,
         },
         {
-          title: 'Apps',
+          title: t('nav.apps'),
           url: '/apps',
           icon: IconPackages,
         },
         {
-          title: 'Chats',
+          title: t('nav.chats'),
           url: '/chats',
           badge: '3',
           icon: IconMessages,
         },
         {
-          title: 'Users',
+          title: t('nav.users'),
           url: '/users',
           icon: IconUsers,
         },
         {
-          title: 'Secured by Clerk',
+          title: t('nav.securedByClerk'),
           icon: ClerkLogo,
           items: [
             {
-              title: 'Sign In',
+              title: t('nav.signIn'),
               url: '/clerk/sign-in',
             },
             {
-              title: 'Sign Up',
+              title: t('nav.signUp'),
               url: '/clerk/sign-up',
             },
             {
-              title: 'User Management',
+              title: t('nav.userManagement'),
               url: '/clerk/user-management',
             },
           ],
@@ -97,60 +98,60 @@ export const sidebarData: SidebarData = {
       ],
     },
     {
-      title: 'Pages',
+      title: t('nav.pages'),
       items: [
         {
-          title: 'Auth',
+          title: t('nav.auth'),
           icon: IconLockAccess,
           items: [
             {
-              title: 'Sign In',
+              title: t('nav.signIn'),
               url: '/sign-in',
             },
             {
-              title: 'Sign In (2 Col)',
+              title: t('nav.signInTwoCol'),
               url: '/sign-in-2',
             },
             {
-              title: 'Sign Up',
+              title: t('nav.signUp'),
               url: '/sign-up',
             },
             {
-              title: 'Forgot Password',
+              title: t('nav.forgotPassword'),
               url: '/forgot-password',
             },
             {
-              title: 'OTP',
+              title: t('nav.otp'),
               url: '/otp',
             },
           ],
         },
         {
-          title: 'Errors',
+          title: t('nav.errors'),
           icon: IconBug,
           items: [
             {
-              title: 'Unauthorized',
+              title: t('nav.unauthorized'),
               url: '/401',
               icon: IconLock,
             },
             {
-              title: 'Forbidden',
+              title: t('nav.forbidden'),
               url: '/403',
               icon: IconUserOff,
             },
             {
-              title: 'Not Found',
+              title: t('nav.notFound'),
               url: '/404',
               icon: IconError404,
             },
             {
-              title: 'Internal Server Error',
+              title: t('nav.internalServerError'),
               url: '/500',
               icon: IconServerOff,
             },
             {
-              title: 'Maintenance Error',
+              title: t('nav.maintenanceError'),
               url: '/503',
               icon: IconBarrierBlock,
             },
@@ -159,45 +160,45 @@ export const sidebarData: SidebarData = {
       ],
     },
     {
-      title: 'Other',
+      title: t('nav.other'),
       items: [
         {
-          title: 'Settings',
+          title: t('nav.settings'),
           icon: IconSettings,
           items: [
             {
-              title: 'Profile',
+              title: t('nav.profile'),
               url: '/settings',
               icon: IconUserCog,
             },
             {
-              title: 'Account',
+              title: t('nav.account'),
               url: '/settings/account',
               icon: IconTool,
             },
             {
-              title: 'Appearance',
+              title: t('nav.appearance'),
               url: '/settings/appearance',
               icon: IconPalette,
             },
             {
-              title: 'Notifications',
+              title: t('nav.notifications'),
               url: '/settings/notifications',
               icon: IconNotification,
             },
             {
-              title: 'Display',
+              title: t('nav.display'),
               url: '/settings/display',
               icon: IconBrowserCheck,
             },
           ],
         },
         {
-          title: 'Help Center',
+          title: t('nav.helpCenter'),
           url: '/help-center',
           icon: IconHelp,
         },
       ],
     },
   ],
-}
+})

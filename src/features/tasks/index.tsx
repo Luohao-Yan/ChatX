@@ -1,8 +1,8 @@
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
+import { HeaderActions } from '@/components/layout/header-actions'
+import { Breadcrumb } from '@/components/layout/breadcrumb'
+import { useTranslation } from 'react-i18next'
 import { columns } from './components/columns'
 import { DataTable } from './components/data-table'
 import { TasksDialogs } from './components/tasks-dialogs'
@@ -11,14 +11,17 @@ import TasksProvider from './context/tasks-context'
 import { tasks } from './data/tasks'
 
 export default function Tasks() {
+  const { t } = useTranslation()
+  
+  const breadcrumbItems = [
+    { label: t('nav.tasks') }
+  ]
+
   return (
     <TasksProvider>
       <Header fixed>
-        <Search />
-        <div className='ml-auto flex items-center space-x-4'>
-          <ThemeSwitch />
-          <ProfileDropdown />
-        </div>
+        <Breadcrumb items={breadcrumbItems} />
+        <HeaderActions />
       </Header>
 
       <Main>

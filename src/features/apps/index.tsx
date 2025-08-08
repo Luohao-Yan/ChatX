@@ -16,9 +16,9 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
+import { HeaderActions } from '@/components/layout/header-actions'
+import { Breadcrumb } from '@/components/layout/breadcrumb'
+import { useTranslation } from 'react-i18next'
 import { apps } from './data/apps'
 
 const appText = new Map<string, string>([
@@ -28,9 +28,14 @@ const appText = new Map<string, string>([
 ])
 
 export default function Apps() {
+  const { t } = useTranslation()
   const [sort, setSort] = useState('ascending')
   const [appType, setAppType] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
+
+  const breadcrumbItems = [
+    { label: t('nav.apps') }
+  ]
 
   const filteredApps = apps
     .sort((a, b) =>
@@ -51,11 +56,8 @@ export default function Apps() {
     <>
       {/* ===== Top Heading ===== */}
       <Header>
-        <Search />
-        <div className='ml-auto flex items-center gap-4'>
-          <ThemeSwitch />
-          <ProfileDropdown />
-        </div>
+        <Breadcrumb items={breadcrumbItems} />
+        <HeaderActions />
       </Header>
 
       {/* ===== Content ===== */}

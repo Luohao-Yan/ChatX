@@ -10,31 +10,55 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { TopNav } from '@/components/layout/top-nav'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
+import { HeaderActions } from '@/components/layout/header-actions'
 import { Overview } from './components/overview'
 import { RecentSales } from './components/recent-sales'
+import { useTranslation } from 'react-i18next'
 
 export default function Dashboard() {
+  const { t } = useTranslation()
+  
+  const topNav = [
+    {
+      title: t('dashboard.overview'),
+      href: 'dashboard/overview',
+      isActive: true,
+      disabled: false,
+    },
+    {
+      title: t('dashboard.customers'),
+      href: 'dashboard/customers',
+      isActive: false,
+      disabled: true,
+    },
+    {
+      title: t('dashboard.products'),
+      href: 'dashboard/products',
+      isActive: false,
+      disabled: true,
+    },
+    {
+      title: t('nav.settings'),
+      href: 'dashboard/settings',
+      isActive: false,
+      disabled: true,
+    },
+  ]
+
   return (
     <>
       {/* ===== Top Heading ===== */}
       <Header>
         <TopNav links={topNav} />
-        <div className='ml-auto flex items-center space-x-4'>
-          <Search />
-          <ThemeSwitch />
-          <ProfileDropdown />
-        </div>
+        <HeaderActions />
       </Header>
 
       {/* ===== Main ===== */}
       <Main>
         <div className='mb-2 flex items-center justify-between space-y-2'>
-          <h1 className='text-2xl font-bold tracking-tight'>Dashboard</h1>
+          <h1 className='text-2xl font-bold tracking-tight'>{t('dashboard.title')}</h1>
           <div className='flex items-center space-x-2'>
-            <Button>Download</Button>
+            <Button>{t('dashboard.download')}</Button>
           </div>
         </div>
         <Tabs
@@ -44,15 +68,15 @@ export default function Dashboard() {
         >
           <div className='w-full overflow-x-auto pb-2'>
             <TabsList>
-              <TabsTrigger value='overview'>Overview</TabsTrigger>
+              <TabsTrigger value='overview'>{t('dashboard.overview')}</TabsTrigger>
               <TabsTrigger value='analytics' disabled>
-                Analytics
+                {t('dashboard.analytics')}
               </TabsTrigger>
               <TabsTrigger value='reports' disabled>
-                Reports
+                {t('dashboard.reports')}
               </TabsTrigger>
               <TabsTrigger value='notifications' disabled>
-                Notifications
+                {t('dashboard.notifications')}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -61,7 +85,7 @@ export default function Dashboard() {
               <Card>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
                   <CardTitle className='text-sm font-medium'>
-                    Total Revenue
+                    {t('dashboard.totalRevenue')}
                   </CardTitle>
                   <svg
                     xmlns='http://www.w3.org/2000/svg'
@@ -79,14 +103,14 @@ export default function Dashboard() {
                 <CardContent>
                   <div className='text-2xl font-bold'>$45,231.89</div>
                   <p className='text-muted-foreground text-xs'>
-                    +20.1% from last month
+                    +20.1% {t('dashboard.fromLastMonth')}
                   </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
                   <CardTitle className='text-sm font-medium'>
-                    Subscriptions
+                    {t('dashboard.subscriptions')}
                   </CardTitle>
                   <svg
                     xmlns='http://www.w3.org/2000/svg'
@@ -106,13 +130,13 @@ export default function Dashboard() {
                 <CardContent>
                   <div className='text-2xl font-bold'>+2350</div>
                   <p className='text-muted-foreground text-xs'>
-                    +180.1% from last month
+                    +180.1% {t('dashboard.fromLastMonth')}
                   </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>Sales</CardTitle>
+                  <CardTitle className='text-sm font-medium'>{t('dashboard.sales')}</CardTitle>
                   <svg
                     xmlns='http://www.w3.org/2000/svg'
                     viewBox='0 0 24 24'
@@ -130,14 +154,14 @@ export default function Dashboard() {
                 <CardContent>
                   <div className='text-2xl font-bold'>+12,234</div>
                   <p className='text-muted-foreground text-xs'>
-                    +19% from last month
+                    +19% {t('dashboard.fromLastMonth')}
                   </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
                   <CardTitle className='text-sm font-medium'>
-                    Active Now
+                    {t('dashboard.activeNow')}
                   </CardTitle>
                   <svg
                     xmlns='http://www.w3.org/2000/svg'
@@ -155,7 +179,7 @@ export default function Dashboard() {
                 <CardContent>
                   <div className='text-2xl font-bold'>+573</div>
                   <p className='text-muted-foreground text-xs'>
-                    +201 since last hour
+                    +201 {t('dashboard.sinceLastHour')}
                   </p>
                 </CardContent>
               </Card>
@@ -163,7 +187,7 @@ export default function Dashboard() {
             <div className='grid grid-cols-1 gap-4 lg:grid-cols-7'>
               <Card className='col-span-1 lg:col-span-4'>
                 <CardHeader>
-                  <CardTitle>Overview</CardTitle>
+                  <CardTitle>{t('dashboard.overview')}</CardTitle>
                 </CardHeader>
                 <CardContent className='pl-2'>
                   <Overview />
@@ -171,9 +195,9 @@ export default function Dashboard() {
               </Card>
               <Card className='col-span-1 lg:col-span-3'>
                 <CardHeader>
-                  <CardTitle>Recent Sales</CardTitle>
+                  <CardTitle>{t('dashboard.recentSales')}</CardTitle>
                   <CardDescription>
-                    You made 265 sales this month.
+                    {t('dashboard.salesThisMonth')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -187,30 +211,3 @@ export default function Dashboard() {
     </>
   )
 }
-
-const topNav = [
-  {
-    title: 'Overview',
-    href: 'dashboard/overview',
-    isActive: true,
-    disabled: false,
-  },
-  {
-    title: 'Customers',
-    href: 'dashboard/customers',
-    isActive: false,
-    disabled: true,
-  },
-  {
-    title: 'Products',
-    href: 'dashboard/products',
-    isActive: false,
-    disabled: true,
-  },
-  {
-    title: 'Settings',
-    href: 'dashboard/settings',
-    isActive: false,
-    disabled: true,
-  },
-]

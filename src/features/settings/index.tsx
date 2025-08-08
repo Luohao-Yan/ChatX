@@ -9,21 +9,24 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
+import { HeaderActions } from '@/components/layout/header-actions'
+import { Breadcrumb } from '@/components/layout/breadcrumb'
+import { useTranslation } from 'react-i18next'
 import SidebarNav from './components/sidebar-nav'
 
 export default function Settings() {
+  const { t } = useTranslation()
+  
+  const breadcrumbItems = [
+    { label: t('nav.settings') }
+  ]
+
   return (
     <>
       {/* ===== Top Heading ===== */}
       <Header>
-        <Search />
-        <div className='ml-auto flex items-center space-x-4'>
-          <ThemeSwitch />
-          <ProfileDropdown />
-        </div>
+        <Breadcrumb items={breadcrumbItems} />
+        <HeaderActions />
       </Header>
 
       <Main fixed>

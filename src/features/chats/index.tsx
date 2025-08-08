@@ -21,15 +21,16 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
+import { HeaderActions } from '@/components/layout/header-actions'
+import { Breadcrumb } from '@/components/layout/breadcrumb'
+import { useTranslation } from 'react-i18next'
 import { NewChat } from './components/new-chat'
 import { type ChatUser, type Convo } from './data/chat-types'
 // Fake Data
 import { conversations } from './data/convo.json'
 
 export default function Chats() {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null)
   const [mobileSelectedUser, setMobileSelectedUser] = useState<ChatUser | null>(
@@ -37,6 +38,10 @@ export default function Chats() {
   )
   const [createConversationDialogOpened, setCreateConversationDialog] =
     useState(false)
+
+  const breadcrumbItems = [
+    { label: t('nav.chats') }
+  ]
 
   // Filtered data based on the search query
   const filteredChatList = conversations.filter(({ fullName }) =>
@@ -66,11 +71,8 @@ export default function Chats() {
     <>
       {/* ===== Top Heading ===== */}
       <Header>
-        <Search />
-        <div className='ml-auto flex items-center space-x-4'>
-          <ThemeSwitch />
-          <ProfileDropdown />
-        </div>
+        <Breadcrumb items={breadcrumbItems} />
+        <HeaderActions />
       </Header>
 
       <Main fixed>
