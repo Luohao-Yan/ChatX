@@ -28,13 +28,13 @@ export const getSidebarData = (t: TFunction): SidebarData => ({
   user: {
     name: 'satnaing',
     email: 'satnaingdev@gmail.com',
-    avatar: '/avatars/shadcn.jpg',
+    avatar: '/avatars/chatx.jpg',
   },
   teams: [
     {
-      name: 'Shadcn Admin',
+      name: 'ChatX',
       logo: Command,
-      plan: 'Vite + ShadcnUI',
+      plan: 'Vite + ChatX',
     },
     {
       name: 'Acme Inc',

@@ -39,13 +39,13 @@ ChatX is a modern chat application designed for seamless communication and colla
 Clone the project
 
 ```bash
-  git clone https://github.com/satnaing/shadcn-admin.git
+  git clone git@github.com:Luohao-Yan/ChatX.git
 ```
 
 Go to the project directory
 
 ```bash
-  cd shadcn-admin
+  cd ChatX
 ```
 
 Install dependencies
