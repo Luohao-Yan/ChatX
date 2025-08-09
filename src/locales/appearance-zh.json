@@ -1,0 +1,76 @@
+{
+  "colorScheme": {
+    "default": "默认灰色",
+    "defaultDescription": "系统默认的灰色主题",
+    "emerald": "翠绿色",
+    "emeraldDescription": "清新的绿色主题",
+    "blue": "蔚蓝色",
+    "blueDescription": "经典的蓝色主题",
+    "purple": "紫罗兰",
+    "purpleDescription": "优雅的紫色主题",
+    "red": "朱红色",
+    "redDescription": "醒目的红色主题",
+    "orange": "橙黄色",
+    "orangeDescription": "温暖的橙色主题"
+  },
+  "radius": {
+    "none": "无圆角",
+    "noneDescription": "所有元素都是直角",
+    "sm": "小圆角",
+    "smDescription": "轻微的圆角效果",
+    "md": "中等圆角",
+    "mdDescription": "适中的圆角效果",
+    "lg": "大圆角",
+    "lgDescription": "明显的圆角效果（推荐）",
+    "xl": "特大圆角",
+    "xlDescription": "很大的圆角效果",
+    "full": "完全圆形",
+    "fullDescription": "最大圆角效果"
+  },
+  "fontSize": {
+    "xs": "很小",
+    "xsDescription": "14px - 紧凑显示",
+    "sm": "小",
+    "smDescription": "15px - 舒适阅读",
+    "md": "中等",
+    "mdDescription": "16px - 标准大小（推荐）",
+    "lg": "大",
+    "lgDescription": "18px - 易于阅读",
+    "xl": "很大",
+    "xlDescription": "20px - 大字体显示"
+  },
+  "spacing": {
+    "compact": "紧凑",
+    "compactDescription": "较小的间距，显示更多内容",
+    "comfortable": "舒适",
+    "comfortableDescription": "标准间距（推荐）",
+    "spacious": "宽松",
+    "spaciousDescription": "较大的间距，更好的视觉效果"
+  },
+  "width": {
+    "narrow": "窄屏",
+    "narrowDescription": "适合专注阅读（1024px）",
+    "standard": "标准",
+    "standardDescription": "平衡的宽度（1280px）",
+    "wide": "宽屏",
+    "wideDescription": "充分利用宽屏（1536px）",
+    "full": "全屏",
+    "fullDescription": "使用全部可用空间"
+  },
+  "sidebar": {
+    "left": "左侧",
+    "leftDescription": "侧边栏显示在左侧（默认）",
+    "right": "右侧",
+    "rightDescription": "侧边栏显示在右侧"
+  },
+  "animation": {
+    "none": "无动画",
+    "noneDescription": "禁用所有动画效果",
+    "slow": "慢速",
+    "slowDescription": "缓慢的动画效果",
+    "normal": "正常",
+    "normalDescription": "标准动画速度（推荐）",
+    "fast": "快速",
+    "fastDescription": "快速的动画效果"
+  }
+}
