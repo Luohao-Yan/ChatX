@@ -4,6 +4,7 @@ import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 // import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Toaster } from '@/components/ui/sonner'
 import { NavigationProgress } from '@/components/navigation-progress'
+import { EnterprisePageTransition } from '@/components/enterprise-page-transition'
 import GeneralError from '@/features/errors/general-error'
 import NotFoundError from '@/features/errors/not-found-error'
 
@@ -14,7 +15,9 @@ export const Route = createRootRouteWithContext<{
     return (
       <>
         <NavigationProgress />
-        <Outlet />
+        <EnterprisePageTransition>
+          <Outlet />
+        </EnterprisePageTransition>
         <Toaster duration={50000} />
         {/* Devtools disabled - uncomment below to enable in development
         {import.meta.env.MODE === 'development' && (

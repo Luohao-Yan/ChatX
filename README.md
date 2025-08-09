@@ -19,6 +19,9 @@ ChatX is a modern chat application designed for seamless communication and colla
 - Modern UI components
 - Built with TypeScript
 - Fast and efficient
+- **Enterprise Page Transitions** - 6 professional animation effects (Fade, Slide, Slide-up, Zoom, Blur-fade, None)
+- **Advanced Appearance System** - Color schemes, border radius, custom radius, font size customization
+- **Smart Animation Degradation** - Auto-detects user accessibility preferences, error boundary handling, safe fallbacks
 
 ## Tech Stack
 
@@ -35,6 +38,8 @@ ChatX is a modern chat application designed for seamless communication and colla
 **Icons:** [Tabler Icons](https://tabler.io/icons)
 
 **Auth (partial):** [Clerk](https://go.clerk.com/GttUAaK)
+
+**Animation:** [Framer Motion](https://www.framer.com/motion/)
 
 ## Run Locally
 

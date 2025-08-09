@@ -1,13 +1,113 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useTheme } from '@/context/theme-context'
-import { 
-  loadAppConfig, 
-  saveAppConfig, 
-  applyAppConfig, 
-  type AppConfig 
-} from '@/lib/app-config'
-import type { ColorScheme } from '@/config/color-schemes-simple'
+import type { ColorScheme } from '@/config/color-schemes'
+import { getColorSchemeVars, defaultColorScheme } from '@/config/color-schemes'
 import type { RadiusSize } from '@/config/radius-settings'
+import { getRadiusVars, defaultRadius } from '@/config/radius-settings'
+
+// 企业级外观系统的高级类型定义
+export type FontSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+export type SpacingDensity = 'compact' | 'normal' | 'comfortable'
+export type InterfaceWidth = 'narrow' | 'normal' | 'wide' | 'ultra-wide'
+export type SidebarPosition = 'left' | 'right'
+export type PageTransition = 'none' | 'fade' | 'slide' | 'slide-up' | 'zoom' | 'blur-fade'
+
+// 默认值定义
+export const defaultFontSize: FontSize = 'md'
+export const defaultSpacingDensity: SpacingDensity = 'normal'
+export const defaultInterfaceWidth: InterfaceWidth = 'normal'
+export const defaultSidebarPosition: SidebarPosition = 'left'
+export const defaultPageTransition: PageTransition = 'fade'
+
+// 企业级工具函数
+export const sliderValueToRadius = (value: number): string => `${value / 16}rem`
+
+export const getFontSizeVars = (size: FontSize) => {
+  const sizeMap = {
+    xs: '0.75rem',
+    sm: '0.875rem', 
+    md: '1rem',
+    lg: '1.125rem',
+    xl: '1.25rem'
+  }
+  return {
+    '--font-size-base': sizeMap[size],
+    '--font-size-sm': `calc(${sizeMap[size]} * 0.875)`,
+    '--font-size-lg': `calc(${sizeMap[size]} * 1.125)`
+  }
+}
+
+export const getSpacingDensityVars = (density: SpacingDensity) => {
+  const densityMap = {
+    compact: '0.75',
+    normal: '1', 
+    comfortable: '1.25'
+  }
+  const multiplier = densityMap[density]
+  return {
+    '--spacing-unit': `calc(0.5rem * ${multiplier})`,
+    '--spacing-xs': `calc(0.25rem * ${multiplier})`,
+    '--spacing-sm': `calc(0.5rem * ${multiplier})`,
+    '--spacing-md': `calc(1rem * ${multiplier})`,
+    '--spacing-lg': `calc(1.5rem * ${multiplier})`,
+    '--spacing-xl': `calc(2rem * ${multiplier})`
+  }
+}
+
+export const getInterfaceWidthVars = (width: InterfaceWidth) => {
+  const widthMap = {
+    narrow: '1200px',
+    normal: '1400px',
+    wide: '1600px',
+    'ultra-wide': '1800px'
+  }
+  return {
+    '--interface-max-width': widthMap[width],
+    '--container-padding': width === 'narrow' ? '1rem' : '2rem'
+  }
+}
+
+export const getPageTransitionVars = (transition: PageTransition) => {
+  const transitionConfigs = {
+    none: {
+      duration: '0ms',
+      timing: 'ease',
+      transform: 'none'
+    },
+    fade: {
+      duration: '500ms',
+      timing: 'cubic-bezier(0.4, 0.0, 0.2, 1)',
+      transform: 'opacity'
+    },
+    slide: {
+      duration: '600ms',
+      timing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+      transform: 'translateX'
+    },
+    'slide-up': {
+      duration: '550ms',
+      timing: 'cubic-bezier(0.165, 0.84, 0.44, 1)',
+      transform: 'translateY'
+    },
+    zoom: {
+      duration: '450ms',
+      timing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+      transform: 'scale'
+    },
+    'blur-fade': {
+      duration: '600ms',
+      timing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+      transform: 'blur-opacity'
+    }
+  }
+  const config = transitionConfigs[transition] || transitionConfigs.fade
+  return {
+    '--page-transition-duration': config.duration,
+    '--page-transition-timing': config.timing,
+    '--page-transition-transform': config.transform,
+    '--page-transition-type': transition
+  }
+}
 
 export interface AppearanceSettings {
   colorScheme: ColorScheme
@@ -17,7 +117,7 @@ export interface AppearanceSettings {
   spacingDensity: SpacingDensity
   interfaceWidth: InterfaceWidth
   sidebarPosition: SidebarPosition
-  animationSpeed: AnimationSpeed
+  pageTransition: PageTransition
   useCustomRadius: boolean // 是否使用自定义圆角
 }
 
@@ -34,7 +134,7 @@ type AppearanceProviderState = AppearanceSettings & {
   setSpacingDensity: (density: SpacingDensity) => void
   setInterfaceWidth: (width: InterfaceWidth) => void
   setSidebarPosition: (position: SidebarPosition) => void
-  setAnimationSpeed: (speed: AnimationSpeed) => void
+  setPageTransition: (transition: PageTransition) => void
   setUseCustomRadius: (use: boolean) => void
   resetToDefaults: () => void
 }
@@ -47,7 +147,7 @@ const initialState: AppearanceProviderState = {
   spacingDensity: defaultSpacingDensity,
   interfaceWidth: defaultInterfaceWidth,
   sidebarPosition: defaultSidebarPosition,
-  animationSpeed: defaultAnimationSpeed,
+  pageTransition: defaultPageTransition,
   useCustomRadius: false,
   setColorScheme: () => null,
   setRadius: () => null,
@@ -56,7 +156,7 @@ const initialState: AppearanceProviderState = {
   setSpacingDensity: () => null,
   setInterfaceWidth: () => null,
   setSidebarPosition: () => null,
-  setAnimationSpeed: () => null,
+  setPageTransition: () => null,
   setUseCustomRadius: () => null,
   resetToDefaults: () => null,
 }
@@ -71,7 +171,7 @@ const STORAGE_KEYS = {
   spacingDensity: 'appearance-spacing-density',
   interfaceWidth: 'appearance-interface-width',
   sidebarPosition: 'appearance-sidebar-position',
-  animationSpeed: 'appearance-animation-speed',
+  pageTransition: 'appearance-page-transition',
   useCustomRadius: 'appearance-use-custom-radius',
 }
 
@@ -117,9 +217,9 @@ export function AppearanceProvider({
     return (stored as SidebarPosition) || defaultSidebarPosition
   })
   
-  const [animationSpeed, _setAnimationSpeed] = useState<AnimationSpeed>(() => {
-    const stored = localStorage.getItem(`${storageKeyPrefix}${STORAGE_KEYS.animationSpeed}`)
-    return (stored as AnimationSpeed) || defaultAnimationSpeed
+  const [pageTransition, _setPageTransition] = useState<PageTransition>(() => {
+    const stored = localStorage.getItem(`${storageKeyPrefix}${STORAGE_KEYS.pageTransition}`)
+    return (stored as PageTransition) || defaultPageTransition
   })
   
   const [useCustomRadius, _setUseCustomRadius] = useState<boolean>(() => {
@@ -149,8 +249,8 @@ export function AppearanceProvider({
     // 界面宽度变量
     const widthVars = getInterfaceWidthVars(interfaceWidth)
     
-    // 动画速度变量
-    const animationVars = getAnimationSpeedVars(animationSpeed)
+    // 页面切换动画变量
+    const transitionVars = getPageTransitionVars(pageTransition)
     
     // 应用所有变量
     const allVars = {
@@ -159,7 +259,7 @@ export function AppearanceProvider({
       ...fontSizeVars,
       ...spacingVars,
       ...widthVars,
-      ...animationVars,
+      ...transitionVars,
     }
     
     Object.entries(allVars).forEach(([key, value]) => {
@@ -170,7 +270,7 @@ export function AppearanceProvider({
     root.classList.toggle('sidebar-right', sidebarPosition === 'right')
     root.classList.toggle('sidebar-left', sidebarPosition === 'left')
     
-  }, [colorScheme, radius, customRadius, useCustomRadius, fontSize, spacingDensity, interfaceWidth, sidebarPosition, animationSpeed, theme])
+  }, [colorScheme, radius, customRadius, useCustomRadius, fontSize, spacingDensity, interfaceWidth, sidebarPosition, pageTransition, theme])
 
   // 设置函数
   const setColorScheme = (newColorScheme: ColorScheme) => {
@@ -208,9 +308,9 @@ export function AppearanceProvider({
     _setSidebarPosition(newPosition)
   }
 
-  const setAnimationSpeed = (newSpeed: AnimationSpeed) => {
-    localStorage.setItem(`${storageKeyPrefix}${STORAGE_KEYS.animationSpeed}`, newSpeed)
-    _setAnimationSpeed(newSpeed)
+  const setPageTransition = (newTransition: PageTransition) => {
+    localStorage.setItem(`${storageKeyPrefix}${STORAGE_KEYS.pageTransition}`, newTransition)
+    _setPageTransition(newTransition)
   }
 
   const setUseCustomRadius = (use: boolean) => {
@@ -232,7 +332,7 @@ export function AppearanceProvider({
     _setSpacingDensity(defaultSpacingDensity)
     _setInterfaceWidth(defaultInterfaceWidth)
     _setSidebarPosition(defaultSidebarPosition)
-    _setAnimationSpeed(defaultAnimationSpeed)
+    _setPageTransition(defaultPageTransition)
     _setUseCustomRadius(false)
   }
 
@@ -244,7 +344,7 @@ export function AppearanceProvider({
     spacingDensity,
     interfaceWidth,
     sidebarPosition,
-    animationSpeed,
+    pageTransition,
     useCustomRadius,
     setColorScheme,
     setRadius,
@@ -253,7 +353,7 @@ export function AppearanceProvider({
     setSpacingDensity,
     setInterfaceWidth,
     setSidebarPosition,
-    setAnimationSpeed,
+    setPageTransition,
     setUseCustomRadius,
     resetToDefaults,
   }

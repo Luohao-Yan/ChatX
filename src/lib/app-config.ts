@@ -1,5 +1,5 @@
-import { colorSchemes, defaultColorScheme, type ColorScheme } from '@/config/color-schemes-simple'
-import { radiusOptions, defaultRadius, type RadiusSize, getRadiusVars } from '@/config/radius-settings'
+import { defaultColorScheme, type ColorScheme, getColorSchemeVars } from '@/config/color-schemes'
+import { defaultRadius, type RadiusSize, getRadiusVars } from '@/config/radius-settings'
 
 // 应用配置键名
 export const APP_CONFIG_KEYS = {
@@ -56,21 +56,15 @@ export const saveAppConfig = (config: AppConfig): void => {
 
 // 应用颜色方案到 DOM
 export const applyColorScheme = (colorScheme: ColorScheme, isDark: boolean): void => {
-  const scheme = colorSchemes.find(s => s.value === colorScheme)
-  if (!scheme) return
-
   const root = document.documentElement
-  const primaryColor = isDark ? scheme.colors.primaryDark : scheme.colors.primary
   
-  // 更新主色调相关的CSS变量
-  root.style.setProperty('--primary', primaryColor)
-  root.style.setProperty('--ring', primaryColor)
+  // 使用完整的颜色方案系统
+  const colorVars = getColorSchemeVars(colorScheme, isDark)
   
-  // 根据主色调计算其他相关颜色
-  const alpha10 = primaryColor.replace(')', ' / 10%)')
-  const alpha5 = primaryColor.replace(')', ' / 5%)')
-  
-  root.style.setProperty('--accent', isDark ? alpha10 : alpha5)
+  // 应用所有CSS变量
+  Object.entries(colorVars).forEach(([key, value]) => {
+    root.style.setProperty(key, value as string)
+  })
   
   console.log(`Applied color scheme: ${colorScheme} (${isDark ? 'dark' : 'light'})`)
 }

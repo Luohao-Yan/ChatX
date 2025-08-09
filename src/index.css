@@ -181,3 +181,19 @@
     height: 0;
   }
 }
+
+/* Enterprise Page Transitions - Optimized for reliability */
+[data-enterprise-transition] {
+  /* Hardware acceleration optimization */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Reduced motion support for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  [data-enterprise-transition] * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,7 +1,7 @@
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { radiusOptions, type RadiusSize, radiusSliderConfig, sliderValueToRadius, radiusToSliderValue } from '@/config/radius-settings'
+import { radiusOptions, type RadiusSize, radiusSliderConfig, sliderValueToRadius } from '@/config/radius-settings'
 import { cn } from '@/lib/utils'
 
 interface RadiusSliderProps {

@@ -7,7 +7,7 @@ import {
   getDefaultConfig,
   type AppConfig 
 } from '@/lib/app-config'
-import type { ColorScheme } from '@/config/color-schemes-simple'
+import type { ColorScheme } from '@/config/color-schemes'
 import type { RadiusSize } from '@/config/radius-settings'
 
 type AppearanceProviderProps = {

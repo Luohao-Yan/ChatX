@@ -1,6 +1,4 @@
-import { cn } from '@/lib/utils'
 import { colorSchemes, type ColorScheme } from '@/config/color-schemes'
-import { useTranslation } from 'react-i18next'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { FormItem, FormLabel, FormControl } from '@/components/ui/form'
 
@@ -10,7 +8,6 @@ interface ColorSchemeSelectorProps {
 }
 
 export function ColorSchemeSelector({ value, onValueChange }: ColorSchemeSelectorProps) {
-  const { t } = useTranslation()
 
   return (
     <div className='space-y-4'>

@@ -6,6 +6,8 @@ export interface ColorSchemeOption {
   colors: {
     primary: string
     primaryDark: string
+    accent?: string
+    accentDark?: string
   }
 }
 
@@ -16,6 +18,8 @@ export const colorSchemes: ColorSchemeOption[] = [
     colors: {
       primary: 'oklch(0.208 0.042 265.755)',
       primaryDark: 'oklch(0.929 0.013 255.508)',
+      accent: 'oklch(0.968 0.007 247.896)',
+      accentDark: 'oklch(0.279 0.041 260.031)',
     },
   },
   {
