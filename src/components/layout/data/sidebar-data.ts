@@ -1,6 +1,5 @@
 import {
   IconBarrierBlock,
-  IconBrowserCheck,
   IconBug,
   IconChecklist,
   IconError404,
@@ -9,13 +8,9 @@ import {
   IconLock,
   IconLockAccess,
   IconMessages,
-  IconNotification,
   IconPackages,
-  IconPalette,
   IconServerOff,
   IconSettings,
-  IconTool,
-  IconUserCog,
   IconUserOff,
   IconUsers,
 } from '@tabler/icons-react'
@@ -23,8 +18,12 @@ import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
 import { TFunction } from 'i18next'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
+import { getSettingsNavItems } from '@/config/settings-nav'
 
-export const getSidebarData = (t: TFunction): SidebarData => ({
+export const getSidebarData = (t: TFunction): SidebarData => {
+  const settingsNavItems = getSettingsNavItems(t)
+  
+  return {
   user: {
     name: 'satnaing',
     email: 'satnaingdev@gmail.com',
@@ -165,33 +164,11 @@ export const getSidebarData = (t: TFunction): SidebarData => ({
         {
           title: t('nav.settings'),
           icon: IconSettings,
-          items: [
-            {
-              title: t('nav.profile'),
-              url: '/settings',
-              icon: IconUserCog,
-            },
-            {
-              title: t('nav.account'),
-              url: '/settings/account',
-              icon: IconTool,
-            },
-            {
-              title: t('nav.appearance'),
-              url: '/settings/appearance',
-              icon: IconPalette,
-            },
-            {
-              title: t('nav.notifications'),
-              url: '/settings/notifications',
-              icon: IconNotification,
-            },
-            {
-              title: t('nav.display'),
-              url: '/settings/display',
-              icon: IconBrowserCheck,
-            },
-          ],
+          items: settingsNavItems.map(item => ({
+            title: item.title,
+            url: item.href,
+            icon: item.icon,
+          })),
         },
         {
           title: t('nav.helpCenter'),
@@ -201,4 +178,5 @@ export const getSidebarData = (t: TFunction): SidebarData => ({
       ],
     },
   ],
-})
+  }
+}

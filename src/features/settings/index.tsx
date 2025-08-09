@@ -1,17 +1,11 @@
 import { Outlet } from '@tanstack/react-router'
-import {
-  IconBrowserCheck,
-  IconNotification,
-  IconPalette,
-  IconTool,
-  IconUser,
-} from '@tabler/icons-react'
 import { Separator } from '@/components/ui/separator'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { HeaderActions } from '@/components/layout/header-actions'
 import { Breadcrumb } from '@/components/layout/breadcrumb'
 import { useTranslation } from 'react-i18next'
+import { getSettingsNavItems } from '@/config/settings-nav'
 import SidebarNav from './components/sidebar-nav'
 
 export default function Settings() {
@@ -21,7 +15,11 @@ export default function Settings() {
     { label: t('nav.settings') }
   ]
   
-  const sidebarNavItems = getSidebarNavItems(t)
+  const sidebarNavItems = getSettingsNavItems(t).map(item => ({
+    title: item.title,
+    icon: <item.icon size={18} />,
+    href: item.href as string,
+  }))
 
   return (
     <>
@@ -54,30 +52,3 @@ export default function Settings() {
   )
 }
 
-const getSidebarNavItems = (t: any) => [
-  {
-    title: t('nav.profile'),
-    icon: <IconUser size={18} />,
-    href: '/settings',
-  },
-  {
-    title: t('nav.account'),
-    icon: <IconTool size={18} />,
-    href: '/settings/account',
-  },
-  {
-    title: t('nav.appearance'),
-    icon: <IconPalette size={18} />,
-    href: '/settings/appearance',
-  },
-  {
-    title: t('nav.notifications'),
-    icon: <IconNotification size={18} />,
-    href: '/settings/notifications',
-  },
-  {
-    title: t('nav.display'),
-    icon: <IconBrowserCheck size={18} />,
-    href: '/settings/display',
-  },
-]

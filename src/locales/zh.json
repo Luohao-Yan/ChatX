@@ -145,12 +145,12 @@
       "themeDescription": "为仪表板选择主题。",
       "light": "浅色",
       "dark": "深色",
-      "system": "跟随系统",
+      "autoSwitchSystem": "跟随系统",
       "font": "字体",
       "fontDescription": "设置您想在仪表板中使用的字体。",
       "inter": "Inter",
       "manrope": "Manrope",
-      "system": "系统字体",
+      "systemFront": "系统字体",
       "updateAppearance": "更新偏好设置"
     },
     "notifications": {
