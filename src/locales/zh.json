@@ -58,7 +58,14 @@
     "theme": "主题",
     "light": "浅色",
     "dark": "深色",
-    "system": "系统"
+    "system": "系统",
+    "selectOption": "选择{{option}}"
+  },
+  "validation": {
+    "required": "{{field}}是必填项",
+    "minLength": "{{field}}至少需要{{count}}个字符",
+    "maxLength": "{{field}}不能超过{{count}}个字符",
+    "invalidUrl": "请输入有效的网址"
   },
   "auth": {
     "signInTitle": "登录",
@@ -96,11 +103,98 @@
   },
   "settings": {
     "title": "设置",
+    "description": "管理您的账户设置并设置电子邮件偏好。",
     "profileSettings": "个人资料设置",
     "accountSettings": "账户设置",
     "appearanceSettings": "外观设置",
     "notificationSettings": "通知设置",
-    "displaySettings": "显示设置"
+    "displaySettings": "显示设置",
+    "profile": {
+      "title": "个人资料",
+      "description": "这是其他人在网站上看到您的方式。",
+      "username": "用户名",
+      "usernamePlaceholder": "请输入您的用户名",
+      "usernameDescription": "这是您的公开显示名称。它可以是您的真实姓名或笔名。每30天只能更改一次。",
+      "email": "邮箱",
+      "emailPlaceholder": "请输入您的邮箱地址",
+      "emailDescription": "您可以在邮箱设置中管理已验证的邮箱地址。",
+      "bio": "个人简介",
+      "bioPlaceholder": "介绍一下您自己",
+      "bioDescription": "您可以@提及其他用户和组织来链接到他们。",
+      "urls": "网址链接",
+      "urlsDescription": "添加您的网站、博客或社交媒体资料的链接。",
+      "updateProfile": "更新个人资料",
+      "addUrl": "添加网址"
+    },
+    "account": {
+      "title": "账户",
+      "description": "更新您的账户设置。设置您的首选语言和时区。",
+      "name": "姓名",
+      "namePlaceholder": "请输入您的姓名",
+      "nameDescription": "这是将在您的个人资料和邮件中显示的姓名。",
+      "dateOfBirth": "出生日期",
+      "dateOfBirthDescription": "您的出生日期用于计算您的年龄。",
+      "language": "语言",
+      "languageDescription": "这是将在仪表板中使用的语言。",
+      "updateAccount": "更新账户"
+    },
+    "appearance": {
+      "title": "外观",
+      "description": "自定义应用程序的外观。自动在日间和夜间主题之间切换。",
+      "theme": "主题",
+      "themeDescription": "为仪表板选择主题。",
+      "light": "浅色",
+      "dark": "深色",
+      "system": "跟随系统",
+      "font": "字体",
+      "fontDescription": "设置您想在仪表板中使用的字体。",
+      "inter": "Inter",
+      "manrope": "Manrope",
+      "system": "系统字体",
+      "updateAppearance": "更新偏好设置"
+    },
+    "notifications": {
+      "title": "通知",
+      "description": "配置您接收通知的方式。",
+      "notifyAbout": "通知我关于...",
+      "allNewMessages": "所有新消息",
+      "directMessagesAndMentions": "直接消息和提及",
+      "nothing": "不通知",
+      "emailNotifications": "邮件通知",
+      "communicationEmails": "沟通邮件",
+      "communicationEmailsDescription": "接收关于您账户活动的邮件。",
+      "marketingEmails": "营销邮件",
+      "marketingEmailsDescription": "接收关于新产品、功能等的邮件。",
+      "socialEmails": "社交邮件",
+      "socialEmailsDescription": "接收好友请求、关注等的邮件。",
+      "securityEmails": "安全邮件",
+      "securityEmailsDescription": "接收关于您账户活动和安全的邮件。",
+      "updateNotifications": "更新通知设置",
+      "mobileSettings": "为我的移动设备使用不同的设置",
+      "mobileSettingsDescription": {
+        "prefix": "您可以在",
+        "linkText": "移动设备设置",
+        "suffix": "页面中管理您的移动通知。"
+      }
+    },
+    "display": {
+      "title": "显示",
+      "description": "打开或关闭项目以控制应用程序中显示的内容。",
+      "sidebar": "侧边栏",
+      "sidebarDescription": "选择您想要在侧边栏中显示的项目。",
+      "recents": "最近使用",
+      "home": "主页",
+      "applications": "应用程序",
+      "desktop": "桌面",
+      "downloads": "下载",
+      "documents": "文档",
+      "avatarDisplay": "头像显示",
+      "avatarDisplayDescription": "选择在界面中显示哪个头像。",
+      "bottomLeft": "底部左侧头像（默认）",
+      "topRight": "顶部右侧头像",
+      "updateDisplay": "更新显示设置",
+      "selectAtLeastOne": "您必须至少选择一个项目。"
+    }
   },
   "errors": {
     "sessionExpired": "会话已过期！",

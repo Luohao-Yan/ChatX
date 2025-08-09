@@ -1,9 +1,12 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslation } from 'react-i18next'
 import { showSubmittedData } from '@/utils/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { useAvatar } from '@/context/avatar-context'
 import {
   Form,
   FormControl,
@@ -14,56 +17,75 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 
-const items = [
+const getItems = (t: any) => [
   {
     id: 'recents',
-    label: 'Recents',
+    label: t('settings.display.recents'),
   },
   {
     id: 'home',
-    label: 'Home',
+    label: t('settings.display.home'),
   },
   {
     id: 'applications',
-    label: 'Applications',
+    label: t('settings.display.applications'),
   },
   {
     id: 'desktop',
-    label: 'Desktop',
+    label: t('settings.display.desktop'),
   },
   {
     id: 'downloads',
-    label: 'Downloads',
+    label: t('settings.display.downloads'),
   },
   {
     id: 'documents',
-    label: 'Documents',
+    label: t('settings.display.documents'),
   },
 ] as const
 
-const displayFormSchema = z.object({
+const createDisplayFormSchema = (t: any) => z.object({
   items: z.array(z.string()).refine((value) => value.some((item) => item), {
-    message: 'You have to select at least one item.',
+    message: t('settings.display.selectAtLeastOne'),
   }),
+  avatarDisplay: z.enum(['bottom-left', 'top-right']),
 })
 
-type DisplayFormValues = z.infer<typeof displayFormSchema>
+type DisplayFormValues = {
+  items: string[]
+  avatarDisplay: 'bottom-left' | 'top-right'
+}
 
 // This can come from your database or API.
 const defaultValues: Partial<DisplayFormValues> = {
   items: ['recents', 'home'],
+  avatarDisplay: 'bottom-left',
 }
 
 export function DisplayForm() {
+  const { t } = useTranslation()
+  const { avatarDisplay, setAvatarDisplay } = useAvatar()
+  
+  const displayFormSchema = createDisplayFormSchema(t)
+  const items = getItems(t)
+  
   const form = useForm<DisplayFormValues>({
     resolver: zodResolver(displayFormSchema),
-    defaultValues,
+    defaultValues: {
+      ...defaultValues,
+      avatarDisplay,
+    },
   })
+
+  const onSubmit = (data: DisplayFormValues) => {
+    setAvatarDisplay(data.avatarDisplay)
+    showSubmittedData(data)
+  }
 
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit((data) => showSubmittedData(data))}
+        onSubmit={form.handleSubmit(onSubmit)}
         className='space-y-8'
       >
         <FormField
@@ -72,9 +94,9 @@ export function DisplayForm() {
           render={() => (
             <FormItem>
               <div className='mb-4'>
-                <FormLabel className='text-base'>Sidebar</FormLabel>
+                <FormLabel className='text-base'>{t('settings.display.sidebar')}</FormLabel>
                 <FormDescription>
-                  Select the items you want to display in the sidebar.
+                  {t('settings.display.sidebarDescription')}
                 </FormDescription>
               </div>
               {items.map((item) => (
@@ -114,7 +136,46 @@ export function DisplayForm() {
             </FormItem>
           )}
         />
-        <Button type='submit'>Update display</Button>
+        
+        <FormField
+          control={form.control}
+          name='avatarDisplay'
+          render={({ field }) => (
+            <FormItem className='space-y-3'>
+              <FormLabel className='text-base'>{t('settings.display.avatarDisplay')}</FormLabel>
+              <FormDescription>
+                {t('settings.display.avatarDisplayDescription')}
+              </FormDescription>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className='flex flex-col space-y-1'
+                >
+                  <FormItem className='flex items-center space-y-0 space-x-3'>
+                    <FormControl>
+                      <RadioGroupItem value='bottom-left' />
+                    </FormControl>
+                    <FormLabel className='font-normal'>
+                      {t('settings.display.bottomLeft')}
+                    </FormLabel>
+                  </FormItem>
+                  <FormItem className='flex items-center space-y-0 space-x-3'>
+                    <FormControl>
+                      <RadioGroupItem value='top-right' />
+                    </FormControl>
+                    <FormLabel className='font-normal'>
+                      {t('settings.display.topRight')}
+                    </FormLabel>
+                  </FormItem>
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <Button type='submit'>{t('settings.display.updateDisplay')}</Button>
       </form>
     </Form>
   )

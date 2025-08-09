@@ -58,7 +58,14 @@
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark",
-    "system": "System"
+    "system": "System",
+    "selectOption": "Select {{option}}"
+  },
+  "validation": {
+    "required": "{{field}} is required",
+    "minLength": "{{field}} must be at least {{count}} characters",
+    "maxLength": "{{field}} must not be longer than {{count}} characters",
+    "invalidUrl": "Please enter a valid URL"
   },
   "auth": {
     "signInTitle": "Sign In",
@@ -96,11 +103,98 @@
   },
   "settings": {
     "title": "Settings",
+    "description": "Manage your account settings and set e-mail preferences.",
     "profileSettings": "Profile Settings",
     "accountSettings": "Account Settings",
     "appearanceSettings": "Appearance Settings",
     "notificationSettings": "Notification Settings",
-    "displaySettings": "Display Settings"
+    "displaySettings": "Display Settings",
+    "profile": {
+      "title": "Profile",
+      "description": "This is how others will see you on the site.",
+      "username": "Username",
+      "usernamePlaceholder": "Enter your username",
+      "usernameDescription": "This is your public display name. It can be your real name or a pseudonym. You can only change this once every 30 days.",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email address",
+      "emailDescription": "You can manage verified email addresses in your email settings.",
+      "bio": "Bio",
+      "bioPlaceholder": "Tell us a little bit about yourself",
+      "bioDescription": "You can @mention other users and organizations to link to them.",
+      "urls": "URLs",
+      "urlsDescription": "Add links to your website, blog, or social media profiles.",
+      "updateProfile": "Update profile",
+      "addUrl": "Add URL"
+    },
+    "account": {
+      "title": "Account",
+      "description": "Update your account settings. Set your preferred language and timezone.",
+      "name": "Name",
+      "namePlaceholder": "Enter your name",
+      "nameDescription": "This is the name that will be displayed on your profile and in emails.",
+      "dateOfBirth": "Date of birth",
+      "dateOfBirthDescription": "Your date of birth is used to calculate your age.",
+      "language": "Language",
+      "languageDescription": "This is the language that will be used in the dashboard.",
+      "updateAccount": "Update account"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize the appearance of the app. Automatically switch between day and night themes.",
+      "theme": "Theme",
+      "themeDescription": "Select the theme for the dashboard.",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "font": "Font",
+      "fontDescription": "Set the font you want to use in the dashboard.",
+      "inter": "Inter",
+      "manrope": "Manrope",
+      "system": "System",
+      "updateAppearance": "Update preferences"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Configure how you receive notifications.",
+      "notifyAbout": "Notify me about...",
+      "allNewMessages": "All new messages",
+      "directMessagesAndMentions": "Direct messages and mentions",
+      "nothing": "Nothing",
+      "emailNotifications": "Email Notifications",
+      "communicationEmails": "Communication emails",
+      "communicationEmailsDescription": "Receive emails about your account activity.",
+      "marketingEmails": "Marketing emails",
+      "marketingEmailsDescription": "Receive emails about new products, features, and more.",
+      "socialEmails": "Social emails",
+      "socialEmailsDescription": "Receive emails for friend requests, follows, and more.",
+      "securityEmails": "Security emails",
+      "securityEmailsDescription": "Receive emails about your account activity and security.",
+      "updateNotifications": "Update notifications",
+      "mobileSettings": "Use different settings for my mobile devices",
+      "mobileSettingsDescription": {
+        "prefix": "You can manage your mobile notifications in the",
+        "linkText": "mobile settings",
+        "suffix": "page."
+      }
+    },
+    "display": {
+      "title": "Display",
+      "description": "Turn items on or off to control what's displayed in the app.",
+      "sidebar": "Sidebar",
+      "sidebarDescription": "Select the items you want to display in the sidebar.",
+      "recents": "Recents",
+      "home": "Home",
+      "applications": "Applications",
+      "desktop": "Desktop",
+      "downloads": "Downloads",
+      "documents": "Documents",
+      "avatarDisplay": "Avatar Display",
+      "avatarDisplayDescription": "Choose which avatar to display in the interface.",
+      "bottomLeft": "Bottom-left avatar (Default)",
+      "topRight": "Top-right avatar",
+      "updateDisplay": "Update display",
+      "selectAtLeastOne": "You have to select at least one item."
+    }
   },
   "errors": {
     "sessionExpired": "Session expired!",

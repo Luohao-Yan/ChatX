@@ -10,9 +10,11 @@ import { NavUser } from '@/components/layout/nav-user'
 import { TeamSwitcher } from '@/components/layout/team-switcher'
 import { getSidebarData } from './data/sidebar-data'
 import { useTranslation } from 'react-i18next'
+import { useAvatar } from '@/context/avatar-context'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { t } = useTranslation()
+  const { avatarDisplay } = useAvatar()
   const sidebarData = getSidebarData(t)
 
   return (
@@ -26,7 +28,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={sidebarData.user} />
+        {avatarDisplay === 'bottom-left' && <NavUser user={sidebarData.user} />}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
