@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
-import { AxiosError } from 'axios'
+import { RequestError } from '@/lib/request-adapter'
 import {
   QueryCache,
   QueryClient,
@@ -30,7 +30,7 @@ const queryClient = new QueryClient({
         if (failureCount > 3 && import.meta.env.PROD) return false
 
         return !(
-          error instanceof AxiosError &&
+          error instanceof RequestError &&
           [401, 403].includes(error.response?.status ?? 0)
         )
       },
@@ -41,7 +41,7 @@ const queryClient = new QueryClient({
       onError: (error) => {
         handleServerError(error)
 
-        if (error instanceof AxiosError) {
+        if (error instanceof RequestError) {
           if (error.response?.status === 304) {
             toast.error('Content not modified!')
           }
@@ -51,7 +51,7 @@ const queryClient = new QueryClient({
   },
   queryCache: new QueryCache({
     onError: (error) => {
-      if (error instanceof AxiosError) {
+      if (error instanceof RequestError) {
         if (error.response?.status === 401) {
           toast.error('Session expired!')
           useAuthStore.getState().auth.reset()

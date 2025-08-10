@@ -22,6 +22,7 @@ ChatX is a modern chat application designed for seamless communication and colla
 - **Enterprise Page Transitions** - 6 professional animation effects (Fade, Slide, Slide-up, Zoom, Blur-fade, None)
 - **Advanced Appearance System** - Color schemes, border radius, custom radius, font size customization
 - **Smart Animation Degradation** - Auto-detects user accessibility preferences, error boundary handling, safe fallbacks
+- **Enterprise-Grade HTTP Client** - Type-safe fetch-based request module with interceptors, retry logic, and error handling
 
 ## Tech Stack
 
@@ -40,6 +41,12 @@ ChatX is a modern chat application designed for seamless communication and colla
 **Auth (partial):** [Clerk](https://go.clerk.com/GttUAaK)
 
 **Animation:** [Framer Motion](https://www.framer.com/motion/)
+
+**HTTP Client:** Custom Fetch-based Request Module (replaces Axios)
+
+**State Management:** [Zustand](https://zustand-demo.pmnd.rs/)
+
+**Data Fetching:** [TanStack Query](https://tanstack.com/query/latest)
 
 ## Run Locally
 
@@ -65,6 +72,94 @@ Start the server
 
 ```bash
   pnpm run dev
+```
+
+## HTTP Client Usage
+
+This project features a custom enterprise-grade HTTP client built on the fetch API, providing a modern alternative to Axios with full TypeScript support.
+
+### Basic Usage
+
+```typescript
+import { http } from '@/lib/request-adapter'
+
+// GET request
+const users = await http.get('/users')
+
+// POST request
+const newUser = await http.post('/users', {
+  name: 'John Doe',
+  email: 'john@example.com'
+})
+
+// With query parameters
+const filteredUsers = await http.get('/users', {
+  params: { page: 1, limit: 10 }
+})
+```
+
+### Advanced Features
+
+```typescript
+// Request with retry and timeout
+const data = await http.get('/api/data', {
+  retry: 3,           // Retry 3 times on failure
+  retryDelay: 1000,   // 1 second delay between retries
+  timeout: 5000,      // 5 second timeout
+})
+
+// File upload
+const formData = new FormData()
+formData.append('file', file)
+await http.post('/upload', formData)
+```
+
+### Interceptors
+
+```typescript
+// Request interceptor - add authentication
+http.addRequestInterceptor({
+  onRequest: (config) => {
+    const token = localStorage.getItem('authToken')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  }
+})
+
+// Response interceptor - handle errors globally
+http.addResponseInterceptor({
+  onResponseError: (error) => {
+    if (error.status === 401) {
+      // Redirect to login
+      window.location.href = '/login'
+    }
+    throw error
+  }
+})
+```
+
+### Integration with React Query
+
+```typescript
+import { useQuery } from '@tanstack/react-query'
+import { http } from '@/lib/request-adapter'
+
+function useUsers() {
+  return useQuery({
+    queryKey: ['users'],
+    queryFn: () => http.get('/users').then(res => res.data)
+  })
+}
+```
+
+### Configuration
+
+Environment variables for HTTP client configuration:
+
+```env
+VITE_API_BASE_URL=http://localhost:3000/api
 ```
 
 ### Current Sponsor

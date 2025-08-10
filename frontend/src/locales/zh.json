@@ -28,7 +28,15 @@
     "appearance": "外观",
     "notifications": "通知",
     "display": "显示",
-    "helpCenter": "帮助中心"
+    "helpCenter": "帮助中心",
+    "documentManagement": "文档管理",
+    "myDocuments": "我的文档",
+    "recentDocuments": "最近文档",
+    "favorites": "收藏夹",
+    "sharedWithMe": "共享给我",
+    "trash": "回收站",
+    "storageAnalysis": "存储分析",
+    "documentSettings": "文档设置"
   },
   "common": {
     "loading": "加载中...",

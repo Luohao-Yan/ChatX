@@ -13,6 +13,13 @@ import {
   IconSettings,
   IconUserOff,
   IconUsers,
+  IconFileText,
+  IconClock,
+  IconHeart,
+  IconTrash,
+  IconChartPie,
+  IconCategory,
+  IconFolder,
 } from '@tabler/icons-react'
 import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
 import { TFunction } from 'i18next'
@@ -91,6 +98,55 @@ export const getSidebarData = (t: TFunction): SidebarData => {
             {
               title: t('nav.userManagement'),
               url: '/clerk/user-management',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: t('nav.documentManagement'),
+      items: [
+        {
+          title: t('nav.myDocuments'),
+          url: '/documents',
+          icon: IconFileText,
+        },
+        {
+          title: t('nav.recentDocuments'),
+          url: '/documents/recent',
+          icon: IconClock,
+        },
+        {
+          title: t('nav.favorites'),
+          url: '/documents/favorites',
+          icon: IconHeart,
+        },
+        {
+          title: t('nav.sharedWithMe'),
+          url: '/documents/shared',
+          icon: IconUsers,
+        },
+        {
+          title: t('nav.trash'),
+          url: '/documents/trash',
+          icon: IconTrash,
+        },
+        {
+          title: t('nav.storageAnalysis'),
+          url: '/documents/storage',
+          icon: IconChartPie,
+        },
+        {
+          title: t('nav.documentSettings'),
+          icon: IconSettings,
+          items: [
+            {
+              title: '分类标签',
+              url: '/documents/settings/categories',
+            },
+            {
+              title: '文件夹管理',
+              url: '/documents/settings/folders',
             },
           ],
         },

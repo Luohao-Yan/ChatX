@@ -1,0 +1,42 @@
+"use client";
+import {
+  Primitive
+} from "./chunk-OPSECTPI.js";
+import "./chunk-VHNF5BZV.js";
+import {
+  require_jsx_runtime
+} from "./chunk-ZIZLNBKN.js";
+import "./chunk-NCBFKE47.js";
+import {
+  require_react
+} from "./chunk-4MXNSX3A.js";
+import {
+  __toESM
+} from "./chunk-G3PMV62Z.js";
+
+// node_modules/.pnpm/@radix-ui+react-label@2.1.7_@types+react-dom@19.1.6_@types+react@19.1.8__@types+react@1_f026c130782473ba8001b4f96e481e94/node_modules/@radix-ui/react-label/dist/index.mjs
+var React = __toESM(require_react(), 1);
+var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
+var NAME = "Label";
+var Label = React.forwardRef((props, forwardedRef) => {
+  return (0, import_jsx_runtime.jsx)(
+    Primitive.label,
+    {
+      ...props,
+      ref: forwardedRef,
+      onMouseDown: (event) => {
+        const target = event.target;
+        if (target.closest("button, input, select, textarea")) return;
+        props.onMouseDown?.(event);
+        if (!event.defaultPrevented && event.detail > 1) event.preventDefault();
+      }
+    }
+  );
+});
+Label.displayName = NAME;
+var Root = Label;
+export {
+  Label,
+  Root
+};
+//# sourceMappingURL=@radix-ui_react-label.js.map

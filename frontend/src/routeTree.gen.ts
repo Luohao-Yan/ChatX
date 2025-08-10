@@ -29,6 +29,7 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
+import { Route as AuthenticatedDocumentsIndexRouteImport } from './routes/_authenticated/documents/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
@@ -38,6 +39,13 @@ import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
+import { Route as AuthenticatedDocumentsTrashRouteImport } from './routes/_authenticated/documents/trash'
+import { Route as AuthenticatedDocumentsStorageRouteImport } from './routes/_authenticated/documents/storage'
+import { Route as AuthenticatedDocumentsSharedRouteImport } from './routes/_authenticated/documents/shared'
+import { Route as AuthenticatedDocumentsRecentRouteImport } from './routes/_authenticated/documents/recent'
+import { Route as AuthenticatedDocumentsFavoritesRouteImport } from './routes/_authenticated/documents/favorites'
+import { Route as AuthenticatedDocumentsSettingsFoldersRouteImport } from './routes/_authenticated/documents/settings/folders'
+import { Route as AuthenticatedDocumentsSettingsCategoriesRouteImport } from './routes/_authenticated/documents/settings/categories'
 
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
   id: '/clerk',
@@ -139,6 +147,12 @@ const AuthenticatedHelpCenterIndexRoute =
     path: '/help-center/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDocumentsIndexRoute =
+  AuthenticatedDocumentsIndexRouteImport.update({
+    id: '/documents/',
+    path: '/documents/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
   id: '/chats/',
   path: '/chats/',
@@ -189,6 +203,48 @@ const AuthenticatedSettingsAccountRoute =
     path: '/account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedDocumentsTrashRoute =
+  AuthenticatedDocumentsTrashRouteImport.update({
+    id: '/documents/trash',
+    path: '/documents/trash',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDocumentsStorageRoute =
+  AuthenticatedDocumentsStorageRouteImport.update({
+    id: '/documents/storage',
+    path: '/documents/storage',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDocumentsSharedRoute =
+  AuthenticatedDocumentsSharedRouteImport.update({
+    id: '/documents/shared',
+    path: '/documents/shared',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDocumentsRecentRoute =
+  AuthenticatedDocumentsRecentRouteImport.update({
+    id: '/documents/recent',
+    path: '/documents/recent',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDocumentsFavoritesRoute =
+  AuthenticatedDocumentsFavoritesRouteImport.update({
+    id: '/documents/favorites',
+    path: '/documents/favorites',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDocumentsSettingsFoldersRoute =
+  AuthenticatedDocumentsSettingsFoldersRouteImport.update({
+    id: '/documents/settings/folders',
+    path: '/documents/settings/folders',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDocumentsSettingsCategoriesRoute =
+  AuthenticatedDocumentsSettingsCategoriesRouteImport.update({
+    id: '/documents/settings/categories',
+    path: '/documents/settings/categories',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -205,6 +261,11 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
+  '/documents/favorites': typeof AuthenticatedDocumentsFavoritesRoute
+  '/documents/recent': typeof AuthenticatedDocumentsRecentRoute
+  '/documents/shared': typeof AuthenticatedDocumentsSharedRoute
+  '/documents/storage': typeof AuthenticatedDocumentsStorageRoute
+  '/documents/trash': typeof AuthenticatedDocumentsTrashRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -214,10 +275,13 @@ export interface FileRoutesByFullPath {
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/documents': typeof AuthenticatedDocumentsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
+  '/documents/settings/folders': typeof AuthenticatedDocumentsSettingsFoldersRoute
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -232,6 +296,11 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
+  '/documents/favorites': typeof AuthenticatedDocumentsFavoritesRoute
+  '/documents/recent': typeof AuthenticatedDocumentsRecentRoute
+  '/documents/shared': typeof AuthenticatedDocumentsSharedRoute
+  '/documents/storage': typeof AuthenticatedDocumentsStorageRoute
+  '/documents/trash': typeof AuthenticatedDocumentsTrashRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -241,10 +310,13 @@ export interface FileRoutesByTo {
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/documents': typeof AuthenticatedDocumentsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
+  '/documents/settings/folders': typeof AuthenticatedDocumentsSettingsFoldersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -264,6 +336,11 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/documents/favorites': typeof AuthenticatedDocumentsFavoritesRoute
+  '/_authenticated/documents/recent': typeof AuthenticatedDocumentsRecentRoute
+  '/_authenticated/documents/shared': typeof AuthenticatedDocumentsSharedRoute
+  '/_authenticated/documents/storage': typeof AuthenticatedDocumentsStorageRoute
+  '/_authenticated/documents/trash': typeof AuthenticatedDocumentsTrashRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -273,10 +350,13 @@ export interface FileRoutesById {
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
+  '/_authenticated/documents/': typeof AuthenticatedDocumentsIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
+  '/_authenticated/documents/settings/folders': typeof AuthenticatedDocumentsSettingsFoldersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -295,6 +375,11 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/documents/favorites'
+    | '/documents/recent'
+    | '/documents/shared'
+    | '/documents/storage'
+    | '/documents/trash'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -304,10 +389,13 @@ export interface FileRouteTypes {
     | '/clerk/user-management'
     | '/apps'
     | '/chats'
+    | '/documents'
     | '/help-center'
     | '/settings/'
     | '/tasks'
     | '/users'
+    | '/documents/settings/categories'
+    | '/documents/settings/folders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
@@ -322,6 +410,11 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/documents/favorites'
+    | '/documents/recent'
+    | '/documents/shared'
+    | '/documents/storage'
+    | '/documents/trash'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -331,10 +424,13 @@ export interface FileRouteTypes {
     | '/clerk/user-management'
     | '/apps'
     | '/chats'
+    | '/documents'
     | '/help-center'
     | '/settings'
     | '/tasks'
     | '/users'
+    | '/documents/settings/categories'
+    | '/documents/settings/folders'
   id:
     | '__root__'
     | '/_authenticated'
@@ -353,6 +449,11 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/'
+    | '/_authenticated/documents/favorites'
+    | '/_authenticated/documents/recent'
+    | '/_authenticated/documents/shared'
+    | '/_authenticated/documents/storage'
+    | '/_authenticated/documents/trash'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
@@ -362,10 +463,13 @@ export interface FileRouteTypes {
     | '/clerk/_authenticated/user-management'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
+    | '/_authenticated/documents/'
     | '/_authenticated/help-center/'
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
+    | '/_authenticated/documents/settings/categories'
+    | '/_authenticated/documents/settings/folders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -525,6 +629,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHelpCenterIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/documents/': {
+      id: '/_authenticated/documents/'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof AuthenticatedDocumentsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/chats/': {
       id: '/_authenticated/chats/'
       path: '/chats'
@@ -588,6 +699,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/documents/trash': {
+      id: '/_authenticated/documents/trash'
+      path: '/documents/trash'
+      fullPath: '/documents/trash'
+      preLoaderRoute: typeof AuthenticatedDocumentsTrashRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/documents/storage': {
+      id: '/_authenticated/documents/storage'
+      path: '/documents/storage'
+      fullPath: '/documents/storage'
+      preLoaderRoute: typeof AuthenticatedDocumentsStorageRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/documents/shared': {
+      id: '/_authenticated/documents/shared'
+      path: '/documents/shared'
+      fullPath: '/documents/shared'
+      preLoaderRoute: typeof AuthenticatedDocumentsSharedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/documents/recent': {
+      id: '/_authenticated/documents/recent'
+      path: '/documents/recent'
+      fullPath: '/documents/recent'
+      preLoaderRoute: typeof AuthenticatedDocumentsRecentRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/documents/favorites': {
+      id: '/_authenticated/documents/favorites'
+      path: '/documents/favorites'
+      fullPath: '/documents/favorites'
+      preLoaderRoute: typeof AuthenticatedDocumentsFavoritesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/documents/settings/folders': {
+      id: '/_authenticated/documents/settings/folders'
+      path: '/documents/settings/folders'
+      fullPath: '/documents/settings/folders'
+      preLoaderRoute: typeof AuthenticatedDocumentsSettingsFoldersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/documents/settings/categories': {
+      id: '/_authenticated/documents/settings/categories'
+      path: '/documents/settings/categories'
+      fullPath: '/documents/settings/categories'
+      preLoaderRoute: typeof AuthenticatedDocumentsSettingsCategoriesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -617,21 +777,39 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedDocumentsFavoritesRoute: typeof AuthenticatedDocumentsFavoritesRoute
+  AuthenticatedDocumentsRecentRoute: typeof AuthenticatedDocumentsRecentRoute
+  AuthenticatedDocumentsSharedRoute: typeof AuthenticatedDocumentsSharedRoute
+  AuthenticatedDocumentsStorageRoute: typeof AuthenticatedDocumentsStorageRoute
+  AuthenticatedDocumentsTrashRoute: typeof AuthenticatedDocumentsTrashRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
+  AuthenticatedDocumentsIndexRoute: typeof AuthenticatedDocumentsIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
+  AuthenticatedDocumentsSettingsCategoriesRoute: typeof AuthenticatedDocumentsSettingsCategoriesRoute
+  AuthenticatedDocumentsSettingsFoldersRoute: typeof AuthenticatedDocumentsSettingsFoldersRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedDocumentsFavoritesRoute: AuthenticatedDocumentsFavoritesRoute,
+  AuthenticatedDocumentsRecentRoute: AuthenticatedDocumentsRecentRoute,
+  AuthenticatedDocumentsSharedRoute: AuthenticatedDocumentsSharedRoute,
+  AuthenticatedDocumentsStorageRoute: AuthenticatedDocumentsStorageRoute,
+  AuthenticatedDocumentsTrashRoute: AuthenticatedDocumentsTrashRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
+  AuthenticatedDocumentsIndexRoute: AuthenticatedDocumentsIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
+  AuthenticatedDocumentsSettingsCategoriesRoute:
+    AuthenticatedDocumentsSettingsCategoriesRoute,
+  AuthenticatedDocumentsSettingsFoldersRoute:
+    AuthenticatedDocumentsSettingsFoldersRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

@@ -14,6 +14,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  cacheDir: './.vite',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
