@@ -17,7 +17,7 @@ export function handleServerError(error: unknown) {
   }
 
   if (error instanceof RequestError) {
-    errMsg = error.response?.data?.title || error.data?.title || error.message
+    errMsg = (error.response?.data as any)?.title || (error.data as any)?.title || error.message
   }
 
   toast.error(errMsg)

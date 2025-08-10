@@ -22,6 +22,7 @@ ChatX is a powerful full-stack chat application designed to provide a seamless e
 - **Responsive & Accessible Design**: Ensures a great user experience on all devices and respects user accessibility preferences.
 - **Modern UI Components**: Built with shadcn/ui for a beautiful and easy-to-use interface.
 - **Comprehensive Document Management Interface**: User-centric design with intuitive navigation for document workflow management.
+- **Enterprise-Grade Knowledge Graph Visualization**: Interactive ECharts-powered graph with dynamic theming and relationship exploration.
 
 ### Backend (API & Services)
 - **Enterprise-grade Document Management System**:
@@ -34,7 +35,8 @@ ChatX is a powerful full-stack chat application designed to provide a seamless e
     - **Content Intelligence**: Automatic identification and smart categorization of 11+ file types.
 - **User Authentication & Management**: Secure, JWT-based authentication, session management, and user profile handling.
 - **Vector Search Integration**: Enables semantic search on document content via Weaviate.
-- **Knowledge Graph-powered**: Utilizes Neo4j for analyzing data relationships.
+- **Knowledge Graph System**: Utilizes Neo4j for analyzing data relationships with interactive visualization support.
+- **Real-time Data Visualization**: Frontend-backend integration for dynamic knowledge graph exploration.
 - **Asynchronous Task Processing**: Uses Celery for handling time-consuming tasks like file processing and notifications.
 
 ## 🚀 Tech Architecture
@@ -46,6 +48,7 @@ ChatX is a powerful full-stack chat application designed to provide a seamless e
 - **UI Component Library**: [ShadcnUI](https://ui.shadcn.com) (TailwindCSS + RadixUI)
 - **Routing**: [TanStack Router](https://tanstack.com/router/latest)
 - **Animation**: [Framer Motion](https://www.framer.com/motion/)
+- **Visualization**: [ECharts](https://echarts.apache.org/) & [ECharts for React](https://github.com/hustcc/echarts-for-react)
 - **Authentication**: [Clerk](https://go.clerk.com/GttUAaK)
 
 ### Backend Tech Stack
@@ -91,7 +94,8 @@ After startup, you can run `docker-compose ps` to confirm all services are `Up`.
 **Key Backend Endpoints:**
 - **API Docs (Swagger)**: http://localhost/docs
 - **MinIO Console**: http://localhost/minio
-- **Neo4j Browser**: http://localhost/neo4j
+- **Neo4j Browser**: http://localhost/neo4j (Knowledge Graph database)
+- **Knowledge Graph API**: http://localhost/api/knowledge/graph
 
 ### Step 2: Start the Frontend Dev Server
 
@@ -115,15 +119,21 @@ You're all set! You can now open [http://localhost:5173](http://localhost:5173) 
 
 ## 📁 Project Structure
 
-```
+```text
 chatx-main/
 ├── backend/            # Backend FastAPI application and all service configurations
 │   ├── app/            # FastAPI core source code
+│   │   ├── knowledge/  # Knowledge graph API endpoints and services
+│   │   └── ...
 │   ├── nginx/          # Nginx configuration files
 │   ├── docker-compose.yml # Docker orchestration file
 │   └── ...
 ├── frontend/           # Frontend React application
 │   ├── src/            # React core source code
+│   │   ├── components/knowledge-graph/ # ECharts-based visualization components
+│   │   ├── hooks/use-graph-theme.ts   # Theme integration for graphs
+│   │   ├── routes/knowledge/          # Knowledge graph routes
+│   │   └── ...
 │   ├── public/         # Static assets
 │   ├── package.json    # Frontend dependency configuration
 │   └── ...

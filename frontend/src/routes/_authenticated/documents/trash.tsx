@@ -30,7 +30,7 @@ function TrashPage() {
       <Main>
         <div className="space-y-6">
           <div className="flex items-center space-x-4">
-            <IconTrash className="h-8 w-8" />
+            <IconTrash className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-3xl font-bold">回收站</h1>
               <p className="text-muted-foreground">恢复或永久删除已删除的文档</p>

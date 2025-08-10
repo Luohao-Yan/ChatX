@@ -31,6 +31,15 @@ ChatX is a modern chat application designed for seamless communication and colla
   - **Trash** - Recover accidentally deleted documents
   - **Storage Analytics** - View storage usage statistics and optimization recommendations
   - **Document Settings** - Category/tag management and folder structure configuration
+- **Enterprise-Grade Knowledge Graph Visualization** - Interactive knowledge relationship visualization:
+  - **ECharts-Powered Graph** - High-performance force-directed layout with enterprise-grade rendering
+  - **Dynamic Theme Integration** - Complete system theme support with 15+ color schemes and dark/light mode
+  - **Interactive Node System** - 9 different node types (Documents, Concepts, People, Organizations, etc.)
+  - **Advanced Tooltips** - Rich, contextual information display with modern UI design
+  - **Mobile-Responsive Controls** - Touch-optimized zoom, pan, and interaction controls
+  - **Real-time Filtering** - Search and filter nodes by type, content, or relationships
+  - **Full-Screen Mode** - Immersive graph exploration experience
+  - **Node Detail Panels** - Comprehensive information display for selected nodes
 
 ## Tech Stack
 
@@ -55,6 +64,8 @@ ChatX is a modern chat application designed for seamless communication and colla
 **State Management:** [Zustand](https://zustand-demo.pmnd.rs/)
 
 **Data Fetching:** [TanStack Query](https://tanstack.com/query/latest)
+
+**Visualization:** [ECharts](https://echarts.apache.org/) & [ECharts for React](https://github.com/hustcc/echarts-for-react)
 
 ## Run Locally
 
@@ -82,10 +93,11 @@ Start the server
   pnpm run dev
 ```
 
-## Document Management Routes
+## Application Routes
 
-The application includes a comprehensive document management system with the following routes:
+The application includes comprehensive management systems with the following routes:
 
+### Document Management
 - `/documents` - My Documents (main document workspace)
 - `/documents/recent` - Recently accessed documents
 - `/documents/favorites` - Favorited documents
@@ -94,6 +106,9 @@ The application includes a comprehensive document management system with the fol
 - `/documents/storage` - Storage usage analytics
 - `/documents/settings/categories` - Category and tag management
 - `/documents/settings/folders` - Folder structure management
+
+### Knowledge Graph
+- `/knowledge/graph` - Interactive knowledge graph visualization with real-time data exploration
 
 ## HTTP Client Usage
 
@@ -181,6 +196,70 @@ Environment variables for HTTP client configuration:
 
 ```env
 VITE_API_BASE_URL=http://localhost:3000/api
+```
+
+## Knowledge Graph Visualization
+
+The application features an enterprise-grade knowledge graph built with ECharts, providing interactive visualization of data relationships.
+
+### Key Features
+
+- **High-Performance Rendering**: Powered by ECharts with optimized force-directed layout algorithm
+- **Dynamic Theme Support**: Automatically adapts to system themes with 15+ color schemes
+- **Interactive Exploration**: Click, drag, zoom, and pan with smooth animations
+- **Smart Node Classification**: 9 distinct node types with semantic color coding
+- **Advanced Filtering**: Real-time search and type-based filtering
+- **Mobile Responsive**: Touch-optimized controls for mobile devices
+- **Rich Tooltips**: Contextual information with modern design
+
+### Node Types
+
+The knowledge graph supports various node types, each with distinct visual styling:
+
+```typescript
+// Supported node types with semantic colors
+{
+  document: 'Documents and files',
+  concept: 'Abstract concepts and ideas', 
+  person: 'People and individuals',
+  organization: 'Companies and organizations',
+  department: 'Organizational departments',
+  topic: 'Subject topics and themes',
+  tag: 'Classification tags',
+  website: 'Web resources and links',
+  wechat_article: 'WeChat articles and content'
+}
+```
+
+### Theme Integration
+
+The knowledge graph seamlessly integrates with the application's theme system:
+
+```typescript
+// Automatic theme adaptation
+const graphTheme = useGraphTheme()
+
+// Supports all color schemes:
+// default, emerald, blue, indigo, purple, red, orange, 
+// teal, cyan, lime, pink, amber, slate, neutral, zinc
+```
+
+### Usage Example
+
+```typescript
+import { KnowledgeGraph } from '@/components/knowledge-graph/knowledge-graph'
+
+function MyComponent() {
+  return (
+    <KnowledgeGraph
+      data={graphData}
+      loading={false}
+      onNodeClick={(node) => {
+        console.log('Selected node:', node)
+      }}
+    />
+  )
+}
 ```
 
 ### Current Sponsor

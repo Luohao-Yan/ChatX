@@ -7,11 +7,9 @@ import {
 } from '@tabler/icons-react'
 import type { TFunction } from 'i18next'
 import type { ComponentType } from 'react'
-import type { LinkProps } from '@tanstack/react-router'
-
 export interface SettingsNavItem {
   title: string
-  href: LinkProps['to']
+  href: string
   icon: ComponentType<{ size?: number; className?: string }>
 }
 

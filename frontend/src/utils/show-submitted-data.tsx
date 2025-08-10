@@ -11,5 +11,8 @@ export function showSubmittedData(
         <code className='text-white'>{JSON.stringify(data, null, 2)}</code>
       </pre>
     ),
+    duration: 20000, // 20秒后自动消失
+    dismissible: true, // 允许用户手动关闭
+    closeButton: true, // 显示关闭按钮
   })
 }

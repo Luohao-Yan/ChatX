@@ -30,7 +30,7 @@ function SharedDocumentsPage() {
       <Main>
         <div className="space-y-6">
           <div className="flex items-center space-x-4">
-            <IconUsers className="h-8 w-8" />
+            <IconUsers className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-3xl font-bold">共享给我</h1>
               <p className="text-muted-foreground">查看他人分享给您的文档</p>

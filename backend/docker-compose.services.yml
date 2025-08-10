@@ -1,4 +1,4 @@
-version: '3.8'
+# yaml-language-server: $schema=https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json
 
 # 外部依赖服务 - 仅用于本地开发
 # 使用: docker-compose -f docker-compose.services.yml up -d
@@ -12,7 +12,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chatx_password}
       POSTGRES_DB: ${POSTGRES_DB:-chatx_db}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./docker-data/postgres:/var/lib/postgresql/data
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
@@ -26,7 +26,7 @@ services:
     container_name: ${REDIS_CONTAINER_NAME:-chatx_redis}
     command: redis-server --appendonly yes
     volumes:
-      - redis_data:/data
+      - ./docker-data/redis:/data
     ports:
       - "${REDIS_PORT:-6379}:6379"
     healthcheck:
@@ -43,7 +43,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-chatx_minio_password}
     command: server /data --console-address ":9001"
     volumes:
-      - minio_data:/data
+      - ./docker-data/minio:/data
     ports:
       - "${MINIO_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
@@ -64,7 +64,7 @@ services:
       ENABLE_MODULES: 'backup-filesystem,text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai'
       CLUSTER_HOSTNAME: 'node1'
     volumes:
-      - weaviate_data:/var/lib/weaviate
+      - ./docker-data/weaviate:/var/lib/weaviate
     ports:
       - "${WEAVIATE_PORT:-8080}:8080"
     healthcheck:
@@ -85,9 +85,9 @@ services:
       NEO4J_dbms_memory_heap_max__size: ${NEO4J_HEAP_MAX:-1G}
       NEO4J_dbms_memory_pagecache_size: ${NEO4J_PAGECACHE:-256m}
     volumes:
-      - neo4j_data:/data
-      - neo4j_logs:/logs
-      - neo4j_conf:/conf
+      - ./docker-data/neo4j/data:/data
+      - ./docker-data/neo4j/logs:/logs
+      - ./docker-data/neo4j/conf:/conf
     ports:
       - "${NEO4J_HTTP_PORT:-7474}:7474"
       - "${NEO4J_BOLT_PORT:-7687}:7687"
@@ -97,14 +97,7 @@ services:
       timeout: 10s
       retries: 5
 
-volumes:
-  postgres_data:
-  redis_data:
-  minio_data:
-  weaviate_data:
-  neo4j_data:
-  neo4j_logs:
-  neo4j_conf:
+# volumes section removed - using local directory mounts
 
 networks:
   default:

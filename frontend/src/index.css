@@ -197,3 +197,11 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Fix sonner toast close button positioning */
+[data-sonner-toast][data-styled='true'] [data-close-button] {
+  left: unset !important;
+  right: 0 !important;
+  transform: translate(35%, -35%) !important;
+}
+

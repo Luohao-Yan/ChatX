@@ -39,6 +39,11 @@ import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
+import { Route as AuthenticatedKnowledgeWechatRouteImport } from './routes/_authenticated/knowledge/wechat'
+import { Route as AuthenticatedKnowledgeWebBlogsRouteImport } from './routes/_authenticated/knowledge/web-blogs'
+import { Route as AuthenticatedKnowledgeOrganizationsRouteImport } from './routes/_authenticated/knowledge/organizations'
+import { Route as AuthenticatedKnowledgeGraphRouteImport } from './routes/_authenticated/knowledge/graph'
+import { Route as AuthenticatedKnowledgeDepartmentsRouteImport } from './routes/_authenticated/knowledge/departments'
 import { Route as AuthenticatedDocumentsTrashRouteImport } from './routes/_authenticated/documents/trash'
 import { Route as AuthenticatedDocumentsStorageRouteImport } from './routes/_authenticated/documents/storage'
 import { Route as AuthenticatedDocumentsSharedRouteImport } from './routes/_authenticated/documents/shared'
@@ -203,6 +208,36 @@ const AuthenticatedSettingsAccountRoute =
     path: '/account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedKnowledgeWechatRoute =
+  AuthenticatedKnowledgeWechatRouteImport.update({
+    id: '/knowledge/wechat',
+    path: '/knowledge/wechat',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedKnowledgeWebBlogsRoute =
+  AuthenticatedKnowledgeWebBlogsRouteImport.update({
+    id: '/knowledge/web-blogs',
+    path: '/knowledge/web-blogs',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedKnowledgeOrganizationsRoute =
+  AuthenticatedKnowledgeOrganizationsRouteImport.update({
+    id: '/knowledge/organizations',
+    path: '/knowledge/organizations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedKnowledgeGraphRoute =
+  AuthenticatedKnowledgeGraphRouteImport.update({
+    id: '/knowledge/graph',
+    path: '/knowledge/graph',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedKnowledgeDepartmentsRoute =
+  AuthenticatedKnowledgeDepartmentsRouteImport.update({
+    id: '/knowledge/departments',
+    path: '/knowledge/departments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDocumentsTrashRoute =
   AuthenticatedDocumentsTrashRouteImport.update({
     id: '/documents/trash',
@@ -266,6 +301,11 @@ export interface FileRoutesByFullPath {
   '/documents/shared': typeof AuthenticatedDocumentsSharedRoute
   '/documents/storage': typeof AuthenticatedDocumentsStorageRoute
   '/documents/trash': typeof AuthenticatedDocumentsTrashRoute
+  '/knowledge/departments': typeof AuthenticatedKnowledgeDepartmentsRoute
+  '/knowledge/graph': typeof AuthenticatedKnowledgeGraphRoute
+  '/knowledge/organizations': typeof AuthenticatedKnowledgeOrganizationsRoute
+  '/knowledge/web-blogs': typeof AuthenticatedKnowledgeWebBlogsRoute
+  '/knowledge/wechat': typeof AuthenticatedKnowledgeWechatRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -301,6 +341,11 @@ export interface FileRoutesByTo {
   '/documents/shared': typeof AuthenticatedDocumentsSharedRoute
   '/documents/storage': typeof AuthenticatedDocumentsStorageRoute
   '/documents/trash': typeof AuthenticatedDocumentsTrashRoute
+  '/knowledge/departments': typeof AuthenticatedKnowledgeDepartmentsRoute
+  '/knowledge/graph': typeof AuthenticatedKnowledgeGraphRoute
+  '/knowledge/organizations': typeof AuthenticatedKnowledgeOrganizationsRoute
+  '/knowledge/web-blogs': typeof AuthenticatedKnowledgeWebBlogsRoute
+  '/knowledge/wechat': typeof AuthenticatedKnowledgeWechatRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -341,6 +386,11 @@ export interface FileRoutesById {
   '/_authenticated/documents/shared': typeof AuthenticatedDocumentsSharedRoute
   '/_authenticated/documents/storage': typeof AuthenticatedDocumentsStorageRoute
   '/_authenticated/documents/trash': typeof AuthenticatedDocumentsTrashRoute
+  '/_authenticated/knowledge/departments': typeof AuthenticatedKnowledgeDepartmentsRoute
+  '/_authenticated/knowledge/graph': typeof AuthenticatedKnowledgeGraphRoute
+  '/_authenticated/knowledge/organizations': typeof AuthenticatedKnowledgeOrganizationsRoute
+  '/_authenticated/knowledge/web-blogs': typeof AuthenticatedKnowledgeWebBlogsRoute
+  '/_authenticated/knowledge/wechat': typeof AuthenticatedKnowledgeWechatRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -380,6 +430,11 @@ export interface FileRouteTypes {
     | '/documents/shared'
     | '/documents/storage'
     | '/documents/trash'
+    | '/knowledge/departments'
+    | '/knowledge/graph'
+    | '/knowledge/organizations'
+    | '/knowledge/web-blogs'
+    | '/knowledge/wechat'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -415,6 +470,11 @@ export interface FileRouteTypes {
     | '/documents/shared'
     | '/documents/storage'
     | '/documents/trash'
+    | '/knowledge/departments'
+    | '/knowledge/graph'
+    | '/knowledge/organizations'
+    | '/knowledge/web-blogs'
+    | '/knowledge/wechat'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -454,6 +514,11 @@ export interface FileRouteTypes {
     | '/_authenticated/documents/shared'
     | '/_authenticated/documents/storage'
     | '/_authenticated/documents/trash'
+    | '/_authenticated/knowledge/departments'
+    | '/_authenticated/knowledge/graph'
+    | '/_authenticated/knowledge/organizations'
+    | '/_authenticated/knowledge/web-blogs'
+    | '/_authenticated/knowledge/wechat'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
@@ -699,6 +764,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/knowledge/wechat': {
+      id: '/_authenticated/knowledge/wechat'
+      path: '/knowledge/wechat'
+      fullPath: '/knowledge/wechat'
+      preLoaderRoute: typeof AuthenticatedKnowledgeWechatRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/knowledge/web-blogs': {
+      id: '/_authenticated/knowledge/web-blogs'
+      path: '/knowledge/web-blogs'
+      fullPath: '/knowledge/web-blogs'
+      preLoaderRoute: typeof AuthenticatedKnowledgeWebBlogsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/knowledge/organizations': {
+      id: '/_authenticated/knowledge/organizations'
+      path: '/knowledge/organizations'
+      fullPath: '/knowledge/organizations'
+      preLoaderRoute: typeof AuthenticatedKnowledgeOrganizationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/knowledge/graph': {
+      id: '/_authenticated/knowledge/graph'
+      path: '/knowledge/graph'
+      fullPath: '/knowledge/graph'
+      preLoaderRoute: typeof AuthenticatedKnowledgeGraphRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/knowledge/departments': {
+      id: '/_authenticated/knowledge/departments'
+      path: '/knowledge/departments'
+      fullPath: '/knowledge/departments'
+      preLoaderRoute: typeof AuthenticatedKnowledgeDepartmentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/documents/trash': {
       id: '/_authenticated/documents/trash'
       path: '/documents/trash'
@@ -782,6 +882,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDocumentsSharedRoute: typeof AuthenticatedDocumentsSharedRoute
   AuthenticatedDocumentsStorageRoute: typeof AuthenticatedDocumentsStorageRoute
   AuthenticatedDocumentsTrashRoute: typeof AuthenticatedDocumentsTrashRoute
+  AuthenticatedKnowledgeDepartmentsRoute: typeof AuthenticatedKnowledgeDepartmentsRoute
+  AuthenticatedKnowledgeGraphRoute: typeof AuthenticatedKnowledgeGraphRoute
+  AuthenticatedKnowledgeOrganizationsRoute: typeof AuthenticatedKnowledgeOrganizationsRoute
+  AuthenticatedKnowledgeWebBlogsRoute: typeof AuthenticatedKnowledgeWebBlogsRoute
+  AuthenticatedKnowledgeWechatRoute: typeof AuthenticatedKnowledgeWechatRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedDocumentsIndexRoute: typeof AuthenticatedDocumentsIndexRoute
@@ -800,6 +905,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDocumentsSharedRoute: AuthenticatedDocumentsSharedRoute,
   AuthenticatedDocumentsStorageRoute: AuthenticatedDocumentsStorageRoute,
   AuthenticatedDocumentsTrashRoute: AuthenticatedDocumentsTrashRoute,
+  AuthenticatedKnowledgeDepartmentsRoute:
+    AuthenticatedKnowledgeDepartmentsRoute,
+  AuthenticatedKnowledgeGraphRoute: AuthenticatedKnowledgeGraphRoute,
+  AuthenticatedKnowledgeOrganizationsRoute:
+    AuthenticatedKnowledgeOrganizationsRoute,
+  AuthenticatedKnowledgeWebBlogsRoute: AuthenticatedKnowledgeWebBlogsRoute,
+  AuthenticatedKnowledgeWechatRoute: AuthenticatedKnowledgeWechatRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedDocumentsIndexRoute: AuthenticatedDocumentsIndexRoute,

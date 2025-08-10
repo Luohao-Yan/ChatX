@@ -30,7 +30,7 @@ function FavoritesPage() {
       <Main>
         <div className="space-y-6">
           <div className="flex items-center space-x-4">
-            <IconHeart className="h-8 w-8" />
+            <IconHeart className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-3xl font-bold">收藏夹</h1>
               <p className="text-muted-foreground">管理您收藏的重要文档</p>

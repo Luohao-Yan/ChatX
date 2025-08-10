@@ -15,9 +15,18 @@ import {
   IconUsers,
   IconFileText,
   IconClock,
-  IconHeart,
+  IconBookmarks,
   IconTrash,
   IconChartPie,
+  IconTags,
+  IconFolder,
+  IconWorld,
+  IconBrandWechat,
+  IconBuilding,
+  IconBuildingBank,
+  IconDatabase,
+  IconChartScatter3d,
+
 } from '@tabler/icons-react'
 import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
 import { TFunction } from 'i18next'
@@ -102,7 +111,7 @@ export const getSidebarData = (t: TFunction): SidebarData => {
         ],
       },
       {
-        title: t('nav.documentManagement'),
+        title: t('nav.knowledgeManagement'),
         items: [
           {
             title: t('nav.myDocuments'),
@@ -115,9 +124,40 @@ export const getSidebarData = (t: TFunction): SidebarData => {
             icon: IconClock,
           },
           {
-            title: t('nav.favorites'),
-            url: '/documents/favorites',
-            icon: IconHeart,
+            title: t('nav.organizationLib'),
+            url: '/knowledge/organizations',
+            icon: IconBuilding,
+          },
+          {
+            title: t('nav.departmentLib'),
+            url: '/knowledge/departments',
+            icon: IconBuildingBank,
+          },
+          {
+            title: t('nav.knowledgeGraph'),
+            url: '/knowledge/graph',
+            icon: IconChartScatter3d,
+          },
+          {
+            title: t('nav.knowledgeFavorites'),
+            icon: IconBookmarks,
+            items: [
+              {
+                title: t('nav.documentFavorites'),
+                url: '/documents/favorites',
+                icon: IconFileText,
+              },
+              {
+                title: t('nav.webBlogKnowledge'),
+                url: '/knowledge/web-blogs',
+                icon: IconWorld,
+              },
+              {
+                title: t('nav.wechatKnowledge'),
+                url: '/knowledge/wechat',
+                icon: IconBrandWechat,
+              },
+            ],
           },
           {
             title: t('nav.sharedWithMe'),
@@ -135,16 +175,18 @@ export const getSidebarData = (t: TFunction): SidebarData => {
             icon: IconChartPie,
           },
           {
-            title: t('nav.documentSettings'),
-            icon: IconSettings,
+            title: t('nav.knowledgeSettings'),
+            icon: IconDatabase,
             items: [
               {
-                title: '分类标签',
+                title: t('nav.knowledgeCategories'),
                 url: '/documents/settings/categories',
+                icon: IconTags,
               },
               {
-                title: '文件夹管理',
+                title: t('nav.knowledgeFolders'),
                 url: '/documents/settings/folders',
+                icon: IconFolder,
               },
             ],
           },

@@ -18,7 +18,12 @@ export const Route = createRootRouteWithContext<{
         <EnterprisePageTransition>
           <Outlet />
         </EnterprisePageTransition>
-        <Toaster duration={50000} />
+        <Toaster 
+          duration={10000} 
+          closeButton={true}
+          position="bottom-right"
+          richColors={true}
+        />
         {/* Devtools disabled - uncomment below to enable in development
         {import.meta.env.MODE === 'development' && (
           <>
