@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  app:
+    command: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+    volumes:
+      # 生产环境：移除代码挂载，只保留数据持久化
+      - app_logs:/app/logs
+      - app_tmp:/app/tmp
+    environment:
+      DEBUG: false
+      ENVIRONMENT: production
+    restart: unless-stopped
+
+  celery-worker:
+    volumes:
+      # 生产环境：移除代码挂载
+      - app_logs:/app/logs
+    restart: unless-stopped
+    command: celery -A app.celery worker --loglevel=warning --concurrency=2
+
+  celery-beat:
+    volumes:
+      # 生产环境：移除代码挂载，只保留调度数据
+      - celery_beat_data:/app/celerybeat-schedule
+      - app_logs:/app/logs
+    restart: unless-stopped
+    command: celery -A app.celery beat --loglevel=warning
+
+  nginx:
+    volumes:
+      - ./nginx/nginx-ssl.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    restart: unless-stopped
+
+  postgres:
+    restart: unless-stopped
+    command: postgres -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=all
+
+  redis:
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+  minio:
+    restart: unless-stopped
+
+  weaviate:
+    restart: unless-stopped
+
+  neo4j:
+    restart: unless-stopped
+    environment:
+      NEO4J_dbms_memory_heap_initial__size: 1G
+      NEO4J_dbms_memory_heap_max__size: 2G
+      NEO4J_dbms_memory_pagecache_size: 512m

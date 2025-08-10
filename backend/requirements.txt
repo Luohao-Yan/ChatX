@@ -10,3 +10,23 @@ psycopg2-binary==2.9.10
 pydantic==2.10.3
 pydantic-settings==2.6.1
 email-validator==2.2.0
+
+# Redis
+redis==5.0.1
+
+# Celery
+celery==5.3.6
+
+# MinIO
+minio==7.2.5
+
+# Weaviate
+weaviate-client==4.4.1
+
+# Neo4j
+neo4j==5.15.0
+
+# Additional dependencies
+httpx==0.26.0
+aiofiles==23.2.1
+Pillow==10.2.0

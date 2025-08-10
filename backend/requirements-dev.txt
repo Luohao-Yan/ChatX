@@ -1,0 +1,22 @@
+# 代码格式化
+black==23.12.1
+isort==5.13.2
+
+# 代码检查
+flake8==7.0.0
+mypy==1.8.0
+
+# 测试工具
+pytest==7.4.4
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+
+# 调试工具
+ipython==8.18.1
+ipdb==0.13.13
+
+# API 测试
+httpx==0.26.0
+
+# 环境变量
+python-dotenv==1.0.0
