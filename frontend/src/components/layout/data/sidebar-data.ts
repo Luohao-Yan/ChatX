@@ -39,8 +39,8 @@ export const getSidebarData = (t: TFunction): SidebarData => {
 
   return {
     user: {
-      name: 'satnaing',
-      email: 'satnaingdev@gmail.com',
+      name: 'Leon',
+      email: 'chatxforleondev@gmail.com',
       avatar: '/avatars/chatx.jpg',
     },
     teams: [
