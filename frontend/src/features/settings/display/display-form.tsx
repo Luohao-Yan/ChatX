@@ -16,6 +16,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { useEffect } from 'react'
 
 const getItems = (t: any) => [
   {
@@ -65,6 +67,7 @@ const defaultValues: Partial<DisplayFormValues> = {
 export function DisplayForm() {
   const { t } = useTranslation()
   const { avatarDisplay, setAvatarDisplay } = useAvatar()
+  const isMobile = useIsMobile()
   
   const displayFormSchema = createDisplayFormSchema(t)
   const items = getItems(t)
@@ -77,8 +80,18 @@ export function DisplayForm() {
     },
   })
 
+  useEffect(() => {
+    if (isMobile) {
+      form.setValue('avatarDisplay', 'top-right')
+    } else {
+      form.setValue('avatarDisplay', avatarDisplay)
+    }
+  }, [isMobile, form, avatarDisplay])
+
   const onSubmit = (data: DisplayFormValues) => {
-    setAvatarDisplay(data.avatarDisplay)
+    if (!isMobile) {
+      setAvatarDisplay(data.avatarDisplay)
+    }
     showSubmittedData(data)
   }
 
@@ -145,12 +158,14 @@ export function DisplayForm() {
               <FormLabel className='text-base'>{t('settings.display.avatarDisplay')}</FormLabel>
               <FormDescription>
                 {t('settings.display.avatarDisplayDescription')}
+                {isMobile && <span className='font-medium text-foreground'> (On mobile, the avatar is always displayed in the top right.)</span>}
               </FormDescription>
               <FormControl>
                 <RadioGroup
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
                   className='flex flex-col space-y-1'
+                  disabled={isMobile}
                 >
                   <FormItem className='flex items-center space-y-0 space-x-3'>
                     <FormControl>

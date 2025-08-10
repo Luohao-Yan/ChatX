@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Check, ChevronDown, Languages } from 'lucide-react'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -15,6 +17,7 @@ const languages = [
 
 export function LanguageSwitcher() {
   const { i18n } = useTranslation()
+  const isMobile = useIsMobile()
 
   const handleLanguageChange = (languageCode: string) => {
     i18n.changeLanguage(languageCode)
@@ -25,10 +28,10 @@ export function LanguageSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 px-2">
+        <Button variant="ghost" size={isMobile ? "icon" : "sm"} className={cn(!isMobile && "h-8 px-2")}>
           <Languages className="h-4 w-4" />
-          <span className="ml-1">{currentLanguage.name}</span>
-          <ChevronDown className="ml-1 h-3 w-3" />
+          {!isMobile && <span className="ml-1">{currentLanguage.name}</span>}
+          {!isMobile && <ChevronDown className="ml-1 h-3 w-3" />}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-32">

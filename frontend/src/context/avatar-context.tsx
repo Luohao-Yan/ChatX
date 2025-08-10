@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 type AvatarDisplay = 'bottom-left' | 'top-right'
 
@@ -50,9 +51,14 @@ export function AvatarProvider({
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAvatar = () => {
   const context = useContext(AvatarProviderContext)
+  const isMobile = useIsMobile()
 
   if (context === undefined)
     throw new Error('useAvatar must be used within an AvatarProvider')
+
+  if (isMobile) {
+    return { ...context, avatarDisplay: 'top-right' as const }
+  }
 
   return context
 }
