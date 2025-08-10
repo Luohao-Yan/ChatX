@@ -1,8 +1,15 @@
-[简体中文](./README.zh-CN.md)
+<p align="right">
+  <a href="./README.zh-CN.md">
+    <img src="https://img.shields.io/badge/Language-简体中文-blue?style=for-the-badge" alt="Switch to Chinese">
+  </a>
+</p>
 
 # ChatX - A Modern & Intelligent Chat Application
 
-![ChatX Application](./frontend/public/images/chatx.png)
+<p align="center">
+  <img alt="ChatX Desktop" src="./frontend/public/images/chatx.png" width="70%">
+  <img alt="ChatX Mobile" src="./frontend/public/images/mobile-image.png" width="25%">
+</p>
 
 ChatX is a powerful full-stack chat application designed to provide a seamless experience for communication, collaboration, and intelligent file management. It is built with a modern tech stack, featuring a user-centric and customizable frontend, and a stable, scalable enterprise-grade backend.
 

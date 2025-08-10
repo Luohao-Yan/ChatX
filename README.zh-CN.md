@@ -1,8 +1,15 @@
-[English](./README.md)
+<p align="right">
+  <a href="./README.md">
+    <img src="https://img.shields.io/badge/Language-English-blue?style=for-the-badge" alt="Switch to English">
+  </a>
+</p>
 
 # ChatX - 现代化智能聊天应用
 
-![ChatX Application](./frontend/public/images/chatx.png)
+<p align="center">
+  <img alt="ChatX 桌面端" src="./frontend/public/images/chatx.png" width="70%">
+  <img alt="ChatX 移动端" src="./frontend/public/images/mobile-image.png" width="25%">
+</p>
 
 ChatX 是一个功能强大的全栈聊天应用程序，旨在提供无缝的沟通、协作和智能文件管理体验。它采用现代技术栈构建，前端注重用户体验和可定制性，后端提供稳定、可扩展的企业级服务。
 
