@@ -27,3 +27,4 @@ backend/docker-data/
 *.njsproj
 *.sln
 *.sw?
+.vite/*
