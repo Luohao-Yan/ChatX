@@ -1,133 +1,136 @@
-# ChatX - 现代化智能聊天应用
+[简体中文](./README.zh-CN.md)
+
+# ChatX - A Modern & Intelligent Chat Application
 
 ![ChatX Application](./frontend/public/images/chatx.png)
 
-ChatX 是一个功能强大的全栈聊天应用程序，旨在提供无缝的沟通、协作和智能文件管理体验。它采用现代技术栈构建，前端注重用户体验和可定制性，后端提供稳定、可扩展的企业级服务。
+ChatX is a powerful full-stack chat application designed to provide a seamless experience for communication, collaboration, and intelligent file management. It is built with a modern tech stack, featuring a user-centric and customizable frontend, and a stable, scalable enterprise-grade backend.
 
-## ✨ 核心功能
+## ✨ Core Features
 
-### 前端 (UI/UX)
-- **实时消息**：提供流畅的即时通讯体验。
-- **企业级页面切换动画**：内置 6 种专业动画效果（渐变、滑动、缩放等）。
-- **高级外观定制**：支持浅色/深色模式、自定义颜色方案、圆角、字体大小等。
-- **响应式与无障碍设计**：在所有设备上都能良好运行，并尊重用户的无障碍偏好。
-- **现代UI组件**：基于 shadcn/ui 构建，美观且易于使用。
+### Frontend (UI/UX)
+- **Real-time Messaging**: Delivers a smooth instant messaging experience.
+- **Enterprise-grade Page Transitions**: Includes 6 professional animation effects (fade, slide, zoom, etc.).
+- **Advanced Appearance Customization**: Supports light/dark modes, custom color schemes, border-radius, and font sizes.
+- **Responsive & Accessible Design**: Ensures a great user experience on all devices and respects user accessibility preferences.
+- **Modern UI Components**: Built with shadcn/ui for a beautiful and easy-to-use interface.
 
-### 后端 (API & 服务)
-- **企业级文件管理**：
-    - 层级文件夹与文件操作 (上传/下载/删除/重命名)。
-    - 基于 SHA256 的文件去重。
-    - 11 种文件类型自动识别与智能分类。
-    - 灵活的标签管理系统。
-    - 多维度高级搜索与过滤。
-    - 支持过期时间和密码保护的文件分享。
-- **用户认证与管理**：基于 JWT 的安全认证、会话管理和用户信息管理。
-- **向量搜索集成**：通过 Weaviate 实现文档内容的语义搜索。
-- **知识图谱关联**：利用 Neo4j 进行数据关系分析。
-- **异步任务处理**：使用 Celery 处理耗时任务，如文件处理和通知。
+### Backend (API & Services)
+- **Enterprise-grade File Management**:
+    - Hierarchical folders and file operations (upload/download/delete/rename).
+    - File deduplication based on SHA256 hash.
+    - Automatic identification and smart categorization of 11 file types.
+    - Flexible tag management system.
+    - Advanced search and filtering across multiple dimensions.
+    - Secure file sharing with expiration dates and password protection.
+- **User Authentication & Management**: Secure, JWT-based authentication, session management, and user profile handling.
+- **Vector Search Integration**: Enables semantic search on document content via Weaviate.
+- **Knowledge Graph-powered**: Utilizes Neo4j for analyzing data relationships.
+- **Asynchronous Task Processing**: Uses Celery for handling time-consuming tasks like file processing and notifications.
 
-## 🚀 技术架构
+## 🚀 Tech Architecture
 
-### 前端技术栈
-- **UI 框架**: [React](https://react.dev/)
-- **构建工具**: [Vite](https://vitejs.dev/)
-- **语言**: [TypeScript](https://www.typescriptlang.org/)
-- **UI 组件库**: [ShadcnUI](https://ui.shadcn.com) (TailwindCSS + RadixUI)
-- **路由**: [TanStack Router](https://tanstack.com/router/latest)
-- **动画**: [Framer Motion](https://www.framer.com/motion/)
-- **认证**: [Clerk](https://go.clerk.com/GttUAaK)
+### Frontend Tech Stack
+- **UI Framework**: [React](https://react.dev/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **UI Component Library**: [ShadcnUI](https://ui.shadcn.com) (TailwindCSS + RadixUI)
+- **Routing**: [TanStack Router](https://tanstack.com/router/latest)
+- **Animation**: [Framer Motion](https://www.framer.com/motion/)
+- **Authentication**: [Clerk](https://go.clerk.com/GttUAaK)
 
-### 后端技术栈
-- **Web 框架**: [FastAPI](https://fastapi.tiangolo.com/)
-- **语言**: [Python 3.11+](https://www.python.org/)
-- **容器化**: [Docker](https://www.docker.com/) & Docker Compose
-- **反向代理**: Nginx
-- **数据库**:
-    - **关系型**: PostgreSQL
-    - **向量**: Weaviate
-    - **知识图谱**: Neo4j
-- **缓存**: Redis
-- **文件存储**: MinIO
-- **异步任务**: Celery
+### Backend Tech Stack
+- **Web Framework**: [FastAPI](https://fastapi.tiangolo.com/)
+- **Language**: [Python 3.11+](https://www.python.org/)
+- **Containerization**: [Docker](https://www.docker.com/) & Docker Compose
+- **Reverse Proxy**: Nginx
+- **Databases**:
+    - **Relational**: PostgreSQL
+    - **Vector**: Weaviate
+    - **Knowledge Graph**: Neo4j
+- **Caching**: Redis
+- **File Storage**: MinIO
+- **Async Tasks**: Celery
 
-## 🏁 快速开始
+## 🏁 Quick Start
 
-请遵循以下步骤在本地启动并运行 ChatX 进行开发。
+Follow these steps to run ChatX locally for development.
 
-### 前置要求
-- [Docker](https://www.docker.com/get-started) 和 Docker Compose
-- [Node.js](https://nodejs.org/) (v18+) 和 [pnpm](https://pnpm.io/installation)
+### Prerequisites
+- [Docker](https://www.docker.com/get-started) and Docker Compose
+- [Node.js](https://nodejs.org/) (v18+) and [pnpm](https://pnpm.io/installation)
 
-### 步骤 1: 启动后端服务
+### Step 1: Start the Backend Services
 
-后端所有依赖服务（数据库、缓存、文件存储等）都通过 Docker 管理，方便一键启动。
+All backend dependencies (databases, cache, file storage, etc.) are managed via Docker for a simple one-command setup.
 
 ```bash
-# 进入后端目录
+# Navigate to the backend directory
 cd backend
 
-# 复制环境变量文件模板
+# Copy the example environment file
 cp .env.example .env
 
-# (可选) 根据需要修改 .env 文件中的端口或密码配置
+# (Optional) Modify ports or passwords in the .env file as needed
 
-# 启动所有后端服务（包括 FastAPI 应用）
-# 此脚本会赋予执行权限并启动容器
+# Start all backend services (including the FastAPI app)
+# This script will grant execution permissions and start the containers
 chmod +x start.sh && ./start.sh
 ```
-启动后，可以通过 `docker-compose ps` 确认所有服务都处于 `Up` 状态。
+After startup, you can run `docker-compose ps` to confirm all services are `Up`.
 
-**后端主要访问地址:**
-- **API 文档 (Swagger)**: http://localhost/docs
-- **MinIO 控制台**: http://localhost/minio
-- **Neo4j 浏览器**: http://localhost/neo4j
+**Key Backend Endpoints:**
+- **API Docs (Swagger)**: http://localhost/docs
+- **MinIO Console**: http://localhost/minio
+- **Neo4j Browser**: http://localhost/neo4j
 
-### 步骤 2: 启动前端开发服务器
+### Step 2: Start the Frontend Dev Server
 
 ```bash
-# 进入前端目录
+# Navigate to the frontend directory
 cd frontend
 
-# 安装依赖
+# Install dependencies
 pnpm install
 
-# (可选) 复制并配置前端环境变量
+# (Optional) Copy and configure frontend environment variables
 # cp .env.example .env
 
-# 启动前端开发服务器
+# Start the frontend development server
 pnpm run dev
 ```
 
-### 步骤 3: 访问应用
+### Step 3: Access the Application
 
-一切就绪！现在您可以在浏览器中打开 [http://localhost:5173](http://localhost:5173) 来访问 ChatX 应用。
+You're all set! You can now open [http://localhost:5173](http://localhost:5173) in your browser to access the ChatX application.
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 chatx-main/
-├── backend/            # 后端 FastAPI 应用和所有服务配置
-│   ├── app/            # FastAPI 核心代码
-│   ├── nginx/          # Nginx 配置文件
-│   ├── docker-compose.yml # Docker 编排文件
+├── backend/            # Backend FastAPI application and all service configurations
+│   ├── app/            # FastAPI core source code
+│   ├── nginx/          # Nginx configuration files
+│   ├── docker-compose.yml # Docker orchestration file
 │   └── ...
-├── frontend/           # 前端 React 应用
-│   ├── src/            # React 核心代码
-│   ├── public/         # 静态资源
-│   ├── package.json    # 前端依赖配置
+├── frontend/           # Frontend React application
+│   ├── src/            # React core source code
+│   ├── public/         # Static assets
+│   ├── package.json    # Frontend dependency configuration
 │   └── ...
-├── .github/            # GitHub 相关配置 (CI/CD, 模板等)
-├── README.md           # 本项目说明文件
-└── .gitignore          # Git 忽略配置
+├── .github/            # GitHub-related configurations (CI/CD, templates, etc.)
+├── README.md           # This project description file (English)
+├── README.zh-CN.md     # Project description file (Chinese)
+└── .gitignore          # Git ignore configuration
 ```
 
-## 🤝 贡献
+## 🤝 Contributing
 
-我们欢迎任何形式的贡献！请阅读我们的 [CONTRIBUTING.md](./.github/CONTRIBUTING.md) 文件，了解我们的行为准则以及提交拉取请求的流程。
+We welcome contributions of all kinds! Please read our [CONTRIBUTING.md](./.github/CONTRIBUTING.md) file for details on our code of conduct and the process for submitting pull requests.
 
-## 📄 许可证
+## 📄 License
 
-本项目根据 [MIT 许可证](./frontend/LICENSE) 授权。
+This project is licensed under the [MIT License](./frontend/LICENSE).
 
 ---
-由 [@Leon (Luohao-Yan)](https://github.com/Luohao-Yan) 精心打造 🤍
+Crafted with 🤍 by [@Leon (Luohao-Yan)](https://github.com/Luohao-Yan)
