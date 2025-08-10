@@ -21,15 +21,17 @@ ChatX is a powerful full-stack chat application designed to provide a seamless e
 - **Advanced Appearance Customization**: Supports light/dark modes, custom color schemes, border-radius, and font sizes.
 - **Responsive & Accessible Design**: Ensures a great user experience on all devices and respects user accessibility preferences.
 - **Modern UI Components**: Built with shadcn/ui for a beautiful and easy-to-use interface.
+- **Comprehensive Document Management Interface**: User-centric design with intuitive navigation for document workflow management.
 
 ### Backend (API & Services)
-- **Enterprise-grade File Management**:
-    - Hierarchical folders and file operations (upload/download/delete/rename).
-    - File deduplication based on SHA256 hash.
-    - Automatic identification and smart categorization of 11 file types.
-    - Flexible tag management system.
-    - Advanced search and filtering across multiple dimensions.
-    - Secure file sharing with expiration dates and password protection.
+- **Enterprise-grade Document Management System**:
+    - **Document Lifecycle**: Full document workflow from upload to archival with version control.
+    - **Smart Organization**: Hierarchical folders, intelligent categorization, and flexible tagging system.
+    - **Advanced Search**: Multi-dimensional filtering, semantic search, and content-based discovery.
+    - **Secure Sharing**: Time-limited sharing links with password protection and access controls.
+    - **Storage Analytics**: Detailed usage statistics and storage optimization insights.
+    - **File Operations**: Upload/download/delete/rename with SHA256-based deduplication.
+    - **Content Intelligence**: Automatic identification and smart categorization of 11+ file types.
 - **User Authentication & Management**: Secure, JWT-based authentication, session management, and user profile handling.
 - **Vector Search Integration**: Enables semantic search on document content via Weaviate.
 - **Knowledge Graph-powered**: Utilizes Neo4j for analyzing data relationships.

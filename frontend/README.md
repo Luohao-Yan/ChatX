@@ -23,6 +23,14 @@ ChatX is a modern chat application designed for seamless communication and colla
 - **Advanced Appearance System** - Color schemes, border radius, custom radius, font size customization
 - **Smart Animation Degradation** - Auto-detects user accessibility preferences, error boundary handling, safe fallbacks
 - **Enterprise-Grade HTTP Client** - Type-safe fetch-based request module with interceptors, retry logic, and error handling
+- **Comprehensive Document Management Interface** - User-centric document management experience:
+  - **My Documents** - Main document workspace with upload and management capabilities
+  - **Recent Documents** - Quick access to recently used documents
+  - **Favorites** - Bookmark important documents for quick access
+  - **Shared with Me** - View documents shared by others
+  - **Trash** - Recover accidentally deleted documents
+  - **Storage Analytics** - View storage usage statistics and optimization recommendations
+  - **Document Settings** - Category/tag management and folder structure configuration
 
 ## Tech Stack
 
@@ -73,6 +81,19 @@ Start the server
 ```bash
   pnpm run dev
 ```
+
+## Document Management Routes
+
+The application includes a comprehensive document management system with the following routes:
+
+- `/documents` - My Documents (main document workspace)
+- `/documents/recent` - Recently accessed documents
+- `/documents/favorites` - Favorited documents
+- `/documents/shared` - Documents shared by others
+- `/documents/trash` - Deleted documents (recoverable)
+- `/documents/storage` - Storage usage analytics
+- `/documents/settings/categories` - Category and tag management
+- `/documents/settings/folders` - Folder structure management
 
 ## HTTP Client Usage
 
