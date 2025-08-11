@@ -4,7 +4,7 @@ import {
   IconChecklist,
   IconError404,
   IconHelp,
-  IconLayoutDashboard,
+  // IconLayoutDashboard,
   IconLock,
   IconLockAccess,
   IconMessages,
@@ -96,55 +96,55 @@ export const getSidebarData = (t: TFunction): SidebarData => {
           },
         ],
       },
-      {
-        title: t('nav.general'),
-        items: [
-          {
-            title: t('nav.dashboard'),
-            url: '/',
-            icon: IconLayoutDashboard,
-          },
-          {
-            title: t('nav.tasks'),
-            url: '/tasks',
-            icon: IconChecklist,
-          },
-          {
-            title: t('nav.apps'),
-            url: '/apps',
-            icon: IconPackages,
-          },
-          {
-            title: t('nav.chats'),
-            url: '/chats',
-            badge: '3',
-            icon: IconMessages,
-          },
-          {
-            title: t('nav.users'),
-            url: '/users',
-            icon: IconUsers,
-          },
-          {
-            title: t('nav.securedByClerk'),
-            icon: ClerkLogo,
-            items: [
-              {
-                title: t('nav.signIn'),
-                url: '/clerk/sign-in',
-              },
-              {
-                title: t('nav.signUp'),
-                url: '/clerk/sign-up',
-              },
-              {
-                title: t('nav.userManagement'),
-                url: '/clerk/user-management',
-              },
-            ],
-          },
-        ],
-      },
+      // {
+      //   title: t('nav.general'),
+      //   items: [
+      //     {
+      //       title: t('nav.dashboard'),
+      //       url: '/',
+      //       icon: IconLayoutDashboard,
+      //     },
+      //     {
+      //       title: t('nav.tasks'),
+      //       url: '/tasks',
+      //       icon: IconChecklist,
+      //     },
+      //     {
+      //       title: t('nav.apps'),
+      //       url: '/apps',
+      //       icon: IconPackages,
+      //     },
+      //     {
+      //       title: t('nav.chats'),
+      //       url: '/chats',
+      //       badge: '3',
+      //       icon: IconMessages,
+      //     },
+      //     {
+      //       title: t('nav.users'),
+      //       url: '/users',
+      //       icon: IconUsers,
+      //     },
+      //     {
+      //       title: t('nav.securedByClerk'),
+      //       icon: ClerkLogo,
+      //       items: [
+      //         {
+      //           title: t('nav.signIn'),
+      //           url: '/clerk/sign-in',
+      //         },
+      //         {
+      //           title: t('nav.signUp'),
+      //           url: '/clerk/sign-up',
+      //         },
+      //         {
+      //           title: t('nav.userManagement'),
+      //           url: '/clerk/user-management',
+      //         },
+      //       ],
+      //     },
+      //   ],
+      // },
       {
         title: t('nav.knowledgeManagement'),
         items: [
@@ -227,6 +227,35 @@ export const getSidebarData = (t: TFunction): SidebarData => {
           },
         ],
       },
+
+      {
+        title: t('nav.other'),
+        items: [
+          {
+            title: t('nav.helpCenter'),
+            url: '/help-center',
+            icon: IconHelp,
+          },
+          {
+            title: t('nav.securedByClerk'),
+            icon: ClerkLogo,
+            items: [
+              {
+                title: t('nav.signIn'),
+                url: '/clerk/sign-in',
+              },
+              {
+                title: t('nav.signUp'),
+                url: '/clerk/sign-up',
+              },
+              {
+                title: t('nav.userManagement'),
+                url: '/clerk/user-management',
+              },
+            ],
+          },
+        ],
+      },
       {
         title: t('nav.pages'),
         items: [
@@ -286,16 +315,6 @@ export const getSidebarData = (t: TFunction): SidebarData => {
                 icon: IconBarrierBlock,
               },
             ],
-          },
-        ],
-      },
-      {
-        title: t('nav.other'),
-        items: [
-          {
-            title: t('nav.helpCenter'),
-            url: '/help-center',
-            icon: IconHelp,
           },
         ],
       },

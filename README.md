@@ -10,12 +10,17 @@
   <img alt="ChatX Desktop" src="./frontend/public/images/chatx.png" width="70%">
   <img alt="ChatX Mobile" src="./frontend/public/images/mobile-image.png" width="25%">
 </p>
+<p align="center">
+  <img alt="ChatX Desktop" src="./frontend/public/images/home.png" width="70%">
+  <img alt="ChatX Mobile" src="./frontend/public/images/mobile-home-image.png.png" width="25%">
+</p>
 
 ChatX is a powerful full-stack chat application designed to provide a seamless experience for communication, collaboration, and intelligent file management. It is built with a modern tech stack, featuring a user-centric and customizable frontend, and a stable, scalable enterprise-grade backend.
 
 ## ✨ Core Features
 
 ### Frontend (UI/UX)
+
 - **Real-time Messaging**: Delivers a smooth instant messaging experience.
 - **Enterprise-grade Page Transitions**: Includes 6 professional animation effects (fade, slide, zoom, etc.).
 - **Advanced Appearance Customization**: Supports light/dark modes, custom color schemes, border-radius, and font sizes.
@@ -25,14 +30,15 @@ ChatX is a powerful full-stack chat application designed to provide a seamless e
 - **Enterprise-Grade Knowledge Graph Visualization**: Interactive ECharts-powered graph with dynamic theming and relationship exploration.
 
 ### Backend (API & Services)
+
 - **Enterprise-grade Document Management System**:
-    - **Document Lifecycle**: Full document workflow from upload to archival with version control.
-    - **Smart Organization**: Hierarchical folders, intelligent categorization, and flexible tagging system.
-    - **Advanced Search**: Multi-dimensional filtering, semantic search, and content-based discovery.
-    - **Secure Sharing**: Time-limited sharing links with password protection and access controls.
-    - **Storage Analytics**: Detailed usage statistics and storage optimization insights.
-    - **File Operations**: Upload/download/delete/rename with SHA256-based deduplication.
-    - **Content Intelligence**: Automatic identification and smart categorization of 11+ file types.
+  - **Document Lifecycle**: Full document workflow from upload to archival with version control.
+  - **Smart Organization**: Hierarchical folders, intelligent categorization, and flexible tagging system.
+  - **Advanced Search**: Multi-dimensional filtering, semantic search, and content-based discovery.
+  - **Secure Sharing**: Time-limited sharing links with password protection and access controls.
+  - **Storage Analytics**: Detailed usage statistics and storage optimization insights.
+  - **File Operations**: Upload/download/delete/rename with SHA256-based deduplication.
+  - **Content Intelligence**: Automatic identification and smart categorization of 11+ file types.
 - **User Authentication & Management**: Secure, JWT-based authentication, session management, and user profile handling.
 - **Vector Search Integration**: Enables semantic search on document content via Weaviate.
 - **Knowledge Graph System**: Utilizes Neo4j for analyzing data relationships with interactive visualization support.
@@ -42,6 +48,7 @@ ChatX is a powerful full-stack chat application designed to provide a seamless e
 ## 🚀 Tech Architecture
 
 ### Frontend Tech Stack
+
 - **UI Framework**: [React](https://react.dev/)
 - **Build Tool**: [Vite](https://vitejs.dev/)
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
@@ -52,14 +59,15 @@ ChatX is a powerful full-stack chat application designed to provide a seamless e
 - **Authentication**: [Clerk](https://go.clerk.com/GttUAaK)
 
 ### Backend Tech Stack
+
 - **Web Framework**: [FastAPI](https://fastapi.tiangolo.com/)
 - **Language**: [Python 3.11+](https://www.python.org/)
 - **Containerization**: [Docker](https://www.docker.com/) & Docker Compose
 - **Reverse Proxy**: Nginx
 - **Databases**:
-    - **Relational**: PostgreSQL
-    - **Vector**: Weaviate
-    - **Knowledge Graph**: Neo4j
+  - **Relational**: PostgreSQL
+  - **Vector**: Weaviate
+  - **Knowledge Graph**: Neo4j
 - **Caching**: Redis
 - **File Storage**: MinIO
 - **Async Tasks**: Celery
@@ -69,6 +77,7 @@ ChatX is a powerful full-stack chat application designed to provide a seamless e
 Follow these steps to run ChatX locally for development.
 
 ### Prerequisites
+
 - [Docker](https://www.docker.com/get-started) and Docker Compose
 - [Node.js](https://nodejs.org/) (v18+) and [pnpm](https://pnpm.io/installation)
 
@@ -89,13 +98,15 @@ cp .env.example .env
 # This script will grant execution permissions and start the containers
 chmod +x start.sh && ./start.sh
 ```
+
 After startup, you can run `docker-compose ps` to confirm all services are `Up`.
 
 **Key Backend Endpoints:**
-- **API Docs (Swagger)**: http://localhost/docs
-- **MinIO Console**: http://localhost/minio
-- **Neo4j Browser**: http://localhost/neo4j (Knowledge Graph database)
-- **Knowledge Graph API**: http://localhost/api/knowledge/graph
+
+- **API Docs (Swagger)**: <http://localhost/docs>
+- **MinIO Console**: <http://localhost/minio>
+- **Neo4j Browser**: <http://localhost/neo4j> (Knowledge Graph database)
+- **Knowledge Graph API**: <http://localhost/api/knowledge/graph>
 
 ### Step 2: Start the Frontend Dev Server
 
