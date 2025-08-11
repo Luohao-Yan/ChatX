@@ -7,7 +7,7 @@
 # ChatX - 现代化智能聊天应用
 
 <p align="center">
-  <img alt="ChatX 桌面端" src="./frontend/public/images/chatx.png" width="70%">
+  <img alt="ChatX 桌面端" src="./frontend/public/images/chatx-1.png" width="70%">
   <img alt="ChatX 移动端" src="./frontend/public/images/mobile-image.png" width="25%">
 </p>
 <p align="center">

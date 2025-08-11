@@ -7,7 +7,7 @@
 # ChatX - A Modern & Intelligent Chat Application
 
 <p align="center">
-  <img alt="ChatX Desktop" src="./frontend/public/images/chatx.png" width="70%">
+  <img alt="ChatX Desktop" src="./frontend/public/images/chatx-1.png" width="70%">
   <img alt="ChatX Mobile" src="./frontend/public/images/mobile-image.png" width="25%">
 </p>
 <p align="center">
