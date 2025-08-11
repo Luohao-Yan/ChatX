@@ -32,6 +32,7 @@ import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedDocumentsIndexRouteImport } from './routes/_authenticated/documents/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
+import { Route as AuthenticatedAiChatsIndexRouteImport } from './routes/_authenticated/ai-chats/index'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
@@ -168,6 +169,12 @@ const AuthenticatedAppsIndexRoute = AuthenticatedAppsIndexRouteImport.update({
   path: '/apps/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAiChatsIndexRoute =
+  AuthenticatedAiChatsIndexRouteImport.update({
+    id: '/ai-chats/',
+    path: '/ai-chats/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ClerkAuthenticatedUserManagementRoute =
   ClerkAuthenticatedUserManagementRouteImport.update({
     id: '/user-management',
@@ -313,6 +320,7 @@ export interface FileRoutesByFullPath {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/ai-chats': typeof AuthenticatedAiChatsIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/documents': typeof AuthenticatedDocumentsIndexRoute
@@ -353,6 +361,7 @@ export interface FileRoutesByTo {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/ai-chats': typeof AuthenticatedAiChatsIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/documents': typeof AuthenticatedDocumentsIndexRoute
@@ -398,6 +407,7 @@ export interface FileRoutesById {
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/_authenticated/ai-chats/': typeof AuthenticatedAiChatsIndexRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/documents/': typeof AuthenticatedDocumentsIndexRoute
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
+    | '/ai-chats'
     | '/apps'
     | '/chats'
     | '/documents'
@@ -482,6 +493,7 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
+    | '/ai-chats'
     | '/apps'
     | '/chats'
     | '/documents'
@@ -526,6 +538,7 @@ export interface FileRouteTypes {
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
+    | '/_authenticated/ai-chats/'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
     | '/_authenticated/documents/'
@@ -715,6 +728,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ai-chats/': {
+      id: '/_authenticated/ai-chats/'
+      path: '/ai-chats'
+      fullPath: '/ai-chats'
+      preLoaderRoute: typeof AuthenticatedAiChatsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/clerk/_authenticated/user-management': {
       id: '/clerk/_authenticated/user-management'
       path: '/user-management'
@@ -887,6 +907,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedKnowledgeOrganizationsRoute: typeof AuthenticatedKnowledgeOrganizationsRoute
   AuthenticatedKnowledgeWebBlogsRoute: typeof AuthenticatedKnowledgeWebBlogsRoute
   AuthenticatedKnowledgeWechatRoute: typeof AuthenticatedKnowledgeWechatRoute
+  AuthenticatedAiChatsIndexRoute: typeof AuthenticatedAiChatsIndexRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedDocumentsIndexRoute: typeof AuthenticatedDocumentsIndexRoute
@@ -912,6 +933,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedKnowledgeOrganizationsRoute,
   AuthenticatedKnowledgeWebBlogsRoute: AuthenticatedKnowledgeWebBlogsRoute,
   AuthenticatedKnowledgeWechatRoute: AuthenticatedKnowledgeWechatRoute,
+  AuthenticatedAiChatsIndexRoute: AuthenticatedAiChatsIndexRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedDocumentsIndexRoute: AuthenticatedDocumentsIndexRoute,

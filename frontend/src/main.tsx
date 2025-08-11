@@ -14,7 +14,6 @@ import { FontProvider } from './context/font-context'
 import { ThemeProvider } from './context/theme-context'
 import { AppearanceProvider } from './context/appearance-context'
 import './lib/i18n'
-import './lib/test-config' // 开发环境测试
 import './index.css'
 // Generated Routes
 import { routeTree } from './routeTree.gen'

@@ -46,7 +46,21 @@
     "knowledgeFolders": "知识文件夹管理",
     "knowledgeFavorites": "知识收藏夹",
     "documentFavorites": "文档收藏",
-    "knowledgeGraph": "知识图谱"
+    "knowledgeGraph": "知识图谱",
+    "agents": "智能体",
+    "voice": "语音",
+    "projects": "项目",
+    "sharedApps": "共享应用",
+    "history": "历史记录",
+    "chatHistory": "历史记录"
+  },
+  "userMenu": {
+    "upgradeToPro": "升级到专业版",
+    "account": "账户",
+    "billing": "账单",
+    "settings": "设置",
+    "notifications": "通知",
+    "logOut": "退出登录"
   },
   "common": {
     "loading": "加载中...",
@@ -175,7 +189,7 @@
         "defaultDescription": "经典专业的灰色主题，适合企业环境",
         "emerald": "翠绿色",
         "emeraldDescription": "清新自然的绿色主题",
-        "blue": "蔚蓝色", 
+        "blue": "蔚蓝色",
         "blueDescription": "沉稳可靠的蓝色主题",
         "indigo": "靛青色",
         "indigoDescription": "深邃优雅的靛青主题",

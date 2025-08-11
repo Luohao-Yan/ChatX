@@ -6,7 +6,7 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import { NavGroup } from '@/components/layout/nav-group'
-import { NavUser } from '@/components/layout/nav-user'
+import { UserDropdown } from '@/components/user-dropdown'
 import { TeamSwitcher } from '@/components/layout/team-switcher'
 import { getSidebarData } from './data/sidebar-data'
 import { useTranslation } from 'react-i18next'
@@ -28,7 +28,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        {avatarDisplay === 'bottom-left' && <NavUser user={sidebarData.user} />}
+        {avatarDisplay === 'bottom-left' && (
+          <UserDropdown user={sidebarData.user} variant="expanded" />
+        )}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

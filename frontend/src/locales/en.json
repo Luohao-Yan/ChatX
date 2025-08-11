@@ -45,7 +45,21 @@
     "knowledgeFolders": "Knowledge Folders",
     "knowledgeFavorites": "Knowledge Favorites",
     "documentFavorites": "Document Favorites",
-    "knowledgeGraph": "Knowledge Graph"
+    "knowledgeGraph": "Knowledge Graph",
+    "agents": "Agents",
+    "voice": "Voice",
+    "projects": "Projects",
+    "sharedApps": "Shared Apps",
+    "history": "History",
+    "chatHistory": "Chat History"
+  },
+  "userMenu": {
+    "upgradeToPro": "Upgrade to Pro",
+    "account": "Account",
+    "billing": "Billing",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "logOut": "Log out"
   },
   "common": {
     "loading": "Loading...",

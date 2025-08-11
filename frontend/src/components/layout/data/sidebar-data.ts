@@ -10,7 +10,6 @@ import {
   IconMessages,
   IconPackages,
   IconServerOff,
-  IconSettings,
   IconUserOff,
   IconUsers,
   IconFileText,
@@ -26,16 +25,16 @@ import {
   IconBuildingBank,
   IconDatabase,
   IconChartScatter3d,
+  IconMicrophone,
+  IconShare,
 
 } from '@tabler/icons-react'
 import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
 import { TFunction } from 'i18next'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
-import { getSettingsNavItems } from '@/config/settings-nav'
 
 export const getSidebarData = (t: TFunction): SidebarData => {
-  const settingsNavItems = getSettingsNavItems(t)
 
   return {
     user: {
@@ -61,6 +60,42 @@ export const getSidebarData = (t: TFunction): SidebarData => {
       },
     ],
     navGroups: [
+      {
+        title: t('nav.agents'),
+        items: [
+          {
+            title: t('nav.chats'),
+            url: '/ai-chats',
+            badge: '3',
+            icon: IconMessages,
+          },
+          {
+            title: t('nav.voice'),
+            url: '/voice',
+            icon: IconMicrophone,
+          },
+          {
+            title: t('nav.tasks'),
+            url: '/tasks',
+            icon: IconChecklist,
+          },
+          {
+            title: t('nav.projects'),
+            url: '/projects',
+            icon: IconPackages,
+          },
+          {
+            title: t('nav.sharedApps'),
+            url: '/shared-apps',
+            icon: IconShare,
+          },
+          {
+            title: t('nav.chatHistory'),
+            url: '/chat-history',
+            icon: IconClock,
+          },
+        ],
+      },
       {
         title: t('nav.general'),
         items: [
@@ -257,15 +292,6 @@ export const getSidebarData = (t: TFunction): SidebarData => {
       {
         title: t('nav.other'),
         items: [
-          {
-            title: t('nav.settings'),
-            icon: IconSettings,
-            items: settingsNavItems.map(item => ({
-              title: item.title,
-              url: item.href,
-              icon: item.icon,
-            })),
-          },
           {
             title: t('nav.helpCenter'),
             url: '/help-center',
