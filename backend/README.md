@@ -1,589 +1,280 @@
-# ChatX 后端 API
-
-基于 FastAPI 的现代化后端服务，集成了用户认证、文件管理、向量搜索等功能。
-
-## 🏗️ 技术架构
-
-- **Web 框架**: FastAPI 
-- **反向代理**: Nginx (统一入口、负载均衡、SSL终结)
-- **数据库**: PostgreSQL (用户数据、结构化数据)
-- **缓存**: Redis (会话管理、缓存优化)
-- **异步任务**: Celery (定时任务、异步处理)
-- **文件存储**: MinIO (用户文件、媒体资源)
-- **向量数据库**: Weaviate (向量搜索、语义检索)
-- **知识图谱**: Neo4j (关系分析、图算法)
-- **容器化**: Docker & Docker Compose
-
-## 🚀 快速开始
-
-### 前置要求
-
-- Docker 和 Docker Compose
-- Python 3.11+ (如需本地开发)
-
-### 一键启动
-
-```bash
-# 克隆项目后进入后端目录
-cd backend
-
-# 给启动脚本执行权限
-chmod +x start.sh
-
-# 启动所有服务
-./start.sh
-```
-
-### 手动启动
-
-**开发环境**:
-
-1. **环境配置**
-```bash
-# 复制环境变量文件
-cp .env.example .env
-
-# 根据需要修改 .env 文件中的配置
-```
-
-2. **启动服务**
-```bash
-# 启动所有服务
-docker-compose up --build -d
-
-# 查看服务状态
-docker-compose ps
-
-# 查看日志
-docker-compose logs -f
-```
-
-**生产环境**:
-
-1. **生产环境启动**
-```bash
-# 给脚本执行权限
-chmod +x start-prod.sh
-
-# 启动生产环境 (包含 SSL 和优化配置)
-./start-prod.sh
-```
-
-2. **手动生产启动**
-```bash
-# 生成 SSL 证书
-chmod +x generate-ssl.sh
-./generate-ssl.sh
-
-# 启动生产环境
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
-```
-
-## 📋 服务说明
-
-### 核心服务
-
-| 服务 | 内部端口 | 外部访问 | 说明 |
-|------|---------|---------|------|
-| Nginx | 80/443 | ✅ | 反向代理和负载均衡 |
-| FastAPI 应用 | 8000 | 🚫 | 通过 Nginx 访问 |
-| PostgreSQL | 5432 | ✅ | 关系型数据库 |
-| Redis | 6379 | ✅ | 缓存和会话存储 |
-| MinIO | 9000/9001 | ✅ | 对象存储服务 |
-| Neo4j | 7474/7687 | ✅ | 知识图谱数据库 |
-| Weaviate | 8080 | ✅ | 向量数据库 |
-| Celery Worker | - | 🚫 | 异步任务处理 |
-| Celery Beat | - | 🚫 | 定时任务调度 |
-
-### 🌐 统一入口地址 (推荐)
-
-通过 Nginx 反向代理访问所有服务：
-
-- **🏠 主页**: http://localhost
-- **📖 API 文档**: http://localhost/docs
-- **🔗 API 接口**: http://localhost/api/*
-- **📦 MinIO 控制台**: http://localhost/minio
-- **🕸️ Neo4j 浏览器**: http://localhost/neo4j
-- **🔍 Weaviate 控制台**: http://localhost/weaviate
-
-### 🔧 直连地址 (开发调试)
-
-- **PostgreSQL**: localhost:5432 (用户名: `chatx_user`, 密码: `chatx_password`)
-- **Redis**: localhost:6379
-- **MinIO API**: localhost:9000
-- **Neo4j Bolt**: localhost:7687
-- **Weaviate API**: localhost:8080
-
-## 🔐 API 功能
-
-### 用户认证
-
-- ✅ 用户注册/登录
-- ✅ JWT 访问令牌 + 刷新令牌
-- ✅ 密码强度验证
-- ✅ 用户会话管理
-- ✅ 邮箱验证 (预留接口)
-- ✅ 密码重置 (预留接口)
-
-### 用户管理
-
-- ✅ 用户信息 CRUD
-- ✅ 用户权限控制
-- ✅ 用户头像上传
-- ✅ 活跃状态管理
-
-### 文件管理系统
-
-**📁 基础文件操作**
-- ✅ 文件上传 (单个/批量，最大20个文件)
-- ✅ 文件下载 (流式下载，支持断点续传)
-- ✅ 文件删除 (软删除/硬删除)
-- ✅ 文件预览和详情查看
-- ✅ 文件重命名和更新
-- ✅ 文件去重 (基于SHA256哈希)
-
-**📂 文件夹管理**
-- ✅ 层级文件夹结构
-- ✅ 文件夹创建/更新/删除
-- ✅ 文件夹树形导航
-- ✅ 文件夹权限继承
-
-**🏷️ 智能分类系统**
-- ✅ 11种文件类型自动识别 (文档、图片、视频、音频、PDF、代码、表格、演示文稿等)
-- ✅ 自定义分类管理 (支持层级分类)
-- ✅ 分类颜色和图标设置
-- ✅ 分类统计和文件计数
-
-**🔖 标签管理**
-- ✅ 多标签关联 (一个文件可有多个标签)
-- ✅ 标签自动创建和复用
-- ✅ 标签使用频率统计
-- ✅ 热门标签推荐
-- ✅ 批量标签操作
-
-**🔍 高级搜索**
-- ✅ 关键词全文搜索 (文件名、标题、描述、标签)
-- ✅ 多维度过滤 (类型、大小、时间、分类、标签)
-- ✅ 智能排序 (时间、大小、下载量、查看次数)
-- ✅ 分页浏览和无限滚动
-
-**👥 文件分享**
-- ✅ 分享链接生成 (支持过期时间)
-- ✅ 密码保护分享
-- ✅ 访问权限控制 (只读、编辑、管理员)
-- ✅ 分享统计和访问记录
-- ✅ 批量分享管理
-
-**📊 统计和分析**
-- ✅ 用户文件统计 (总数、大小、配额使用)
-- ✅ 文件类型分布分析
-- ✅ 热门文件和最近上传
-- ✅ 用户活动记录和操作日志
-- ✅ 存储空间管理
-
-**🔐 权限和安全**
-- ✅ 细粒度权限控制 (所有者、读取、写入、管理员)
-- ✅ 文件可见性设置 (私有、内部、共享、公开)
-- ✅ 访问日志记录 (IP、用户代理、操作类型)
-- ✅ 文件完整性校验 (SHA256)
-- ✅ 安全文件类型检查
-
-**🔧 企业级特性**
-- ✅ 文件版本管理 (历史版本保存)
-- ✅ 文件评论和协作
-- ✅ 批量操作支持
-- ✅ 文件活动时间线
-- ✅ 异步处理和队列
-- ✅ 向量搜索集成 (文档内容搜索)
-- ✅ 知识图谱关联 (Neo4j图数据库)
-
-### 向量搜索
-
-- ✅ 向量数据存储
-- ✅ 语义搜索  
-- ✅ 文档索引管理
-- ✅ 相似性搜索
-
-## 📋 API 接口文档
-
-### 🔐 认证接口 `/api/auth`
-
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| POST | `/register` | 用户注册 | 公开 |
-| POST | `/login` | 用户登录 | 公开 |
-| POST | `/refresh` | 刷新访问令牌 | 需要刷新令牌 |
-| POST | `/logout` | 用户退出 | 需要认证 |
-| POST | `/forgot-password` | 忘记密码 | 公开 |
-| POST | `/reset-password` | 重置密码 | 需要重置令牌 |
-
-### 👥 用户管理 `/api/users`
-
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| GET | `/me` | 获取当前用户信息 | 需要认证 |
-| PUT | `/me` | 更新用户信息 | 需要认证 |
-| POST | `/upload-avatar` | 上传用户头像 | 需要认证 |
-| GET | `/profile/{user_id}` | 获取用户资料 | 需要认证 |
-| GET | `/` | 获取用户列表 | 管理员 |
-
-### 📁 文件管理 `/api/files`
-
-**文件操作**
-
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| POST | `/upload` | 单文件上传 | 需要认证 |
-| POST | `/upload-multiple` | 批量文件上传 | 需要认证 |
-| GET | `/{file_id}` | 获取文件详情 | 需要权限 |
-| PUT | `/{file_id}` | 更新文件信息 | 需要权限 |
-| DELETE | `/{file_id}` | 删除文件 | 需要权限 |
-| GET | `/{file_id}/download` | 下载文件 | 需要权限 |
-
-**文件搜索**
-
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| GET | `/search` | 搜索文件 | 需要认证 |
-
-**文件夹管理**
-
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| POST | `/folders` | 创建文件夹 | 需要认证 |
-| GET | `/folders/tree` | 获取文件夹树 | 需要认证 |
-| GET | `/folders/{folder_id}/files` | 获取文件夹下的文件 | 需要权限 |
-
-**文件分享**
-
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| POST | `/{file_id}/share` | 分享文件 | 需要权限 |
-| GET | `/{file_id}/shares` | 获取分享列表 | 需要权限 |
-| GET | `/shared-with-me` | 获取分享给我的文件 | 需要认证 |
-
-**统计信息**
-
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| GET | `/statistics/overview` | 文件统计概览 | 需要认证 |
-| GET | `/statistics/user` | 用户文件统计 | 需要认证 |
-
-**分类和标签 (即将上线)**
-
-| 方法 | 路径 | 说明 | 权限 |
-|------|------|------|------|
-| GET | `/categories` | 获取分类列表 | 需要认证 |
-| POST | `/categories` | 创建分类 | 需要认证 |
-| GET | `/categories/tree` | 获取分类树 | 需要认证 |
-| GET | `/tags` | 获取标签列表 | 需要认证 |
-| POST | `/tags` | 创建标签 | 需要认证 |
-| POST | `/{file_id}/tags` | 为文件添加标签 | 需要权限 |
-
-### 🔍 搜索参数说明
-
-**文件搜索支持的参数**:
-- `keyword`: 关键词搜索 (文件名、标题、描述)
-- `file_type`: 文件类型过滤 (document, image, video 等)
-- `mime_type`: MIME类型过滤
-- `folder_id`: 指定文件夹ID
-- `category`: 文件分类过滤
-- `tags`: 标签数组过滤
-- `tag_ids`: 标签ID数组过滤
-- `visibility`: 可见性过滤 (private, public 等)
-- `created_from/created_to`: 创建时间范围
-- `min_size/max_size`: 文件大小范围
-- `sort_by`: 排序字段 (created_at, file_size, download_count)
-- `sort_order`: 排序方式 (asc, desc)
-- `page/per_page`: 分页参数
-
-**示例请求**:
-```bash
-GET /api/files/search?keyword=报告&file_type=document&sort_by=created_at&sort_order=desc&page=1&per_page=20
-```
-
-## 🛠️ 开发指南
-
-### 本地开发环境
-
-1. **安装依赖**
-```bash
-pip install -r requirements.txt
-```
-
-2. **启动外部服务**
-```bash
-# 只启动数据库和中间件服务
-docker-compose up postgres redis minio weaviate -d
-```
-
-3. **运行应用**
-```bash
-# 开发模式运行
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### 数据库迁移
-
-```bash
-# 创建迁移文件
-alembic revision --autogenerate -m "描述"
-
-# 应用迁移
-alembic upgrade head
-```
-
-### Celery 任务
-
-```bash
-# 启动 Worker
-celery -A app.celery worker --loglevel=info
-
-# 启动 Beat (定时任务)
-celery -A app.celery beat --loglevel=info
-
-# 查看任务状态
-celery -A app.celery flower
-```
-
-## 🔧 常用命令
-
-### Docker 相关
-
-```bash
-# 查看所有服务状态
-docker-compose ps
-
-# 查看特定服务日志
-docker-compose logs -f app
-
-# 重启应用服务
-docker-compose restart app
-
-# 进入应用容器
-docker-compose exec app bash
-
-# 停止所有服务
-docker-compose down
-
-# 完全清理 (包括数据卷)
-docker-compose down -v
-```
-
-### 数据库相关
-
-```bash
-# 连接数据库
-docker-compose exec postgres psql -U chatx_user -d chatx_db
-
-# 备份数据库
-docker-compose exec postgres pg_dump -U chatx_user chatx_db > backup.sql
-
-# 恢复数据库
-docker-compose exec -T postgres psql -U chatx_user -d chatx_db < backup.sql
-```
-
-### Redis 相关
-
-```bash
-# 连接 Redis
-docker-compose exec redis redis-cli
-
-# 查看所有键
-docker-compose exec redis redis-cli keys "*"
-
-# 清空缓存
-docker-compose exec redis redis-cli flushall
-```
+# ChatX Backend
+
+ChatX 后端服务，基于 FastAPI 构建的现代化微服务架构，集成了多种数据存储和AI服务。
+
+## 🏗️ 技术栈
+
+### 核心框架
+- **FastAPI** - 现代化的 Web API 框架
+- **Uvicorn** - ASGI 服务器
+- **Pydantic** - 数据验证和设置管理
+- **SQLAlchemy** - ORM 框架
+- **Alembic** - 数据库迁移工具
+
+### 数据存储
+- **PostgreSQL** - 关系型数据库
+- **Redis** - 缓存和会话存储
+- **Neo4j** - 知识图谱数据库
+- **Weaviate** - 向量数据库
+- **MinIO** - 对象存储
+
+### 其他服务
+- **Celery** - 异步任务队列
+- **JWT** - 身份验证
+- **CORS** - 跨域资源共享
 
 ## 📁 项目结构
 
 ```
 backend/
 ├── app/
-│   ├── __init__.py
-│   ├── main.py                   # FastAPI 应用入口
-│   ├── celery.py                # Celery 配置
-│   ├── api/                     # API 路由
-│   │   ├── __init__.py
-│   │   ├── auth_api.py          # 认证相关 API
-│   │   ├── users_api.py         # 用户管理 API
-│   │   └── file_management_api.py # 企业级文件管理 API
-│   ├── core/                    # 核心配置
-│   │   ├── __init__.py
-│   │   ├── config.py            # 应用配置
-│   │   ├── database.py          # 数据库配置
-│   │   ├── security.py          # 安全认证
-│   │   ├── redis.py             # Redis 客户端
-│   │   ├── minio_client.py      # MinIO 对象存储客户端
-│   │   ├── weaviate_client.py   # Weaviate 向量数据库客户端
-│   │   └── neo4j_client.py      # Neo4j 图数据库客户端
-│   ├── models/                  # 数据模型
-│   │   ├── __init__.py
-│   │   ├── user_models.py       # 用户模型
-│   │   └── file_models.py       # 文件管理模型 (File/Folder/Category/Tag等)
-│   ├── schemas/                 # Pydantic 模式
-│   │   ├── __init__.py
-│   │   ├── user_schemas.py      # 用户相关模式
-│   │   └── file_schemas.py      # 文件管理相关模式
-│   ├── services/                # 业务逻辑层
-│   │   └── file_service.py      # 文件管理核心业务逻辑
-│   ├── tasks/                   # Celery 异步任务
-│   │   ├── __init__.py
-│   │   └── user_tasks.py        # 用户相关任务
-│   └── utils/                   # 工具函数
-│       ├── __init__.py
-│       └── deps.py              # 依赖注入
-├── nginx/                       # Nginx 配置
-│   ├── nginx.conf               # 开发环境配置
-│   └── nginx-ssl.conf           # 生产环境 SSL 配置
-├── docker-compose.yml           # 开发环境 Docker 编排
-├── docker-compose.prod.yml      # 生产环境 Docker 编排
-├── Dockerfile                   # Docker 构建配置
-├── requirements.txt             # Python 基础依赖
-├── requirements-dev.txt         # 开发环境依赖
-├── alembic.ini                  # 数据库迁移配置
-├── .env.example                # 环境变量示例
-├── start.sh                    # 开发环境启动脚本
-├── start-prod.sh               # 生产环境启动脚本
-├── dev-start.sh                # 本地开发启动脚本
-├── generate-ssl.sh             # SSL证书生成脚本
-├── create_tables.py            # 数据库表创建脚本
-└── README.md                   # 项目说明文档
+│   ├── api/                    # API 路由
+│   │   ├── auth_api.py        # 认证相关接口
+│   │   ├── users_api.py       # 用户管理接口
+│   │   └── file_management_api.py # 文件管理接口
+│   ├── core/                   # 核心模块
+│   │   ├── config.py          # 配置管理
+│   │   ├── database.py        # 数据库连接
+│   │   ├── security.py        # 安全相关
+│   │   ├── redis.py           # Redis 客户端
+│   │   ├── neo4j_client.py    # Neo4j 客户端
+│   │   ├── weaviate_client.py # Weaviate 客户端
+│   │   └── minio_client.py    # MinIO 客户端
+│   ├── models/                 # 数据模型
+│   │   ├── user_models.py     # 用户模型
+│   │   └── file_models.py     # 文件模型
+│   ├── schemas/                # Pydantic 模式
+│   │   ├── user_schemas.py    # 用户模式
+│   │   └── file_schemas.py    # 文件模式
+│   ├── services/               # 业务服务
+│   │   └── file_service.py    # 文件服务
+│   ├── tasks/                  # Celery 任务
+│   │   └── user_tasks.py      # 用户相关任务
+│   ├── utils/                  # 工具函数
+│   │   └── deps.py            # 依赖注入
+│   ├── celery.py              # Celery 配置
+│   └── main.py                # 应用入口
+├── alembic/                    # 数据库迁移
+│   └── versions/              # 迁移版本
+├── docker-data/                # Docker 数据持久化
+├── .env                        # 生产环境配置
+├── .env.dev                    # 开发环境配置
+├── .env.example               # 配置模板
+├── requirements.txt           # 生产依赖
+├── requirements-dev.txt       # 开发依赖
+├── docker-compose.services.yml # 外部服务
+├── docker-compose.yml         # 完整服务编排
+├── dev-start.sh              # 开发环境启动脚本
+└── start.sh                  # 生产环境启动脚本
 ```
 
-### 📊 数据库模型架构
+## 🚀 快速开始
 
-**用户管理**
-- `User` - 用户基础信息
+### 环境要求
 
-**文件管理核心**
-- `File` - 文件信息表 (增强版，支持分类、标签、权限)
-- `Folder` - 文件夹层级结构表
-- `FileVersion` - 文件版本历史表
-- `FileActivity` - 文件操作日志表
+- Python 3.11+
+- Docker & Docker Compose
+- Git
 
-**分类和标签系统**
-- `FileCategory` - 文件分类表 (支持层级)
-- `FileTag` - 文件标签表
-- `FileTagRelation` - 文件标签关联表
+### 安装步骤
 
-**分享和协作**
-- `FileShare` - 文件分享配置表
-- `FileComment` - 文件评论表
+1. **克隆项目**
+   ```bash
+   git clone <repository-url>
+   cd chatx-main/backend
+   ```
 
-**索引优化**
-- 复合索引优化查询性能
-- 全文搜索索引
-- 分类和标签查询优化
+2. **创建虚拟环境**
+   ```bash
+   python3 -m venv chatx-service
+   source chatx-service/bin/activate  # Linux/Mac
+   # 或
+   chatx-service\Scripts\activate     # Windows
+   ```
 
-## 🔒 安全特性
+3. **安装依赖**
+   ```bash
+   pip install -r requirements.txt
+   pip install -r requirements-dev.txt
+   ```
 
-- **Nginx 安全层**: 统一入口、隐藏内部服务、防护攻击
-- **SSL/HTTPS**: 数据传输加密、证书管理
-- **安全头设置**: XSS 保护、内容类型嗅探防护
-- JWT 访问令牌 + 刷新令牌机制
-- 密码加密存储 (bcrypt)
-- 用户权限分级 (普通用户/超级用户)
-- 文件访问权限控制
-- CORS 跨域配置
-- 请求速率限制 (可配置)
-- SQL 注入防护
+4. **配置环境变量**
+   ```bash
+   cp .env.example .env
+   # 根据需要修改 .env 文件中的配置
+   ```
 
-## 🚀 Nginx 的优势
+5. **启动外部服务**
+   ```bash
+   docker-compose -f docker-compose.services.yml up -d
+   ```
 
-### 性能优化
-- **静态文件服务**: 高效处理 CSS、JS、图片等静态资源
-- **Gzip 压缩**: 减少传输数据量，提升加载速度
-- **连接复用**: Keep-Alive 连接减少握手开销
-- **缓存控制**: 浏览器缓存优化，减少重复请求
+6. **启动开发环境**
+   ```bash
+   ./dev-start.sh
+   ```
 
-### 负载均衡
-- **多实例支持**: 可配置多个后端实例实现高可用
-- **健康检查**: 自动检测后端服务状态
-- **故障转移**: 自动切换到健康的后端实例
+7. **访问应用**
+   - API 文档: http://localhost:8000/docs
+   - 应用接口: http://localhost:8000
 
-### 统一管理
-- **单一入口**: 所有服务通过统一域名访问
-- **路径路由**: 智能路由不同服务 (/api → 后端, /minio → 文件服务)
-- **协议升级**: HTTP 自动重定向到 HTTPS
-- **日志集中**: 统一的访问日志和错误日志
+## 🔧 配置说明
 
-### 安全防护
-- **隐藏后端**: 客户端无法直接访问内部服务
-- **SSL 终结**: 在 Nginx 层处理 HTTPS，减轻后端负担
-- **访问控制**: IP 限制、速率限制
-- **安全头**: 自动添加安全相关的 HTTP 头
+### 环境变量配置
 
-## 🐛 故障排除
+项目支持多环境配置：
 
-### 服务启动失败
+- `.env` - 生产环境配置
+- `.env.dev` - 开发环境配置  
+- `.env.example` - 配置模板
 
-1. 检查端口占用: `lsof -i :8000`
-2. 查看服务日志: `docker-compose logs 服务名`
-3. 检查磁盘空间: `df -h`
-4. 重启 Docker: `sudo systemctl restart docker`
+主要配置项：
 
-### 数据库连接失败
+```bash
+# 数据库配置
+DATABASE_URL=postgresql://user:password@localhost:5433/chatx_db
+REDIS_URL=redis://localhost:6380/0
 
-1. 检查数据库状态: `docker-compose ps postgres`
-2. 验证连接配置: 检查 `.env` 文件中的 `DATABASE_URL`
-3. 查看数据库日志: `docker-compose logs postgres`
+# 服务端口 (支持自定义避免冲突)
+POSTGRES_PORT=5433
+REDIS_PORT=6380
+MINIO_PORT=9000
+NEO4J_BOLT_PORT=7687
+WEAVIATE_PORT=8080
 
-### 文件上传失败
+# 安全配置
+SECRET_KEY=your-secret-key
+ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-1. 检查 MinIO 状态: `docker-compose ps minio`
-2. 验证存储空间: 访问 MinIO 控制台
-3. 检查文件大小限制: 查看 `.env` 中的 `MAX_FILE_SIZE`
+# 外部服务配置
+MINIO_ENDPOINT=localhost:9000
+NEO4J_URL=bolt://localhost:7687
+WEAVIATE_URL=http://localhost:8080
+```
 
-## 📞 技术支持
+### 服务说明
 
-如有问题，请检查：
+| 服务 | 端口 | 描述 |
+|------|------|------|
+| PostgreSQL | 5433 | 主数据库 |
+| Redis | 6380 | 缓存和会话 |
+| MinIO | 9000/9001 | 对象存储 |
+| Neo4j | 7474/7687 | 知识图谱 |
+| Weaviate | 8080 | 向量数据库 |
 
-1. Docker 和 Docker Compose 版本
-2. 端口占用情况
-3. 环境变量配置
-4. 服务日志输出
+## 🔨 开发指南
 
-## 🚧 开发路线图
+### 代码规范
 
-### 🔥 即将发布 (v1.1)
+项目使用以下工具确保代码质量：
 
-- [ ] 文件分类和标签API接口完善
-- [ ] 文件内容提取和向量化搜索
-- [ ] 文件缩略图生成
-- [ ] 批量文件操作优化
+```bash
+# 代码格式化
+black app/
 
-### 📋 计划中功能 (v1.2+)
+# 导入排序
+isort app/
 
-**文件管理增强**
-- [ ] 文件在线预览 (支持常见格式)
-- [ ] 文件协作编辑
-- [ ] 文件收藏和个人空间
-- [ ] 文件回收站功能
-- [ ] 文件压缩和解压缩
+# 代码检查
+flake8 app/
 
-**系统功能**
-- [ ] 邮件服务集成
-- [ ] 短信验证功能  
-- [ ] OAuth 第三方登录 (微信、QQ、GitHub等)
-- [ ] API 速率限制和防滥用
-- [ ] 系统监控和日志收集
-- [ ] 自动化测试覆盖
-- [ ] API 版本控制
+# 类型检查
+mypy app/
+```
 
-**性能和安全**
-- [ ] 数据加密传输
-- [ ] 文件访问审计
-- [ ] 自动备份策略
-- [ ] CDN 集成优化
-- [ ] 大文件分片上传
-- [ ] 断点续传支持
+### 数据库迁移
 
-**企业级功能**
-- [ ] 多租户支持
-- [ ] 工作流和审批
-- [ ] 详细权限管理
-- [ ] 数据分析报表
-- [ ] 第三方集成API
-- [ ] 移动端API优化
+```bash
+# 创建迁移
+alembic revision --autogenerate -m "描述"
+
+# 应用迁移
+alembic upgrade head
+
+# 查看迁移历史
+alembic history
+```
+
+### 测试
+
+```bash
+# 运行测试
+pytest
+
+# 生成覆盖率报告
+pytest --cov=app tests/
+```
+
+## 📚 API 文档
+
+启动应用后，访问以下地址查看 API 文档：
+
+- **Swagger UI**: <http://localhost:8000/docs>
+- **ReDoc**: <http://localhost:8000/redoc>
+- **OpenAPI JSON**: <http://localhost:8000/openapi.json>
+
+### 主要 API 端点
+
+- `POST /auth/login` - 用户登录
+- `POST /auth/register` - 用户注册
+- `GET /users/me` - 获取当前用户信息
+- `POST /files/upload` - 文件上传
+- `GET /files/` - 文件列表
+
+## 🔍 故障排除
+
+### 常见问题
+
+1. **端口冲突**
+   - 问题：PostgreSQL 端口 5432 已被占用
+   - 解决：修改 `.env` 文件中的端口配置
+
+2. **服务启动失败**
+   - 检查 Docker 服务状态：`docker-compose ps`
+   - 查看服务日志：`docker-compose logs <service_name>`
+
+3. **数据库连接失败**
+   - 确保 PostgreSQL 服务正常运行
+   - 检查环境变量中的数据库连接字符串
+
+4. **虚拟环境问题**
+   - 确保激活了正确的虚拟环境
+   - 重新安装依赖：`pip install -r requirements.txt`
+
+### 日志查看
+
+```bash
+# 查看应用日志
+docker-compose logs -f app
+
+# 查看特定服务日志
+docker-compose logs -f postgres
+docker-compose logs -f redis
+
+# 查看所有服务状态
+docker-compose ps
+```
+
+## 🤝 贡献指南
+
+1. Fork 项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 创建 Pull Request
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+## 🆘 支持
+
+如果您遇到问题或有疑问，请：
+
+1. 查看本文档的故障排除部分
+2. 搜索现有的 Issues
+3. 创建新的 Issue 并提供详细信息
+
+---
+
+**Happy Coding! 🎉**

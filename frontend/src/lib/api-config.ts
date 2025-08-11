@@ -17,7 +17,7 @@ const isProduction = import.meta.env.PROD
 
 // 默认API配置
 export const DEFAULT_API_CONFIG: ApiConfig = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || (isDevelopment ? 'http://localhost:3000/api' : '/api'),
+  baseURL: import.meta.env.VITE_API_BASE_URL || (isDevelopment ? 'http://localhost:8000/api' : '/api'),
   timeout: 10000,
   retryCount: 2,
   retryDelay: 1000,

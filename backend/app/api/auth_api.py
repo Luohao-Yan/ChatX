@@ -16,6 +16,9 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
     user = db.query(User).filter(User.email == email).first()
     if not user:
         return None
+    # 检查是否设置了密码（第三方用户可能没有密码）
+    if not user.hashed_password:
+        return None
     if not security.verify_password(password, user.hashed_password):
         return None
     return user

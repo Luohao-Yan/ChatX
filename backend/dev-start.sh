@@ -9,8 +9,8 @@ if [[ "$VIRTUAL_ENV" == "" ]]; then
     echo "⚠️  请先激活虚拟环境！"
     echo ""
     echo "创建并激活虚拟环境："
-    echo "  python3 -m venv venv"
-    echo "  source venv/bin/activate"
+    echo "  python3 -m venv chatx-service"
+    echo "  source chatx-service/bin/activate"
     echo "  pip install -r requirements.txt"
     echo "  pip install -r requirements-dev.txt"
     echo ""
@@ -35,7 +35,23 @@ fi
 # 检查外部服务是否运行
 echo "🔍 检查外部服务..."
 
-services_to_check=("postgres:5432" "redis:6379" "minio:9000" "neo4j:7687" "weaviate:8080")
+# 读取环境变量获取端口配置
+export $(cat .env 2>/dev/null | grep -v ^# | xargs) 2>/dev/null || true
+
+# 使用环境变量或默认值
+POSTGRES_PORT=${POSTGRES_PORT:-5432}
+REDIS_PORT=${REDIS_PORT:-6379}
+MINIO_PORT=${MINIO_PORT:-9000}
+NEO4J_BOLT_PORT=${NEO4J_BOLT_PORT:-7687}
+WEAVIATE_PORT=${WEAVIATE_PORT:-8080}
+
+services_to_check=(
+    "postgres:$POSTGRES_PORT" 
+    "redis:$REDIS_PORT" 
+    "minio:$MINIO_PORT" 
+    "neo4j:$NEO4J_BOLT_PORT" 
+    "weaviate:$WEAVIATE_PORT"
+)
 missing_services=()
 
 for service in "${services_to_check[@]}"; do

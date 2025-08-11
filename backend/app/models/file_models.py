@@ -30,7 +30,7 @@ class VisibilityLevel(str, Enum):
     PUBLIC = "public"         # 公开可见
 
 class File(Base):
-    __tablename__ = "files"
+    __tablename__ = "sys_files"
 
     id = Column(Integer, primary_key=True, index=True)
     
@@ -61,8 +61,8 @@ class File(Base):
     visibility = Column(String(20), default=VisibilityLevel.PRIVATE, nullable=False, index=True)
     
     # 关联信息
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    parent_folder_id = Column(Integer, ForeignKey("folders.id"), nullable=True, index=True)
+    owner_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False, index=True)
+    parent_folder_id = Column(Integer, ForeignKey("sys_folders.id"), nullable=True, index=True)
     
     # 统计信息
     download_count = Column(Integer, default=0, nullable=False)
@@ -93,7 +93,7 @@ class File(Base):
     )
 
 class Folder(Base):
-    __tablename__ = "folders"
+    __tablename__ = "sys_folders"
 
     id = Column(Integer, primary_key=True, index=True)
     
@@ -102,12 +102,12 @@ class Folder(Base):
     description = Column(Text, nullable=True)
     
     # 层级关系
-    parent_id = Column(Integer, ForeignKey("folders.id"), nullable=True, index=True)
+    parent_id = Column(Integer, ForeignKey("sys_folders.id"), nullable=True, index=True)
     path = Column(String(1000), nullable=False, index=True)  # 完整路径
     level = Column(Integer, default=0, nullable=False)
     
     # 权限和状态
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    owner_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False, index=True)
     visibility = Column(String(20), default=VisibilityLevel.PRIVATE, nullable=False)
     is_system = Column(Boolean, default=False, nullable=False)  # 系统文件夹
     
@@ -128,12 +128,12 @@ class Folder(Base):
     )
 
 class FileVersion(Base):
-    __tablename__ = "file_versions"
+    __tablename__ = "sys_file_versions"
 
     id = Column(Integer, primary_key=True, index=True)
     
     # 关联信息
-    file_id = Column(Integer, ForeignKey("files.id"), nullable=False, index=True)
+    file_id = Column(Integer, ForeignKey("sys_files.id"), nullable=False, index=True)
     version_number = Column(Integer, nullable=False)
     
     # 版本信息
@@ -144,7 +144,7 @@ class FileVersion(Base):
     
     # 变更信息
     change_description = Column(Text, nullable=True)
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_by = Column(Integer, ForeignKey("sys_users.id"), nullable=False)
     
     # 时间戳
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -154,14 +154,14 @@ class FileVersion(Base):
     creator = relationship("User")
 
 class FileShare(Base):
-    __tablename__ = "file_shares"
+    __tablename__ = "sys_file_shares"
 
     id = Column(Integer, primary_key=True, index=True)
     
     # 关联信息
-    file_id = Column(Integer, ForeignKey("files.id"), nullable=False, index=True)
-    shared_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    shared_with = Column(Integer, ForeignKey("users.id"), nullable=True)  # 为空表示公开分享
+    file_id = Column(Integer, ForeignKey("sys_files.id"), nullable=False, index=True)
+    shared_by = Column(Integer, ForeignKey("sys_users.id"), nullable=False)
+    shared_with = Column(Integer, ForeignKey("sys_users.id"), nullable=True)  # 为空表示公开分享
     
     # 分享配置
     access_type = Column(String(20), default="read", nullable=False)  # read, write, admin
@@ -187,14 +187,14 @@ class FileShare(Base):
     recipient = relationship("User", foreign_keys=[shared_with])
 
 class FileComment(Base):
-    __tablename__ = "file_comments"
+    __tablename__ = "sys_file_comments"
 
     id = Column(Integer, primary_key=True, index=True)
     
     # 关联信息
-    file_id = Column(Integer, ForeignKey("files.id"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    parent_id = Column(Integer, ForeignKey("file_comments.id"), nullable=True)  # 回复功能
+    file_id = Column(Integer, ForeignKey("sys_files.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False)
+    parent_id = Column(Integer, ForeignKey("sys_file_comments.id"), nullable=True)  # 回复功能
     
     # 评论内容
     content = Column(Text, nullable=False)
@@ -211,7 +211,7 @@ class FileComment(Base):
     replies = relationship("FileComment", cascade="all, delete-orphan")
 
 class FileCategory(Base):
-    __tablename__ = "file_categories"
+    __tablename__ = "sys_file_categories"
 
     id = Column(Integer, primary_key=True, index=True)
     
@@ -222,12 +222,12 @@ class FileCategory(Base):
     icon = Column(String(50), nullable=True)  # 图标名称
     
     # 层级关系
-    parent_id = Column(Integer, ForeignKey("file_categories.id"), nullable=True, index=True)
+    parent_id = Column(Integer, ForeignKey("sys_file_categories.id"), nullable=True, index=True)
     path = Column(String(500), nullable=False, index=True)
     level = Column(Integer, default=0, nullable=False)
     
     # 权限和状态
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    owner_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False, index=True)
     is_system = Column(Boolean, default=False, nullable=False)  # 系统预设分类
     is_active = Column(Boolean, default=True, nullable=False)
     
@@ -247,7 +247,7 @@ class FileCategory(Base):
     )
 
 class FileTag(Base):
-    __tablename__ = "file_tags"
+    __tablename__ = "sys_file_tags"
 
     id = Column(Integer, primary_key=True, index=True)
     
@@ -257,7 +257,7 @@ class FileTag(Base):
     color = Column(String(7), nullable=True)  # HEX颜色值
     
     # 权限和状态
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    owner_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False, index=True)
     is_system = Column(Boolean, default=False, nullable=False)  # 系统预设标签
     usage_count = Column(Integer, default=0, nullable=False)  # 使用次数
     
@@ -275,16 +275,16 @@ class FileTag(Base):
     )
 
 class FileTagRelation(Base):
-    __tablename__ = "file_tag_relations"
+    __tablename__ = "sys_file_tag_relations"
 
     id = Column(Integer, primary_key=True, index=True)
     
     # 关联信息
-    file_id = Column(Integer, ForeignKey("files.id"), nullable=False, index=True)
-    tag_id = Column(Integer, ForeignKey("file_tags.id"), nullable=False, index=True)
+    file_id = Column(Integer, ForeignKey("sys_files.id"), nullable=False, index=True)
+    tag_id = Column(Integer, ForeignKey("sys_file_tags.id"), nullable=False, index=True)
     
     # 关联信息
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_by = Column(Integer, ForeignKey("sys_users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # 关系
@@ -298,13 +298,13 @@ class FileTagRelation(Base):
     )
 
 class FileActivity(Base):
-    __tablename__ = "file_activities"
+    __tablename__ = "sys_file_activities"
 
     id = Column(Integer, primary_key=True, index=True)
     
     # 关联信息
-    file_id = Column(Integer, ForeignKey("files.id"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    file_id = Column(Integer, ForeignKey("sys_files.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False)
     
     # 活动信息
     action = Column(String(50), nullable=False, index=True)  # upload, download, view, edit, delete, share
