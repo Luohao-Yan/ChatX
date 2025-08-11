@@ -12,7 +12,7 @@
 </p>
 <p align="center">
   <img alt="ChatX Desktop" src="./frontend/public/images/home.png" width="70%">
-  <img alt="ChatX Mobile" src="./frontend/public/images/mobile-home-image.png.png" width="25%">
+  <img alt="ChatX Mobile" src="./frontend/public/images/mobile-home-image.png" width="25%">
 </p>
 
 ChatX is a powerful full-stack chat application designed to provide a seamless experience for communication, collaboration, and intelligent file management. It is built with a modern tech stack, featuring a user-centric and customizable frontend, and a stable, scalable enterprise-grade backend.

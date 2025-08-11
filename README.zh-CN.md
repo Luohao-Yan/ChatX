@@ -12,7 +12,7 @@
 </p>
 <p align="center">
   <img alt="ChatX Desktop" src="./frontend/public/images/home.png" width="70%">
-  <img alt="ChatX Mobile" src="./frontend/public/images/mobile-home-image.png.png" width="25%">
+  <img alt="ChatX Mobile" src="./frontend/public/images/mobile-home-image.png" width="25%">
 </p>
 
 ChatX 是一个功能强大的全栈聊天应用程序，旨在提供无缝的沟通、协作和智能文件管理体验。它采用现代技术栈构建，前端注重用户体验和可定制性，后端提供稳定、可扩展的企业级服务。
