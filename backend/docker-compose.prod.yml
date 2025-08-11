@@ -29,9 +29,9 @@ services:
 
   nginx:
     volumes:
-      - ./nginx/nginx-ssl.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-      - nginx_logs:/var/log/nginx
+      - ./docker-data/nginx/conf/nginx-ssl.conf:/etc/nginx/nginx.conf:ro
+      - ./docker-data/nginx/ssl:/etc/nginx/ssl:ro
+      - ./docker-data/nginx/logs:/var/log/nginx
     restart: unless-stopped
 
   postgres:

@@ -85,6 +85,30 @@ def generate_user_stats():
         db.close()
 
 @celery_app.task
+def send_verification_email(email: str, verification_code: str, email_type: str = "email"):
+    """发送验证邮件"""
+    try:
+        if email_type == "password_reset":
+            subject = "ChatX - 密码重置验证"
+            message = f"您的密码重置验证码是: {verification_code}，有效期1小时。"
+        else:
+            subject = "ChatX - 邮箱验证"
+            message = f"您的邮箱验证码是: {verification_code}，有效期1小时。"
+        
+        # 这里可以集成邮件服务如SendGrid、AWS SES等
+        logger.info(f"发送{email_type}验证邮件给: {email}, 验证码: {verification_code}")
+        
+        # 模拟邮件发送
+        # 实际项目中应该替换为真实的邮件服务
+        # send_email_service(to=email, subject=subject, message=message)
+        
+        return {"status": "success", "message": f"验证邮件已发送给 {email}"}
+        
+    except Exception as e:
+        logger.error(f"发送验证邮件失败: {e}")
+        return {"status": "error", "message": str(e)}
+
+@celery_app.task
 def backup_user_data():
     """备份用户数据"""
     try:

@@ -2,15 +2,26 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Foreign
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from enum import Enum
+
+class UserStatus(str, Enum):
+    ACTIVE = "active"      # 激活
+    INACTIVE = "inactive"  # 停用
+    PENDING = "pending"    # 待激活
+    SUSPENDED = "suspended" # 暂停
+    DELETED = "deleted"    # 已删除
 
 class Organization(Base):
     __tablename__ = "sys_organizations"
 
     id = Column(Integer, primary_key=True, index=True)
     
+    # 多租户支持
+    tenant_id = Column(Integer, ForeignKey("sys_tenants.id"), nullable=False, index=True)
+    
     # 基本信息
     name = Column(String(255), nullable=False, index=True)
-    code = Column(String(50), unique=True, index=True, nullable=False)  # 组织编码
+    code = Column(String(50), index=True, nullable=False)  # 组织编码，同租户内唯一
     description = Column(Text, nullable=True)
     logo_url = Column(String(500), nullable=True)
     
@@ -38,11 +49,18 @@ class Organization(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
+    # 软删除字段
+    is_deleted = Column(Boolean, default=False, nullable=False, index=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_by = Column(Integer, ForeignKey("sys_users.id"), nullable=True)
+    
     # 关系
+    tenant = relationship("Tenant", back_populates="organizations")
     parent = relationship("Organization", remote_side=[id], back_populates="children")
     children = relationship("Organization", back_populates="parent", cascade="all, delete-orphan")
     users = relationship("User", back_populates="organization")
     departments = relationship("Department", back_populates="organization", cascade="all, delete-orphan")
+    deleted_by_user = relationship("User", foreign_keys=[deleted_by])
 
 class Department(Base):
     __tablename__ = "sys_departments"
@@ -81,9 +99,15 @@ class Department(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
+    # 软删除字段
+    is_deleted = Column(Boolean, default=False, nullable=False, index=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_by = Column(Integer, ForeignKey("sys_users.id"), nullable=True)
+    
     # 关系
     organization = relationship("Organization", back_populates="departments")
     parent = relationship("Department", remote_side=[id], back_populates="children")
     children = relationship("Department", back_populates="parent", cascade="all, delete-orphan")
     users = relationship("User", back_populates="department")
     manager = relationship("User", foreign_keys=[manager_id])
+    deleted_by_user = relationship("User", foreign_keys=[deleted_by])

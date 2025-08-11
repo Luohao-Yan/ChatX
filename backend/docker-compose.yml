@@ -188,10 +188,12 @@ services:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - nginx_logs:/var/log/nginx
-      # SSL 证书目录 (生产环境使用)
-      # - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./docker-data/nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker-data/nginx/logs:/var/log/nginx
+      # SSL 证书目录
+      - ./docker-data/nginx/ssl:/etc/nginx/ssl:ro
+      # Let's Encrypt 验证目录
+      - ./docker-data/certbot/www:/var/www/certbot:ro
     depends_on:
       - app
     restart: unless-stopped
@@ -211,7 +213,6 @@ volumes:
   app_logs:          # FastAPI应用日志
   app_tmp:           # 应用临时文件
   celery_beat_data:  # Celery Beat调度数据
-  nginx_logs:        # Nginx访问日志
 
 networks:
   default:

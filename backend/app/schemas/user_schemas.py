@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr, validator
-from typing import Optional
+from pydantic import BaseModel, EmailStr, field_validator
+from typing import Optional, List
 from datetime import datetime
 
 class UserBase(BaseModel):
@@ -11,7 +11,8 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
     
-    @validator('password')
+    @field_validator('password')
+    @classmethod
     def validate_password(cls, v):
         if len(v) < 8:
             raise ValueError('密码长度至少8位')
@@ -44,7 +45,8 @@ class UserInDBBase(UserBase):
         from_attributes = True
 
 class User(UserInDBBase):
-    pass
+    roles: Optional[List[str]] = None  # 角色名列表
+    permissions: Optional[List[str]] = None  # 权限名列表
 
 class UserInDB(UserInDBBase):
     hashed_password: str
@@ -52,6 +54,7 @@ class UserInDB(UserInDBBase):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    refresh_token: Optional[str] = None
 
 class TokenRefresh(BaseModel):
     refresh_token: str
@@ -69,7 +72,8 @@ class PasswordChange(BaseModel):
     current_password: str
     new_password: str
     
-    @validator('new_password')
+    @field_validator('new_password')
+    @classmethod
     def validate_new_password(cls, v):
         if len(v) < 8:
             raise ValueError('密码长度至少8位')
@@ -83,7 +87,8 @@ class PasswordResetConfirm(BaseModel):
     verification_code: str
     new_password: str
     
-    @validator('new_password')
+    @field_validator('new_password')
+    @classmethod
     def validate_new_password(cls, v):
         if len(v) < 8:
             raise ValueError('密码长度至少8位')
@@ -103,3 +108,13 @@ class UserSessionInfo(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UserRoleAssign(BaseModel):
+    user_id: int
+    role_ids: List[int]
+
+
+class UserRoleRevoke(BaseModel):
+    user_id: int
+    role_ids: List[int]

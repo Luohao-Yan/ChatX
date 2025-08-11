@@ -288,7 +288,7 @@ class FileTagRelation(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # 关系
-    file = relationship("File")
+    file = relationship("File", back_populates="tag_relations")
     tag = relationship("FileTag")
     creator = relationship("User")
     

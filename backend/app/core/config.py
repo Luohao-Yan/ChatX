@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 from decouple import config
 
 class Settings(BaseSettings):
@@ -44,6 +44,26 @@ class Settings(BaseSettings):
         default="image/jpeg,image/png,image/gif,application/pdf,text/plain,application/json",
         cast=lambda v: [s.strip() for s in v.split(',')]
     )
+    
+    # 环境设置
+    ENVIRONMENT: str = config("ENVIRONMENT", default="development")
+    DEBUG: bool = config("DEBUG", default=True, cast=bool)
+    
+    # 日志设置
+    LOG_LEVEL: str = config("LOG_LEVEL", default="INFO")
+    LOG_FILE: Optional[str] = config("LOG_FILE", default=None)
+    
+    # 监控设置
+    METRICS_ENABLED: bool = config("METRICS_ENABLED", default=True, cast=bool)
+    TRACING_ENABLED: bool = config("TRACING_ENABLED", default=False, cast=bool)
+    
+    # APM设置
+    APM_SERVICE_NAME: str = config("APM_SERVICE_NAME", default="chatx-api")
+    APM_ENVIRONMENT: str = config("APM_ENVIRONMENT", default="development")
+    
+    # 安全设置
+    SECURITY_HEADERS_ENABLED: bool = config("SECURITY_HEADERS_ENABLED", default=True, cast=bool)
+    RATE_LIMIT_ENABLED: bool = config("RATE_LIMIT_ENABLED", default=True, cast=bool)
     
     class Config:
         env_file = ".env"
