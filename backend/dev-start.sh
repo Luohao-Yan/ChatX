@@ -1,14 +1,21 @@
 #!/bin/bash
 
-# ChatX 本地 Python 开发环境启动脚本
+# ChatX 本地 Python 开发环境启动脚本 (Conda版本)
 
 echo "🐍 ChatX 本地开发环境启动..."
 
-# 检查是否在虚拟环境中
-if [[ "$VIRTUAL_ENV" == "" ]]; then
-    echo "⚠️  请先激活虚拟环境！"
+# 环境名称
+CONDA_ENV_NAME="chatx-backend"
+
+# 检查是否安装了conda
+if ! command -v conda &> /dev/null; then
+    echo "❌ 未找到 conda 命令！"
     echo ""
-    echo "创建并激活虚拟环境："
+    echo "请先安装 Anaconda 或 Miniconda："
+    echo "  - Anaconda: https://www.anaconda.com/download"
+    echo "  - Miniconda: https://docs.conda.io/en/latest/miniconda.html"
+    echo ""
+    echo "或者如果您想使用传统虚拟环境，请运行："
     echo "  python3 -m venv chatx-service"
     echo "  source chatx-service/bin/activate"
     echo "  pip install -r requirements.txt"
@@ -17,7 +24,50 @@ if [[ "$VIRTUAL_ENV" == "" ]]; then
     exit 1
 fi
 
-echo "✅ 虚拟环境已激活: $VIRTUAL_ENV"
+# 初始化conda（确保在脚本中可用）
+eval "$(conda shell.bash hook)"
+
+# 检查conda环境是否存在
+if ! conda env list | grep -q "^${CONDA_ENV_NAME}"; then
+    echo "📦 首次运行：创建conda虚拟环境 $CONDA_ENV_NAME"
+    
+    echo "   正在创建Python 3.11环境..."
+    conda create -n $CONDA_ENV_NAME python=3.11 -y
+    
+    echo "   激活环境..."
+    conda activate $CONDA_ENV_NAME
+    
+    echo "   安装生产依赖..."
+    pip install -r requirements.txt
+    
+    echo "   安装开发依赖..."  
+    pip install -r requirements-dev.txt
+    
+    echo "✅ Conda环境创建完成!"
+else
+    echo "📦 激活现有conda环境: $CONDA_ENV_NAME"
+    conda activate $CONDA_ENV_NAME
+    
+    # 检查依赖是否需要更新
+    if [[ requirements.txt -nt $CONDA_PREFIX ]] || [[ requirements-dev.txt -nt $CONDA_PREFIX ]]; then
+        echo "🔄 检测到依赖文件更新，正在更新包..."
+        pip install -r requirements.txt --upgrade
+        pip install -r requirements-dev.txt --upgrade
+    fi
+fi
+
+# 检查是否在正确的conda环境中
+if [[ "$CONDA_DEFAULT_ENV" != "$CONDA_ENV_NAME" ]]; then
+    echo "⚠️  conda环境激活失败！"
+    echo ""
+    echo "请手动运行以下命令："
+    echo "  conda activate $CONDA_ENV_NAME"
+    echo "  ./dev-start.sh"
+    echo ""
+    exit 1
+fi
+
+echo "✅ Conda虚拟环境已激活: $CONDA_DEFAULT_ENV (Python $(python --version 2>&1 | cut -d' ' -f2))"
 
 # 检查是否存在 .env.dev 文件
 if [ ! -f .env.dev ]; then
@@ -104,4 +154,11 @@ echo "   按 Ctrl+C 停止应用"
 echo ""
 
 # 启动应用
+echo "📋 Conda环境管理命令："
+echo "  - 查看所有环境: conda env list"
+echo "  - 激活环境: conda activate $CONDA_ENV_NAME" 
+echo "  - 删除环境: conda env remove -n $CONDA_ENV_NAME"
+echo "  - 更新依赖: pip install -r requirements.txt --upgrade"
+echo ""
+
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --env-file .env.dev

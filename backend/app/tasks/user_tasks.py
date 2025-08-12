@@ -2,6 +2,7 @@ from app.celery import celery_app
 from app.core.database import SessionLocal
 from app.models.user_models import User
 from app.core.redis import get_redis
+from app.core.session_cache_service import get_session_cache_service
 import logging
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
@@ -137,3 +138,60 @@ def backup_user_data():
         return {"status": "error", "message": str(e)}
     finally:
         db.close()
+
+@celery_app.task
+async def cleanup_expired_redis_sessions():
+    """清理Redis中的过期会话"""
+    try:
+        session_cache = await get_session_cache_service()
+        cleaned_count = await session_cache.cleanup_expired_sessions()
+        
+        logger.info(f"Redis会话清理完成，清理了 {cleaned_count} 个过期会话")
+        return {"status": "success", "cleaned_sessions": cleaned_count}
+        
+    except Exception as e:
+        logger.error(f"清理Redis过期会话失败: {e}")
+        return {"status": "error", "message": str(e)}
+
+@celery_app.task
+async def cleanup_expired_caches():
+    """清理过期的缓存数据"""
+    try:
+        from app.core.api_cache_service import get_api_cache_service
+        
+        # 获取缓存统计
+        api_cache = await get_api_cache_service()
+        stats = await api_cache.get_cache_stats()
+        
+        # 这里可以添加更复杂的缓存清理逻辑
+        # 比如清理超过一定时间的缓存项
+        
+        logger.info(f"缓存清理任务完成，当前缓存统计: {stats}")
+        return {"status": "success", "cache_stats": stats}
+        
+    except Exception as e:
+        logger.error(f"清理过期缓存失败: {e}")
+        return {"status": "error", "message": str(e)}
+
+@celery_app.task
+async def generate_cache_report():
+    """生成缓存使用报告"""
+    try:
+        from app.core.api_cache_service import get_api_cache_service
+        
+        api_cache = await get_api_cache_service()
+        session_cache = await get_session_cache_service()
+        
+        # 生成详细的缓存报告
+        report = {
+            "timestamp": datetime.now().isoformat(),
+            "api_cache_stats": await api_cache.get_cache_stats(),
+            # 可以添加更多统计信息
+        }
+        
+        logger.info(f"缓存报告生成完成: {report}")
+        return {"status": "success", "report": report}
+        
+    except Exception as e:
+        logger.error(f"生成缓存报告失败: {e}")
+        return {"status": "error", "message": str(e)}

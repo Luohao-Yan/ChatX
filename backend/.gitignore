@@ -23,13 +23,12 @@ backend/chatx-service/
 *.code-workspace
 
 # Alembic
-alembic/versions/
-alembic.ini
+# alembic/versions/
+# alembic.ini
 
 # 环境变量和配置
-.env
-.env.*
-*.env
+# .env
+# *.env
 
 # 数据库和日志
 *.db

@@ -10,10 +10,10 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = config("REFRESH_TOKEN_EXPIRE_DAYS", default=7, cast=int)
     
     # 数据库设置
-    DATABASE_URL: str = config("DATABASE_URL", default="postgresql://chatx_user:chatx_password@localhost:5432/chatx_db")
+    DATABASE_URL: str = config("DATABASE_URL", default="postgresql://chatx_user:chatx_password@localhost:5433/chatx_db")
     
     # Redis设置
-    REDIS_URL: str = config("REDIS_URL", default="redis://localhost:6379/0")
+    REDIS_URL: str = config("REDIS_URL", default="redis://localhost:6380/0")
     
     # MinIO设置
     MINIO_ENDPOINT: str = config("MINIO_ENDPOINT", default="localhost:9000")
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: List[str] = config(
         "CORS_ORIGINS", 
         default="http://localhost:5173,http://localhost:3000",
-        cast=lambda v: [s.strip() for s in v.split(',')]
+        cast=lambda v: [s.strip() for s in v.split(',')] if isinstance(v, str) else v
     )
     
     # 文件上传设置
@@ -61,11 +61,29 @@ class Settings(BaseSettings):
     APM_SERVICE_NAME: str = config("APM_SERVICE_NAME", default="chatx-api")
     APM_ENVIRONMENT: str = config("APM_ENVIRONMENT", default="development")
     
+    # 邮件设置
+    SMTP_ENABLED: bool = config("SMTP_ENABLED", default=False, cast=bool)
+    SMTP_SERVER: str = config("SMTP_SERVER", default="smtp.gmail.com")
+    SMTP_PORT: int = config("SMTP_PORT", default=587, cast=int)
+    SMTP_USERNAME: str = config("SMTP_USERNAME", default="")
+    SMTP_PASSWORD: str = config("SMTP_PASSWORD", default="")
+    SMTP_USE_TLS: bool = config("SMTP_USE_TLS", default=True, cast=bool)
+    SMTP_USE_SSL: bool = config("SMTP_USE_SSL", default=False, cast=bool)
+    SMTP_FROM_EMAIL: str = config("SMTP_FROM_EMAIL", default="")
+    SMTP_FROM_NAME: str = config("SMTP_FROM_NAME", default="ChatX System")
+    
+    # 超级管理员设置
+    SUPER_ADMIN_EMAIL: str = config("SUPER_ADMIN_EMAIL", default="admin@chatx.com")
+    SUPER_ADMIN_USERNAME: str = config("SUPER_ADMIN_USERNAME", default="superadmin")
+    SUPER_ADMIN_PASSWORD: str = config("SUPER_ADMIN_PASSWORD", default="ChatX@Admin123!")
+    SUPER_ADMIN_FULL_NAME: str = config("SUPER_ADMIN_FULL_NAME", default="Super Administrator")
+    
     # 安全设置
     SECURITY_HEADERS_ENABLED: bool = config("SECURITY_HEADERS_ENABLED", default=True, cast=bool)
     RATE_LIMIT_ENABLED: bool = config("RATE_LIMIT_ENABLED", default=True, cast=bool)
     
     class Config:
         env_file = ".env"
+        extra = "ignore"  # 忽略未定义的环境变量
 
 settings = Settings()

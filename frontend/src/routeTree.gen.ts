@@ -50,7 +50,7 @@ import { Route as AuthenticatedDocumentsStorageRouteImport } from './routes/_aut
 import { Route as AuthenticatedDocumentsSharedRouteImport } from './routes/_authenticated/documents/shared'
 import { Route as AuthenticatedDocumentsRecentRouteImport } from './routes/_authenticated/documents/recent'
 import { Route as AuthenticatedDocumentsFavoritesRouteImport } from './routes/_authenticated/documents/favorites'
-import { Route as AuthenticatedDocumentsSettingsFoldersRouteImport } from './routes/_authenticated/documents/settings/folders'
+import { Route as AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRouteImport } from './routes/_authenticated/documents/settings/knowledgeQualityAssessment'
 import { Route as AuthenticatedDocumentsSettingsCategoriesRouteImport } from './routes/_authenticated/documents/settings/categories'
 
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
@@ -275,10 +275,10 @@ const AuthenticatedDocumentsFavoritesRoute =
     path: '/documents/favorites',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedDocumentsSettingsFoldersRoute =
-  AuthenticatedDocumentsSettingsFoldersRouteImport.update({
-    id: '/documents/settings/folders',
-    path: '/documents/settings/folders',
+const AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute =
+  AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRouteImport.update({
+    id: '/documents/settings/knowledgeQualityAssessment',
+    path: '/documents/settings/knowledgeQualityAssessment',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDocumentsSettingsCategoriesRoute =
@@ -329,7 +329,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
-  '/documents/settings/folders': typeof AuthenticatedDocumentsSettingsFoldersRoute
+  '/documents/settings/knowledgeQualityAssessment': typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -370,7 +370,7 @@ export interface FileRoutesByTo {
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
-  '/documents/settings/folders': typeof AuthenticatedDocumentsSettingsFoldersRoute
+  '/documents/settings/knowledgeQualityAssessment': typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -416,7 +416,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
-  '/_authenticated/documents/settings/folders': typeof AuthenticatedDocumentsSettingsFoldersRoute
+  '/_authenticated/documents/settings/knowledgeQualityAssessment': typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -461,7 +461,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/users'
     | '/documents/settings/categories'
-    | '/documents/settings/folders'
+    | '/documents/settings/knowledgeQualityAssessment'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
@@ -502,7 +502,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/users'
     | '/documents/settings/categories'
-    | '/documents/settings/folders'
+    | '/documents/settings/knowledgeQualityAssessment'
   id:
     | '__root__'
     | '/_authenticated'
@@ -547,7 +547,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
     | '/_authenticated/documents/settings/categories'
-    | '/_authenticated/documents/settings/folders'
+    | '/_authenticated/documents/settings/knowledgeQualityAssessment'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -854,11 +854,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsFavoritesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/documents/settings/folders': {
-      id: '/_authenticated/documents/settings/folders'
-      path: '/documents/settings/folders'
-      fullPath: '/documents/settings/folders'
-      preLoaderRoute: typeof AuthenticatedDocumentsSettingsFoldersRouteImport
+    '/_authenticated/documents/settings/knowledgeQualityAssessment': {
+      id: '/_authenticated/documents/settings/knowledgeQualityAssessment'
+      path: '/documents/settings/knowledgeQualityAssessment'
+      fullPath: '/documents/settings/knowledgeQualityAssessment'
+      preLoaderRoute: typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/documents/settings/categories': {
@@ -915,7 +915,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
   AuthenticatedDocumentsSettingsCategoriesRoute: typeof AuthenticatedDocumentsSettingsCategoriesRoute
-  AuthenticatedDocumentsSettingsFoldersRoute: typeof AuthenticatedDocumentsSettingsFoldersRoute
+  AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute: typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -942,8 +942,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
   AuthenticatedDocumentsSettingsCategoriesRoute:
     AuthenticatedDocumentsSettingsCategoriesRoute,
-  AuthenticatedDocumentsSettingsFoldersRoute:
-    AuthenticatedDocumentsSettingsFoldersRoute,
+  AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute:
+    AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

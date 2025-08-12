@@ -89,6 +89,27 @@ class RedisClient:
         except Exception as e:
             logger.error(f"Redis设置过期时间失败 {key}: {e}")
             return False
+    
+    async def setex(self, key: str, seconds: int, value: Any) -> bool:
+        """设置键值对并指定过期时间"""
+        try:
+            if isinstance(value, (dict, list)):
+                value = json.dumps(value, ensure_ascii=False)
+            
+            result = await self.redis_client.setex(key, seconds, value)
+            return result
+        except Exception as e:
+            logger.error(f"Redis setex失败 {key}: {e}")
+            return False
+    
+    async def ttl(self, key: str) -> int:
+        """获取键的剩余过期时间"""
+        try:
+            result = await self.redis_client.ttl(key)
+            return result
+        except Exception as e:
+            logger.error(f"Redis TTL获取失败 {key}: {e}")
+            return -1
 
 # 全局Redis客户端实例
 redis_client = RedisClient()

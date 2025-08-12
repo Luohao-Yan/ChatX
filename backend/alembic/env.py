@@ -1,9 +1,17 @@
+import os
+import sys
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
+from sqlalchemy import engine_from_config, pool
 from alembic import context
+
+# 添加项目根目录到 sys.path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
+# 导入配置和模型
+from app.core.config import settings
+from app.core.database import Base
+from app.models import *
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -14,11 +22,11 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+# 设置目标元数据
+target_metadata = Base.metadata
+
+# 动态设置数据库 URL，绕过 ConfigParser 的解析
+config.attributes["sqlalchemy.url"] = settings.DATABASE_URL
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -58,7 +66,10 @@ def run_migrations_online() -> None:
 
     """
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        {
+            **config.get_section(config.config_ini_section, {}),
+            "sqlalchemy.url": settings.DATABASE_URL,
+        },
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

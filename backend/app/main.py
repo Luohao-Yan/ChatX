@@ -23,39 +23,101 @@ import logging
 setup_logging()
 logger = get_logger(__name__)
 
+async def initialize_system():
+    """系统初始化 - 自动检查并初始化RBAC和超级管理员"""
+    from app.core.database import get_db_session
+    from app.core.rbac_init import initialize_rbac_system
+    from app.core.admin_init import initialize_super_admin, check_super_admin_exists
+    from app.application.services.email_service import get_email_service
+    
+    try:
+        db_session = next(get_db_session())
+        
+        # 检查系统是否已初始化
+        admin_exists = check_super_admin_exists(db_session)
+        
+        if not admin_exists:
+            logger.info("🔧 检测到系统未初始化，开始自动初始化...")
+            
+            # 初始化RBAC系统
+            logger.info("🛡️ 初始化RBAC权限系统...")
+            rbac_success = initialize_rbac_system(db_session)
+            
+            if rbac_success:
+                logger.info("✅ RBAC系统初始化成功")
+                
+                # 初始化超级管理员
+                logger.info("👑 初始化超级管理员...")
+                admin_success = initialize_super_admin(db_session)
+                
+                if admin_success:
+                    logger.info("✅ 超级管理员初始化成功")
+                    logger.info(f"📧 超级管理员邮箱: {settings.SUPER_ADMIN_EMAIL}")
+                    logger.info(f"👤 超级管理员用户名: {settings.SUPER_ADMIN_USERNAME}")
+                    logger.info("⚠️  请尽快修改默认密码！")
+                else:
+                    logger.error("❌ 超级管理员初始化失败")
+            else:
+                logger.error("❌ RBAC系统初始化失败")
+        else:
+            logger.info("✅ 系统已初始化，跳过自动初始化")
+        
+        # 测试邮件服务
+        email_service = await get_email_service()
+        if email_service.enabled:
+            connection_ok = email_service.test_connection()
+            if connection_ok:
+                logger.info(f"📧 邮件服务已启用并连接成功: {settings.SMTP_SERVER}")
+            else:
+                logger.warning(f"⚠️  邮件服务已启用但连接失败: {settings.SMTP_SERVER}")
+        else:
+            logger.info("📧 邮件服务未启用（开发模式，验证码将显示在控制台）")
+            
+    except Exception as e:
+        logger.error(f"❌ 系统初始化过程中发生错误: {e}")
+        # 不抛出异常，允许应用继续启动
+    finally:
+        db_session.close()
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 打印启动横幅
     print_startup_banner()
     
     # 启动时初始化
-    logger.info("正在初始化企业级FastAPI应用...")
+    logger.info("正在启动企业级FastAPI应用...")
     
     # 设置系统指标收集
     setup_system_metrics()
     
+    # 自动系统初始化
+    await initialize_system()
+    
     # 连接Redis
     try:
         await redis_client.connect()
-        logger.info("Redis连接成功")
+        logger.info("✅ Redis连接成功")
     except Exception as e:
-        logger.error(f"Redis连接失败: {e}")
+        logger.error(f"❌ Redis连接失败: {e}")
     
     # 初始化Weaviate集合
     try:
         init_collections()
-        logger.info("Weaviate集合初始化成功")
+        logger.info("✅ Weaviate集合初始化成功")
     except Exception as e:
-        logger.error(f"Weaviate集合初始化失败: {e}")
+        logger.error(f"❌ Weaviate集合初始化失败: {e}")
     
     # 测试Neo4j连接
     try:
         stats = neo4j_client.get_database_stats()
-        logger.info(f"Neo4j连接正常，数据库统计: {stats}")
+        logger.info(f"✅ Neo4j连接正常，数据库统计: {stats}")
     except Exception as e:
-        logger.error(f"Neo4j连接失败: {e}")
+        logger.error(f"❌ Neo4j连接失败: {e}")
     
-    logger.info("企业级FastAPI应用初始化完成")
+    logger.info("🎉 企业级FastAPI应用启动完成")
+    logger.info(f"📚 API文档: http://localhost:8000/docs")
+    logger.info(f"🔧 系统信息: http://localhost:8000/system/info")
+    logger.info(f"❤️  健康检查: http://localhost:8000/health")
     
     yield
     
@@ -66,17 +128,17 @@ async def lifespan(app: FastAPI):
     logger.info("正在关闭企业级FastAPI应用...")
     try:
         await redis_client.disconnect()
-        logger.info("Redis连接已断开")
+        logger.info("✅ Redis连接已断开")
     except Exception as e:
-        logger.error(f"Redis断开连接失败: {e}")
+        logger.error(f"❌ Redis断开连接失败: {e}")
     
     try:
         neo4j_client.close()
-        logger.info("Neo4j连接已断开")
+        logger.info("✅ Neo4j连接已断开")
     except Exception as e:
-        logger.error(f"Neo4j断开连接失败: {e}")
+        logger.error(f"❌ Neo4j断开连接失败: {e}")
     
-    logger.info("企业级FastAPI应用已关闭")
+    logger.info("👋 企业级FastAPI应用已关闭")
 
 # 创建FastAPI应用实例
 app = FastAPI(

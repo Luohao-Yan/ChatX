@@ -18,7 +18,6 @@ import {
   IconTrash,
   IconChartPie,
   IconTags,
-  IconFolder,
   IconWorld,
   IconBrandWechat,
   IconBuilding,
@@ -27,12 +26,14 @@ import {
   IconChartScatter3d,
   IconMicrophone,
   IconShare,
-
+  // IconGauge,      // 仪表盘图标，非常适合质量评估
+  IconScale,
 } from '@tabler/icons-react'
 import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
 import { TFunction } from 'i18next'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
+// import { title } from 'process'
 
 export const getSidebarData = (t: TFunction): SidebarData => {
 
@@ -219,9 +220,9 @@ export const getSidebarData = (t: TFunction): SidebarData => {
                 icon: IconTags,
               },
               {
-                title: t('nav.knowledgeFolders'),
-                url: '/documents/settings/folders',
-                icon: IconFolder,
+                title: t('nav.knowledgeQualityAssessment'),
+                url: '/documents/settings/knowledgeQualityAssessment',
+                icon: IconScale,
               },
             ],
           },
@@ -254,6 +255,37 @@ export const getSidebarData = (t: TFunction): SidebarData => {
               },
             ],
           },
+        ],
+      },
+      {
+        title: t('nav.managementCenter'),
+        items: [
+          {
+            title: t('nav.usersManagement'),
+            url: '/management/users',
+            icon: IconUsers,
+          },
+          {
+            title: t('nav.organizationsManagement'),
+            url: '/management/organizations',
+            icon: IconBuilding,
+          },
+          {
+            title: t('nav.departmentsManagement'),
+            url: '/management/departments',
+            icon: IconBuildingBank,
+          },
+          {
+            title: t('nav.rolesManagement'),
+            url: '/management/roles',
+            icon: IconUserOff,
+          },
+          {
+            title: t('nav.permissionsManagement'),
+            url: '/management/permissions',
+            icon: IconLockAccess,
+          },
+
         ],
       },
       {

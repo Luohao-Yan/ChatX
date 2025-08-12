@@ -37,8 +37,8 @@ class RoleUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 class RoleSchema(RoleBase):
-    id: int
-    tenant_id: int
+    id: str
+    tenant_id: str
     is_active: bool
     is_system: bool
     is_default: bool
@@ -83,7 +83,7 @@ class PermissionUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 class PermissionSchema(PermissionBase):
-    id: int
+    id: str
     is_system: bool
     is_active: bool
     created_at: datetime
@@ -96,7 +96,7 @@ class PermissionSchema(PermissionBase):
 # 角色权限关联模型
 
 class RolePermissionAssign(BaseModel):
-    permission_ids: List[int]
+    permission_ids: List[str]
     
     @field_validator('permission_ids')
     @classmethod
@@ -111,7 +111,7 @@ class RolePermissionAssign(BaseModel):
 # 用户角色关联模型
 
 class UserRoleAssign(BaseModel):
-    user_ids: List[int]
+    user_ids: List[str]
     expires_at: Optional[datetime] = None
     
     @field_validator('user_ids')
@@ -127,16 +127,19 @@ class UserRoleAssign(BaseModel):
 # 用户权限关联模型
 
 class UserPermissionAssign(BaseModel):
-    permission_id: int
+    user_id: str
+    permission_id: str
+    granted: bool = True
     resource_id: Optional[str] = None
     expires_at: Optional[datetime] = None
     reason: Optional[str] = None
+    conditions: Optional[Dict[str, Any]] = None
 
 
 class UserPermissionSchema(BaseModel):
-    id: int
-    user_id: int
-    permission_id: int
+    id: str
+    user_id: str
+    permission_id: str
     granted: bool
     resource_id: Optional[str] = None
     expires_at: Optional[datetime] = None
@@ -155,7 +158,7 @@ class UserPermissionSchema(BaseModel):
 # 用户角色权限汇总模型
 
 class UserPermissionSummary(BaseModel):
-    user_id: int
+    user_id: str
     username: str
     email: str
     roles: List[RoleSchema]
@@ -164,7 +167,7 @@ class UserPermissionSummary(BaseModel):
 
 
 class RoleHierarchy(BaseModel):
-    role_id: int
+    role_id: str
     role_name: str
     parent_role_id: Optional[int] = None
     parent_role_name: Optional[str] = None
@@ -175,7 +178,7 @@ class RoleHierarchy(BaseModel):
 
 
 class PermissionTree(BaseModel):
-    permission_id: int
+    permission_id: str
     permission_name: str
     display_name: str
     category: Optional[str] = None
@@ -195,7 +198,7 @@ class PermissionCheckRequest(BaseModel):
 
 
 class PermissionCheckResponse(BaseModel):
-    user_id: int
+    user_id: str
     permission: str
     resource_id: Optional[str] = None
     has_permission: bool
@@ -205,14 +208,14 @@ class PermissionCheckResponse(BaseModel):
 # 批量操作模型
 
 class BatchRoleAssign(BaseModel):
-    role_ids: List[int]
-    user_ids: List[int]
+    role_ids: List[str]
+    user_ids: List[str]
     expires_at: Optional[datetime] = None
 
 
 class BatchPermissionAssign(BaseModel):
-    permission_ids: List[int]
-    user_ids: List[int]
+    permission_ids: List[str]
+    user_ids: List[str]
     resource_id: Optional[str] = None
     expires_at: Optional[datetime] = None
 

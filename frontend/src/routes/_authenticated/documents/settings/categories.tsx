@@ -11,7 +11,7 @@ export const Route = createFileRoute('/_authenticated/documents/settings/categor
 function CategoriesSettingsPage() {
   const topNav = [
     {
-      title: '知识管理',
+      title: '知识管理中心',
       href: '/documents',
       isActive: false,
     },

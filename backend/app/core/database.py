@@ -9,6 +9,15 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def get_db():
+    """依赖注入用的数据库会话生成器"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def get_db_session():
+    """获取数据库会话的生成器（用于初始化脚本）"""
     db = SessionLocal()
     try:
         yield db

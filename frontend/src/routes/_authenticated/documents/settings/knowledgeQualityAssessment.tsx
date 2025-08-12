@@ -4,24 +4,24 @@ import { Main } from '@/components/layout/main'
 import { TopNav } from '@/components/layout/top-nav'
 import { IconFolder } from '@tabler/icons-react'
 
-export const Route = createFileRoute('/_authenticated/documents/settings/folders')({
+export const Route = createFileRoute('/_authenticated/documents/settings/knowledgeQualityAssessment')({
   component: () => <FoldersSettingsPage />,
 })
 
 function FoldersSettingsPage() {
   const topNav = [
     {
-      title: '知识管理',
+      title: '知识管理中心',
       href: '/documents',
       isActive: false,
     },
     {
-      title: '知识管理设置',
+      title: '知识库质量标准',
       href: '/documents/settings/folders',
       isActive: false,
     },
     {
-      title: '知识文件夹管理',
+      title: '知识评估任务',
       href: '/documents/settings/folders',
       isActive: true,
     },
