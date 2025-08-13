@@ -1,13 +1,15 @@
 from app.celery import celery_app
-from app.core.database import SessionLocal
+from app.infrastructure.persistence.database import SessionLocal
 from app.models.user_models import User
-from app.core.redis import get_redis
-from app.core.session_cache_service import get_session_cache_service
+from app.infrastructure.clients.redis_client import get_redis
+from app.application.middleware.session_cache_service import get_session_cache_service
+from app.application.middleware.api_cache_service import get_api_cache_service
 import logging
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
+
 
 @celery_app.task
 def send_welcome_email(user_id: int):
@@ -28,65 +30,73 @@ def send_welcome_email(user_id: int):
     finally:
         db.close()
 
+
 @celery_app.task
 def cleanup_inactive_users():
     """清理非活跃用户"""
     try:
         db = SessionLocal()
         cutoff_date = datetime.now() - timedelta(days=365)
-        
-        inactive_users = db.query(User).filter(
-            User.is_active == False,
-            User.updated_at < cutoff_date
-        ).all()
-        
+
+        inactive_users = (
+            db.query(User)
+            .filter(User.is_active == False, User.updated_at < cutoff_date)
+            .all()
+        )
+
         count = len(inactive_users)
         for user in inactive_users:
             db.delete(user)
-        
+
         db.commit()
         logger.info(f"清理了 {count} 个非活跃用户")
         return {"status": "success", "cleaned_users": count}
-        
+
     except Exception as e:
         logger.error(f"清理非活跃用户失败: {e}")
         return {"status": "error", "message": str(e)}
     finally:
         db.close()
 
+
 @celery_app.task
 def generate_user_stats():
     """生成用户统计信息"""
     try:
         db = SessionLocal()
-        
+
         total_users = db.query(User).count()
         active_users = db.query(User).filter(User.is_active == True).count()
         superusers = db.query(User).filter(User.is_superuser == True).count()
-        
+
         # 近30天新注册用户
         thirty_days_ago = datetime.now() - timedelta(days=30)
-        new_users_30d = db.query(User).filter(User.created_at >= thirty_days_ago).count()
-        
+        new_users_30d = (
+            db.query(User).filter(User.created_at >= thirty_days_ago).count()
+        )
+
         stats = {
             "total_users": total_users,
             "active_users": active_users,
             "superusers": superusers,
             "new_users_30d": new_users_30d,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
-        
+
         logger.info(f"生成用户统计: {stats}")
         return stats
-        
+
     except Exception as e:
         logger.error(f"生成用户统计失败: {e}")
         return {"status": "error", "message": str(e)}
     finally:
         db.close()
 
+
 @celery_app.task
-def send_verification_email(email: str, verification_code: str, email_type: str = "email"):
+def send_verification_email(
+    email: str, verification_code: str, email_type: str = "email"
+):
     """发送验证邮件"""
     try:
         if email_type == "password_reset":
@@ -95,19 +105,20 @@ def send_verification_email(email: str, verification_code: str, email_type: str 
         else:
             subject = "ChatX - 邮箱验证"
             message = f"您的邮箱验证码是: {verification_code}，有效期1小时。"
-        
+
         # 这里可以集成邮件服务如SendGrid、AWS SES等
         logger.info(f"发送{email_type}验证邮件给: {email}, 验证码: {verification_code}")
-        
+
         # 模拟邮件发送
         # 实际项目中应该替换为真实的邮件服务
         # send_email_service(to=email, subject=subject, message=message)
-        
+
         return {"status": "success", "message": f"验证邮件已发送给 {email}"}
-        
+
     except Exception as e:
         logger.error(f"发送验证邮件失败: {e}")
         return {"status": "error", "message": str(e)}
+
 
 @celery_app.task
 def backup_user_data():
@@ -115,29 +126,36 @@ def backup_user_data():
     try:
         db = SessionLocal()
         users = db.query(User).all()
-        
+
         backup_data = []
         for user in users:
-            backup_data.append({
-                "id": user.id,
-                "email": user.email,
-                "username": user.username,
-                "full_name": user.full_name,
-                "is_active": user.is_active,
-                "is_superuser": user.is_superuser,
-                "created_at": user.created_at.isoformat() if user.created_at else None,
-                "updated_at": user.updated_at.isoformat() if user.updated_at else None,
-            })
-        
+            backup_data.append(
+                {
+                    "id": user.id,
+                    "email": user.email,
+                    "username": user.username,
+                    "full_name": user.full_name,
+                    "is_active": user.is_active,
+                    "is_superuser": user.is_superuser,
+                    "created_at": (
+                        user.created_at.isoformat() if user.created_at else None
+                    ),
+                    "updated_at": (
+                        user.updated_at.isoformat() if user.updated_at else None
+                    ),
+                }
+            )
+
         # 这里可以将备份数据保存到MinIO或其他存储服务
         logger.info(f"备份了 {len(backup_data)} 个用户数据")
         return {"status": "success", "backup_count": len(backup_data)}
-        
+
     except Exception as e:
         logger.error(f"备份用户数据失败: {e}")
         return {"status": "error", "message": str(e)}
     finally:
         db.close()
+
 
 @celery_app.task
 async def cleanup_expired_redis_sessions():
@@ -145,53 +163,53 @@ async def cleanup_expired_redis_sessions():
     try:
         session_cache = await get_session_cache_service()
         cleaned_count = await session_cache.cleanup_expired_sessions()
-        
+
         logger.info(f"Redis会话清理完成，清理了 {cleaned_count} 个过期会话")
         return {"status": "success", "cleaned_sessions": cleaned_count}
-        
+
     except Exception as e:
         logger.error(f"清理Redis过期会话失败: {e}")
         return {"status": "error", "message": str(e)}
+
 
 @celery_app.task
 async def cleanup_expired_caches():
     """清理过期的缓存数据"""
     try:
-        from app.core.api_cache_service import get_api_cache_service
-        
+
         # 获取缓存统计
         api_cache = await get_api_cache_service()
         stats = await api_cache.get_cache_stats()
-        
+
         # 这里可以添加更复杂的缓存清理逻辑
         # 比如清理超过一定时间的缓存项
-        
+
         logger.info(f"缓存清理任务完成，当前缓存统计: {stats}")
         return {"status": "success", "cache_stats": stats}
-        
+
     except Exception as e:
         logger.error(f"清理过期缓存失败: {e}")
         return {"status": "error", "message": str(e)}
+
 
 @celery_app.task
 async def generate_cache_report():
     """生成缓存使用报告"""
     try:
-        from app.core.api_cache_service import get_api_cache_service
-        
+
         api_cache = await get_api_cache_service()
         session_cache = await get_session_cache_service()
-        
+
         # 生成详细的缓存报告
         report = {
             "timestamp": datetime.now().isoformat(),
             "api_cache_stats": await api_cache.get_cache_stats(),
             # 可以添加更多统计信息
         }
-        
+
         logger.info(f"缓存报告生成完成: {report}")
         return {"status": "success", "report": report}
-        
+
     except Exception as e:
         logger.error(f"生成缓存报告失败: {e}")
         return {"status": "error", "message": str(e)}

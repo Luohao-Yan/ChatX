@@ -2,6 +2,13 @@
 
 # ChatX 本地 Python 开发环境启动脚本 (Conda版本)
 
+# 解析命令行参数
+FORCE_UPDATE=false
+if [[ "$1" == "--force-update" ]] || [[ "$1" == "-f" ]]; then
+    FORCE_UPDATE=true
+    echo "🔄 强制更新模式启动..."
+fi
+
 echo "🐍 ChatX 本地开发环境启动..."
 
 # 环境名称
@@ -47,13 +54,6 @@ if ! conda env list | grep -q "^${CONDA_ENV_NAME}"; then
 else
     echo "📦 激活现有conda环境: $CONDA_ENV_NAME"
     conda activate $CONDA_ENV_NAME
-    
-    # 检查依赖是否需要更新
-    if [[ requirements.txt -nt $CONDA_PREFIX ]] || [[ requirements-dev.txt -nt $CONDA_PREFIX ]]; then
-        echo "🔄 检测到依赖文件更新，正在更新包..."
-        pip install -r requirements.txt --upgrade
-        pip install -r requirements-dev.txt --upgrade
-    fi
 fi
 
 # 检查是否在正确的conda环境中
@@ -68,6 +68,33 @@ if [[ "$CONDA_DEFAULT_ENV" != "$CONDA_ENV_NAME" ]]; then
 fi
 
 echo "✅ Conda虚拟环境已激活: $CONDA_DEFAULT_ENV (Python $(python --version 2>&1 | cut -d' ' -f2))"
+
+# 统一的依赖管理逻辑
+DEPS_INSTALLED_FLAG="$CONDA_PREFIX/.chatx_deps_installed"
+
+# 检查是否需要安装/更新依赖
+need_update=false
+
+if [ "$FORCE_UPDATE" = true ]; then
+    need_update=true
+    echo "🔄 强制更新依赖..."
+elif [ ! -f "$DEPS_INSTALLED_FLAG" ]; then
+    need_update=true
+    echo "🔄 首次使用环境，安装依赖..."
+elif [[ requirements.txt -nt "$DEPS_INSTALLED_FLAG" ]] || [[ requirements-dev.txt -nt "$DEPS_INSTALLED_FLAG" ]]; then
+    need_update=true
+    echo "🔄 检测到依赖文件更新，正在更新包..."
+fi
+
+if [ "$need_update" = true ]; then
+    pip install -r requirements.txt --upgrade
+    pip install -r requirements-dev.txt --upgrade
+    # 创建/更新状态文件
+    touch "$DEPS_INSTALLED_FLAG"
+    echo "✅ 依赖安装完成"
+else
+    echo "✅ 依赖已是最新版本"
+fi
 
 # 检查是否存在 .env.dev 文件
 if [ ! -f .env.dev ]; then
@@ -86,11 +113,11 @@ fi
 echo "🔍 检查外部服务..."
 
 # 读取环境变量获取端口配置
-export $(cat .env 2>/dev/null | grep -v ^# | xargs) 2>/dev/null || true
+export $(cat .env.dev 2>/dev/null | grep -v ^# | xargs) 2>/dev/null || true
 
 # 使用环境变量或默认值
-POSTGRES_PORT=${POSTGRES_PORT:-5432}
-REDIS_PORT=${REDIS_PORT:-6379}
+POSTGRES_PORT=${POSTGRES_PORT:-5433}
+REDIS_PORT=${REDIS_PORT:-6380}
 MINIO_PORT=${MINIO_PORT:-9000}
 NEO4J_BOLT_PORT=${NEO4J_BOLT_PORT:-7687}
 WEAVIATE_PORT=${WEAVIATE_PORT:-8080}

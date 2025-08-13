@@ -13,6 +13,7 @@
 ### 🔒 挂载安全优化
 
 **开发环境 (`docker-compose.yml`)**：
+
 ```yaml
 volumes:
   - ./app:/app/app:ro  # 只读挂载，防止容器修改源码
@@ -21,6 +22,7 @@ volumes:
 ```
 
 **生产环境 (`docker-compose.prod.yml`)**：
+
 ```yaml
 volumes:
   - app_logs:/app/logs  # 仅日志持久化，无源码挂载
@@ -28,6 +30,7 @@ volumes:
 ```
 
 **数据安全**：
+
 - 所有外部服务使用Docker命名卷，数据不会污染源码目录
 - 应用容器以非root用户(appuser)运行，增强安全性
 - 开发环境代码挂载为只读，防止意外修改
@@ -50,8 +53,9 @@ chmod +x start.sh
 ```
 
 **访问地址**：
-- API文档: http://localhost/docs
-- API接口: http://localhost/api/*
+
+- API文档: <http://localhost/docs>
+- API接口: <http://localhost/api/>*
 
 ---
 
@@ -74,8 +78,9 @@ chmod +x dev-start.sh
 ```
 
 **访问地址**：
-- API文档: http://localhost:8000/docs  
-- API接口: http://localhost:8000/api/*
+
+- API文档: <http://localhost:8000/docs>  
+- API接口: <http://localhost:8000/api/>*
 
 ---
 
@@ -192,11 +197,11 @@ pytest
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
-| 主入口 | http://localhost | Nginx统一入口 |
-| API文档 | http://localhost/docs | FastAPI文档 |
-| API接口 | http://localhost/api/* | REST API |
-| MinIO控制台 | http://localhost/minio | 通过代理访问 |
-| Neo4j浏览器 | http://localhost/neo4j | 通过代理访问 |
+| 主入口 | <http://localhost> | Nginx统一入口 |
+| API文档 | <http://localhost/docs> | FastAPI文档 |
+| API接口 | <http://localhost/api/>* | REST API |
+| MinIO控制台 | <http://localhost/minio> | 通过代理访问 |
+| Neo4j浏览器 | <http://localhost/neo4j> | 通过代理访问 |
 
 ## 🐛 常见问题
 
@@ -254,24 +259,51 @@ pip install -r requirements.txt
 ## 📁 开发环境文件结构
 
 ```
-backend/
-├── docker-compose.yml              # 完整应用部署
-├── docker-compose.services.yml     # 外部服务（开发用）
-├── docker-compose.prod.yml         # 生产环境覆盖
-├── start.sh                        # 完整环境启动脚本
-├── dev-start.sh                    # 开发环境启动脚本
-├── .env.example                    # 环境变量模板
-├── .env.dev                        # 开发环境变量（自动生成）
-├── requirements.txt                # 基础依赖
-├── requirements-dev.txt            # 开发依赖
-├── alembic.ini                     # 数据库迁移配置
-└── app/                            # 应用代码
-    ├── main.py                     # FastAPI入口
-    ├── api/                        # API路由
-    ├── core/                       # 核心配置
-    ├── models/                     # 数据模型
-    ├── services/                   # 业务逻辑
-    └── ...
+按照DDD分层原则
+
+  📂 建议的新目录结构：
+
+  app/
+  ├── core/                          # 🔧 核心基础设施 (保留最基础的)
+  │   ├── config.py                  # ✅ 配置管理
+  │   ├── exceptions.py              # ✅ 异常定义
+  │   ├── logging_config.py          # ✅ 日志配置
+  │   └── banner.py                  # ✅ 启动横幅
+  │
+  ├── infrastructure/                # 🔧 基础设施层 (扩展)
+  │   ├── clients/                   # 外部服务客户端
+  │   │   ├── minio_client.py        # 📦 对象存储客户端
+  │   │   ├── neo4j_client.py        # 🕸️ 图数据库客户端
+  │   │   ├── weaviate_client.py     # 🔍 向量数据库客户端
+  │   │   └── redis.py               # ⚡ Redis客户端
+  │   ├── persistence/               # 数据持久化
+  │   │   ├── database.py            # 💾 数据库连接
+  │   │   └── repositories/          # 已有
+  │   └── security/                  # 安全相关
+  │       └── security.py            # 🔐 安全工具
+  │
+  ├── application/                   # 📋 应用层 (扩展)
+  │   ├── services/                  # 已有
+  │   └── middleware/                # 应用中间件
+  │       ├── api_cache_service.py   # 🗄️ API缓存
+  │       ├── rate_limiter_service.py # 🚦 限流服务
+  │       ├── session_cache_service.py # 💾 会话缓存
+  │       └── verification_service.py # 📧 验证服务
+  │
+  ├── domain/                        # 🎯 领域层 (扩展)
+  │   ├── services/                  # 已有
+  │   └── initialization/            # 系统初始化
+  │       ├── rbac_init.py           # 🛡️ RBAC初始化
+  │       ├── admin_init.py          # 👑 管理员初始化
+  │       └── permissions.py         # 🔑 权限定义
+  │
+  └── shared/                        # 🌐 共享层 (新增)
+      ├── monitoring/                # 监控相关
+      │   ├── metrics.py             # 📊 指标收集
+      │   └── exception_handlers.py  # ❌ 异常处理
+      └── multi_tenancy/             # 多租户
+          └── tenant.py              # 🏢 租户管理
+
 ```
 
 ## 🎯 开发建议
@@ -285,6 +317,7 @@ backend/
 ## 🔄 工作流程建议
 
 1. **启动开发环境**：
+
    ```bash
    docker-compose -f docker-compose.services.yml up -d
    ./dev-start.sh
@@ -296,6 +329,7 @@ backend/
    - 定期运行代码质量检查
 
 3. **功能测试**：
+
    ```bash
    # 停止开发环境
    Ctrl+C  # 停止FastAPI
@@ -306,6 +340,7 @@ backend/
    ```
 
 4. **提交代码**：
+
    ```bash
    # 代码检查
    black app/ && isort app/ && flake8 app/

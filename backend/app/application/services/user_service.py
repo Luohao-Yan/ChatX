@@ -8,11 +8,11 @@ from app.domain.repositories.user_repository import (
 from app.domain.services.user_domain_service import UserDomainService
 from app.schemas.user_schemas import UserCreate, UserUpdate, LoginRequest
 from app.models.user_models import User, UserSession, UserVerification
-from app.core import security
-from app.core.verification_service import get_verification_service
-from app.core.session_cache_service import get_session_cache_service
-from app.core.api_cache_service import get_api_cache_service, cached_api
-from app.core.rate_limiter_service import get_rate_limiter_service
+from app.infrastructure.securities import security
+from app.application.middleware.verification_service import get_verification_service
+from app.application.middleware.session_cache_service import get_session_cache_service
+from app.application.middleware.api_cache_service import get_api_cache_service, cached_api
+from app.application.middleware.rate_limiter_service import get_rate_limiter_service
 from app.tasks.user_tasks import send_verification_email
 from app.application.services.email_service import get_email_service
 

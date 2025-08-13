@@ -13,7 +13,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, JSON, BigInteger
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.infrastructure.persistence.database import Base
 from enum import Enum
 
 __all__ = [

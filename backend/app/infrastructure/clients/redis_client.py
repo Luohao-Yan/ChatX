@@ -23,7 +23,7 @@ class RedisClient:
     async def disconnect(self):
         """断开Redis连接"""
         if self.redis_client:
-            await self.redis_client.close()
+            await self.redis_client.aclose()
             logger.info("Redis连接已关闭")
     
     async def set(self, key: str, value: Any, expire: Optional[int] = None) -> bool:

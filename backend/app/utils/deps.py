@@ -3,53 +3,67 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
-from app.core.database import get_db
+from app.infrastructure.persistence.database import get_db
 from app.core.config import settings
 from app.models.user_models import User
 from app.schemas.user_schemas import TokenPayload
 from app.application.services.user_service import UserService
 from app.application.services.file_service import FileApplicationService
 from app.application.services.rbac_service import (
-    RoleApplicationService, PermissionApplicationService, UserPermissionApplicationService
+    RoleApplicationService,
+    PermissionApplicationService,
+    UserPermissionApplicationService,
 )
 from app.infrastructure.repositories.user_repository_impl import (
-    UserRepository, UserSessionRepository, UserVerificationRepository
+    UserRepository,
+    UserSessionRepository,
+    UserVerificationRepository,
 )
 from app.infrastructure.repositories.file_repository_impl import (
-    FileRepository, FolderRepository, FileShareRepository, 
-    FileActivityRepository, FileTagRepository, FileCategoryRepository
+    FileRepository,
+    FolderRepository,
+    FileShareRepository,
+    FileActivityRepository,
+    FileTagRepository,
+    FileCategoryRepository,
 )
 from app.infrastructure.repositories.rbac_repository_impl import (
-    RoleRepository, PermissionRepository, UserPermissionRepository
+    RoleRepository,
+    PermissionRepository,
+    UserPermissionRepository,
 )
-from app.core.minio_client import get_minio
-from app.core.weaviate_client import get_weaviate  
-from app.core.neo4j_client import get_neo4j
+from app.infrastructure.clients.minio_client import get_minio
+from app.infrastructure.clients.weaviate_client import get_weaviate
+from app.infrastructure.clients.neo4j_client import get_neo4j
 
 security = HTTPBearer()
 
+
 def get_current_user(
     db: Session = Depends(get_db),
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     try:
         payload = jwt.decode(
-            credentials.credentials, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            credentials.credentials,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
         )
         token_data = TokenPayload(**payload)
     except JWTError:
         raise credentials_exception
-    
+
     user = db.query(User).filter(User.id == token_data.sub).first()
     if user is None:
         raise credentials_exception
     return user
+
 
 def get_current_active_user(
     current_user: User = Depends(get_current_user),
@@ -57,6 +71,7 @@ def get_current_active_user(
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
 
 def get_current_active_superuser(
     current_user: User = Depends(get_current_user),
@@ -73,15 +88,15 @@ def get_user_service(db: Session = Depends(get_db)) -> UserService:
     user_repo = UserRepository(db)
     session_repo = UserSessionRepository(db)
     verification_repo = UserVerificationRepository(db)
-    
+
     return UserService(user_repo, session_repo, verification_repo)
 
 
 def get_file_service(
     db: Session = Depends(get_db),
-    minio_client = Depends(get_minio),
-    weaviate_client = Depends(get_weaviate),
-    neo4j_client = Depends(get_neo4j)
+    minio_client=Depends(get_minio),
+    weaviate_client=Depends(get_weaviate),
+    neo4j_client=Depends(get_neo4j),
 ) -> FileApplicationService:
     """获取文件服务实例 - 依赖注入工厂"""
     file_repo = FileRepository(db)
@@ -90,7 +105,7 @@ def get_file_service(
     activity_repo = FileActivityRepository(db)
     tag_repo = FileTagRepository(db)
     category_repo = FileCategoryRepository(db)
-    
+
     return FileApplicationService(
         file_repo=file_repo,
         folder_repo=folder_repo,
@@ -100,7 +115,7 @@ def get_file_service(
         category_repo=category_repo,
         storage_service=minio_client,
         search_service=weaviate_client,
-        graph_service=neo4j_client
+        graph_service=neo4j_client,
     )
 
 
@@ -110,13 +125,17 @@ def get_role_service(db: Session = Depends(get_db)) -> RoleApplicationService:
     return RoleApplicationService(role_repo)
 
 
-def get_permission_service(db: Session = Depends(get_db)) -> PermissionApplicationService:
+def get_permission_service(
+    db: Session = Depends(get_db),
+) -> PermissionApplicationService:
     """获取权限服务实例 - 依赖注入工厂"""
     permission_repo = PermissionRepository(db)
     return PermissionApplicationService(permission_repo)
 
 
-def get_user_permission_service(db: Session = Depends(get_db)) -> UserPermissionApplicationService:
+def get_user_permission_service(
+    db: Session = Depends(get_db),
+) -> UserPermissionApplicationService:
     """获取用户权限服务实例 - 依赖注入工厂"""
     user_permission_repo = UserPermissionRepository(db)
     permission_repo = PermissionRepository(db)

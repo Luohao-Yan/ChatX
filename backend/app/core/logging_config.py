@@ -20,8 +20,24 @@ request_id_context: ContextVar[str] = ContextVar('request_id', default='')
 user_id_context: ContextVar[str] = ContextVar('user_id', default='')
 tenant_id_context: ContextVar[str] = ContextVar('tenant_id', default='')
 
+class SimpleDevFormatter(logging.Formatter):
+    """开发环境简洁日志格式化器"""
+    
+    def format(self, record):
+        # 简化的格式：时间 - 模块 - 级别 - [文件:行号] - 函数 - 消息
+        timestamp = datetime.now().strftime('%H:%M:%S')
+        
+        # 简化模块名
+        module_parts = record.name.split('.')
+        if len(module_parts) > 2:
+            module = f"{module_parts[-2]}.{module_parts[-1]}"
+        else:
+            module = record.name
+            
+        return f"{timestamp} - {module} - {record.levelname} - [{record.filename}:{record.lineno}] - {record.funcName} - {record.getMessage()}"
+
 class StructuredFormatter(jsonlogger.JsonFormatter):
-    """结构化JSON日志格式化器"""
+    """结构化JSON日志格式化器（生产环境）"""
     
     def add_fields(self, log_record: Dict[str, Any], record: logging.LogRecord, message_dict: Dict[str, Any]):
         """添加自定义字段到日志记录"""
@@ -31,23 +47,21 @@ class StructuredFormatter(jsonlogger.JsonFormatter):
         log_record['timestamp'] = datetime.utcnow().isoformat() + 'Z'
         log_record['level'] = record.levelname
         log_record['logger'] = record.name
-        log_record['thread_id'] = threading.current_thread().ident
-        log_record['process_id'] = os.getpid()
         
-        # 请求追踪信息
-        log_record['request_id'] = request_id_context.get() or ''
-        log_record['user_id'] = user_id_context.get() or ''
-        log_record['tenant_id'] = tenant_id_context.get() or ''
+        # 请求追踪信息（仅在有值时添加）
+        request_id = request_id_context.get()
+        if request_id:
+            log_record['request_id'] = request_id
+        user_id = user_id_context.get()
+        if user_id:
+            log_record['user_id'] = user_id
+        tenant_id = tenant_id_context.get()
+        if tenant_id:
+            log_record['tenant_id'] = tenant_id
         
         # 代码位置信息
-        log_record['filename'] = record.filename
+        log_record['source'] = f"{record.filename}:{record.lineno}"
         log_record['function'] = record.funcName
-        log_record['line_number'] = record.lineno
-        
-        # 环境信息
-        log_record['environment'] = os.getenv('ENVIRONMENT', 'development')
-        log_record['service'] = 'chatx-api'
-        log_record['version'] = os.getenv('APP_VERSION', '1.0.0')
 
 class RequestContextFilter(logging.Filter):
     """请求上下文过滤器"""
@@ -85,9 +99,8 @@ def get_logging_config(log_level: str = "INFO", log_file: str = None) -> Dict[st
                 "()": StructuredFormatter,
                 "format": "%(asctime)s %(name)s %(levelname)s %(message)s"
             },
-            "simple": {
-                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                "datefmt": "%Y-%m-%d %H:%M:%S"
+            "dev_simple": {
+                "()": SimpleDevFormatter
             },
             "detailed": {
                 "format": "%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(funcName)s - %(message)s",
@@ -103,8 +116,7 @@ def get_logging_config(log_level: str = "INFO", log_file: str = None) -> Dict[st
             "console": {
                 "class": "logging.StreamHandler",
                 "level": log_level,
-                "formatter": "structured" if os.getenv('ENVIRONMENT') == 'production' else "detailed",
-                "filters": ["request_context"],
+                "formatter": "structured" if os.getenv('ENVIRONMENT') == 'production' else "dev_simple",
                 "stream": sys.stdout
             }
         },
@@ -123,17 +135,17 @@ def get_logging_config(log_level: str = "INFO", log_file: str = None) -> Dict[st
             },
             # Uvicorn日志
             "uvicorn": {
-                "level": "INFO",
+                "level": "WARNING",
                 "handlers": ["console"],
                 "propagate": False
             },
             "uvicorn.error": {
-                "level": "INFO",
+                "level": "WARNING",
                 "handlers": ["console"],
                 "propagate": False
             },
             "uvicorn.access": {
-                "level": "INFO",
+                "level": "ERROR",
                 "handlers": ["console"],
                 "propagate": False,
                 "formatter": "structured"
@@ -151,13 +163,29 @@ def get_logging_config(log_level: str = "INFO", log_file: str = None) -> Dict[st
             },
             # Celery日志
             "celery": {
-                "level": "INFO",
+                "level": "WARNING",
                 "handlers": ["console"],
                 "propagate": False
             },
             # Redis日志
             "redis": {
+                "level": "ERROR",
+                "handlers": ["console"],
+                "propagate": False
+            },
+            # 第三方库日志控制
+            "httpx": {
                 "level": "WARNING",
+                "handlers": ["console"],
+                "propagate": False
+            },
+            "passlib": {
+                "level": "ERROR",
+                "handlers": ["console"],
+                "propagate": False
+            },
+            "pydantic": {
+                "level": "ERROR", 
                 "handlers": ["console"],
                 "propagate": False
             }

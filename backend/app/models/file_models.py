@@ -18,7 +18,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, BigInteger, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.infrastructure.persistence.database import Base
 from enum import Enum
 
 __all__ = [
@@ -179,7 +179,7 @@ class Folder(Base):
     # SQLAlchemy关系映射
     owner = relationship("User")  # 文件夹所有者对象
     parent = relationship("Folder", remote_side=[id])  # 父文件夹对象
-    children = relationship("Folder", cascade="all, delete-orphan")  # 子文件夹列表
+    children = relationship("Folder", cascade="all, delete-orphan", overlaps="parent")  # 子文件夹列表
     files = relationship("File", back_populates="folder")  # 文件夹内的文件列表
     
     # 数据库索引配置
@@ -294,7 +294,7 @@ class FileComment(Base):
     file = relationship("File", back_populates="comments")
     user = relationship("User")
     parent = relationship("FileComment", remote_side=[id])
-    replies = relationship("FileComment", cascade="all, delete-orphan")
+    replies = relationship("FileComment", cascade="all, delete-orphan", overlaps="parent")
 
 class FileCategory(Base):
     __tablename__ = "sys_file_categories"
@@ -324,7 +324,7 @@ class FileCategory(Base):
     # 关系
     owner = relationship("User")
     parent = relationship("FileCategory", remote_side=[id])
-    children = relationship("FileCategory", cascade="all, delete-orphan")
+    children = relationship("FileCategory", cascade="all, delete-orphan", overlaps="parent")
     
     # 索引
     __table_args__ = (

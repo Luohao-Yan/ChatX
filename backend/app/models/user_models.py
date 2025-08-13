@@ -16,7 +16,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, JSON, Table, UniqueConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.infrastructure.persistence.database import Base
 from enum import Enum as PyEnum
 
 __all__ = [
@@ -152,7 +152,8 @@ class User(Base):
     department = relationship("Department", back_populates="users")  # 所属部门关系
     sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")  # 用户会话列表（一对多）
     files = relationship("File", back_populates="owner")  # 用户拥有的文件列表
-    roles = relationship("Role", secondary=user_roles, back_populates="users")  # 用户角色列表（多对多）
+    roles = relationship("Role", secondary=user_roles, back_populates="users", 
+                        foreign_keys=[user_roles.c.user_id, user_roles.c.role_id])  # 用户角色列表（多对多）
     deleted_by_user = relationship("User", foreign_keys=[deleted_by], remote_side="User.id")  # 执行删除操作的用户对象
     
     # 数据库表配置和索引
@@ -308,7 +309,8 @@ class Role(Base):
     parent = relationship("Role", remote_side=[id], back_populates="children")  # 父角色对象
     children = relationship("Role", back_populates="parent", cascade="all, delete-orphan")  # 子角色列表
     permissions = relationship("Permission", secondary=role_permissions, back_populates="roles")  # 角色拥有的权限列表（多对多）
-    users = relationship("User", secondary=user_roles, back_populates="roles")  # 拥有该角色的用户列表（多对多）
+    users = relationship("User", secondary=user_roles, back_populates="roles",
+                        foreign_keys=[user_roles.c.user_id, user_roles.c.role_id])  # 拥有该角色的用户列表（多对多）
     creator = relationship("User", foreign_keys=[created_by])  # 创建者用户对象
     deleted_by_user = relationship("User", foreign_keys=[deleted_by])  # 执行删除的用户对象
     
@@ -436,7 +438,7 @@ class UserPermission(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="最后更新时间")
     
     # SQLAlchemy 关系映射
-    user = relationship("User")  # 被授权的用户对象
+    user = relationship("User", foreign_keys=[user_id])  # 被授权的用户对象
     permission = relationship("Permission")  # 权限对象
     granter = relationship("User", foreign_keys=[granted_by])  # 授权者用户对象
     

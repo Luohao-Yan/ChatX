@@ -6,7 +6,7 @@ RBAC系统初始化脚本
 from sqlalchemy.orm import Session
 from app.models.user_models import Role, Permission, User
 from app.models.tenant_models import Tenant
-from app.core.permissions import Permissions, DefaultRoles
+from app.domain.initialization.permissions import Permissions, DefaultRoles
 import logging
 
 logger = logging.getLogger(__name__)
@@ -57,6 +57,12 @@ def create_default_permissions(db: Session) -> dict:
         {"name": Permissions.SYSTEM_CONFIG, "display_name": "系统配置", "resource_type": "system", "action": "config", "category": "系统管理"},
         {"name": Permissions.SYSTEM_MONITOR, "display_name": "系统监控", "resource_type": "system", "action": "monitor", "category": "系统管理"},
         {"name": Permissions.SYSTEM_BACKUP, "display_name": "系统备份", "resource_type": "system", "action": "backup", "category": "系统管理"},
+        
+        # 回收站管理权限
+        {"name": Permissions.RECYCLE_BIN_READ, "display_name": "查看回收站", "resource_type": "recycle_bin", "action": "read", "category": "回收站管理"},
+        {"name": Permissions.RECYCLE_BIN_RESTORE, "display_name": "恢复回收站项目", "resource_type": "recycle_bin", "action": "restore", "category": "回收站管理"},
+        {"name": Permissions.RECYCLE_BIN_DELETE, "display_name": "永久删除", "resource_type": "recycle_bin", "action": "delete", "category": "回收站管理"},
+        {"name": Permissions.RECYCLE_BIN_MANAGE, "display_name": "管理回收站", "resource_type": "recycle_bin", "action": "manage", "category": "回收站管理"},
     ]
     
     created_permissions = {}
@@ -126,6 +132,7 @@ def create_default_roles(db: Session, permissions: dict) -> dict:
                 Permissions.ORG_CREATE, Permissions.ORG_READ, Permissions.ORG_UPDATE, Permissions.ORG_MANAGE,
                 Permissions.FILE_CREATE, Permissions.FILE_READ, Permissions.FILE_UPDATE, Permissions.FILE_DELETE,
                 Permissions.FILE_SHARE, Permissions.FILE_UPLOAD, Permissions.FILE_DOWNLOAD,
+                Permissions.RECYCLE_BIN_READ, Permissions.RECYCLE_BIN_RESTORE, Permissions.RECYCLE_BIN_DELETE, Permissions.RECYCLE_BIN_MANAGE,
             ]
         },
         {
@@ -139,6 +146,7 @@ def create_default_roles(db: Session, permissions: dict) -> dict:
                 Permissions.ORG_READ, Permissions.ORG_UPDATE,
                 Permissions.FILE_CREATE, Permissions.FILE_READ, Permissions.FILE_UPDATE, 
                 Permissions.FILE_SHARE, Permissions.FILE_UPLOAD, Permissions.FILE_DOWNLOAD,
+                Permissions.RECYCLE_BIN_READ, Permissions.RECYCLE_BIN_RESTORE,
             ]
         },
         {

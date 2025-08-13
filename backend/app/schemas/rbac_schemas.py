@@ -3,7 +3,7 @@ RBAC 相关的 Pydantic 模型
 包括角色、权限的创建、更新和响应模型
 """
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
@@ -45,8 +45,7 @@ class RoleSchema(RoleBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # 权限相关模型
@@ -89,8 +88,7 @@ class PermissionSchema(PermissionBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # 角色权限关联模型
@@ -151,8 +149,7 @@ class UserPermissionSchema(BaseModel):
     source: str = "direct"  # direct 或 role
     granted_by: Optional[str] = None
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # 用户角色权限汇总模型
@@ -173,8 +170,7 @@ class RoleHierarchy(BaseModel):
     parent_role_name: Optional[str] = None
     children: List['RoleHierarchy'] = []
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PermissionTree(BaseModel):
@@ -185,8 +181,7 @@ class PermissionTree(BaseModel):
     parent_id: Optional[int] = None
     children: List['PermissionTree'] = []
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # 权限检查请求模型
@@ -256,5 +251,4 @@ class PermissionAuditLog(BaseModel):
     ip_address: Optional[str] = None
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

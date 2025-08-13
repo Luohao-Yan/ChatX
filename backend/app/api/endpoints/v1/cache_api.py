@@ -2,10 +2,10 @@ from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.security import HTTPBearer
 
-from app.core.api_cache_service import get_api_cache_service
-from app.core.session_cache_service import get_session_cache_service
-from app.core.verification_service import get_verification_service
-from app.core.rate_limiter_service import get_rate_limiter_service
+from app.application.middleware.api_cache_service import get_api_cache_service
+from app.application.middleware.session_cache_service import get_session_cache_service
+from app.application.middleware.verification_service import get_verification_service
+from app.application.middleware.rate_limiter_service import get_rate_limiter_service
 from app.models.user_models import User
 from app.utils.deps import get_current_active_user
 

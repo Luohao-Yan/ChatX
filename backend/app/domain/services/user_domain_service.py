@@ -1,5 +1,5 @@
 from typing import Optional, Tuple
-from app.core import security
+from app.infrastructure.securities import security
 from app.models.user_models import User, UserStatus
 from datetime import datetime, timezone
 

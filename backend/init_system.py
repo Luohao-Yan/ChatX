@@ -6,11 +6,13 @@
 
 import asyncio
 import logging
+import sys
 from sqlalchemy.orm import Session
-from app.core.database import get_db_session
-from app.core.rbac_init import initialize_rbac_system
-from app.core.admin_init import initialize_super_admin, get_super_admin_info
+from app.infrastructure.persistence.database import get_db_session
+from app.domain.initialization.rbac_init import initialize_rbac_system
+from app.domain.initialization.admin_init import initialize_super_admin, get_super_admin_info
 from app.core.config import settings
+from app.application.services.email_service import EmailService
 
 # 配置日志
 logging.basicConfig(
@@ -112,7 +114,6 @@ def check_system_status():
 
 def show_email_configs():
     """显示支持的邮件配置"""
-    from app.application.services.email_service import EmailService
     
     logger.info("\n=== 支持的邮件服务配置 ===")
     logger.info("可以在 .env 文件中配置以下邮件服务：\n")
@@ -139,7 +140,6 @@ def show_email_configs():
 
 def main():
     """主函数"""
-    import sys
     
     if len(sys.argv) > 1:
         command = sys.argv[1]

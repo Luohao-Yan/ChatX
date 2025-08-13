@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
@@ -41,8 +41,7 @@ class UserInDBBase(UserBase):
     updated_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class User(UserInDBBase):
     roles: Optional[List[str]] = None  # 角色名列表
@@ -106,8 +105,7 @@ class UserSessionInfo(BaseModel):
     last_used: datetime
     is_current: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserRoleAssign(BaseModel):

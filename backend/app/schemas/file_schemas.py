@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
@@ -37,7 +37,8 @@ class FileCategoryBase(BaseModel):
     parent_id: Optional[int] = None
 
 class FileCategoryCreate(FileCategoryBase):
-    @validator('name')
+    @field_validator('name')
+    @classmethod
     def validate_name(cls, v):
         if len(v.strip()) < 1:
             raise ValueError('分类名称不能为空')
@@ -63,8 +64,7 @@ class FileCategory(FileCategoryBase):
     created_at: datetime
     updated_at: Optional[datetime]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FileCategoryTree(FileCategory):
     children: List['FileCategoryTree'] = []
@@ -77,7 +77,8 @@ class FileTagBase(BaseModel):
     color: Optional[str] = None
 
 class FileTagCreate(FileTagBase):
-    @validator('name')
+    @field_validator('name')
+    @classmethod
     def validate_name(cls, v):
         if len(v.strip()) < 1:
             raise ValueError('标签名称不能为空')
@@ -98,8 +99,7 @@ class FileTag(FileTagBase):
     created_at: datetime
     updated_at: Optional[datetime]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # 文件夹相关模式
 class FolderBase(BaseModel):
@@ -109,7 +109,8 @@ class FolderBase(BaseModel):
     visibility: VisibilityLevel = VisibilityLevel.PRIVATE
 
 class FolderCreate(FolderBase):
-    @validator('name')
+    @field_validator('name')
+    @classmethod
     def validate_name(cls, v):
         if len(v.strip()) < 1:
             raise ValueError('文件夹名称不能为空')
@@ -132,8 +133,7 @@ class Folder(FolderBase):
     created_at: datetime
     updated_at: Optional[datetime]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FolderTree(Folder):
     children: List['FolderTree'] = []
@@ -152,7 +152,8 @@ class FileBase(BaseModel):
 class FileCreate(FileBase):
     original_name: str
     
-    @validator('title')
+    @field_validator('title')
+    @classmethod
     def validate_title(cls, v):
         if v and len(v) > 255:
             raise ValueError('标题过长')
@@ -186,8 +187,7 @@ class File(FileBase):
     updated_at: Optional[datetime]
     last_accessed: Optional[datetime]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FileInfo(BaseModel):
     """文件基本信息（列表显示用）"""
@@ -204,8 +204,7 @@ class FileInfo(BaseModel):
     download_count: int
     view_count: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FileDetail(File):
     """文件详细信息"""
@@ -233,8 +232,7 @@ class FileVersion(FileVersionBase):
     created_at: datetime
     creator_name: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # 文件分享
 class FileShareBase(BaseModel):
@@ -269,8 +267,7 @@ class FileShare(FileShareBase):
     sharer_name: Optional[str] = None
     recipient_name: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # 文件评论
 class FileCommentBase(BaseModel):
@@ -278,7 +275,8 @@ class FileCommentBase(BaseModel):
     parent_id: Optional[int] = None
 
 class FileCommentCreate(FileCommentBase):
-    @validator('content')
+    @field_validator('content')
+    @classmethod
     def validate_content(cls, v):
         if len(v.strip()) < 1:
             raise ValueError('评论内容不能为空')
@@ -289,7 +287,8 @@ class FileCommentCreate(FileCommentBase):
 class FileCommentUpdate(BaseModel):
     content: str
     
-    @validator('content')
+    @field_validator('content')
+    @classmethod
     def validate_content(cls, v):
         if len(v.strip()) < 1:
             raise ValueError('评论内容不能为空')
@@ -310,8 +309,7 @@ class FileComment(FileCommentBase):
     reply_count: int = 0
     replies: List['FileComment'] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # 文件活动记录
 class FileActivity(BaseModel):
@@ -328,8 +326,7 @@ class FileActivity(BaseModel):
     user_name: Optional[str] = None
     file_name: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # 文件搜索和过滤
 class FileSearchParams(BaseModel):
@@ -356,7 +353,8 @@ class FileSearchParams(BaseModel):
     page: int = 1
     per_page: int = 20
     
-    @validator('per_page')
+    @field_validator('per_page')
+    @classmethod
     def validate_per_page(cls, v):
         if v < 1 or v > 100:
             raise ValueError('每页数量必须在1-100之间')

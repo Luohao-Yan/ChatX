@@ -1,8 +1,8 @@
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
-from app.core.tenant import (
+from app.infrastructure.persistence.database import SessionLocal
+from app.shared.multi_tenancy.tenant import (
     get_tenant_from_request, 
     get_tenant_by_identifier, 
     validate_tenant_status,

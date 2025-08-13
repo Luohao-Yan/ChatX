@@ -21,8 +21,8 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from app.core.rbac_init import initialize_rbac_system
-from app.core.database import SessionLocal
+from app.domain.initialization.rbac_init import initialize_rbac_system
+from app.infrastructure.persistence.database import SessionLocal
 from app.models.user_models import User, Role, Permission
 import logging
 

@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 from typing import List, Optional
 from decouple import config
 
@@ -24,6 +25,7 @@ class Settings(BaseSettings):
     
     # Weaviate设置
     WEAVIATE_URL: str = config("WEAVIATE_URL", default="http://localhost:8080")
+    WEAVIATE_GRPC_PORT: int = config("WEAVIATE_GRPC_PORT", default=50051, cast=int)
     
     # Neo4j设置
     NEO4J_URL: str = config("NEO4J_URL", default="bolt://localhost:7687")
@@ -31,19 +33,22 @@ class Settings(BaseSettings):
     NEO4J_PASSWORD: str = config("NEO4J_PASSWORD", default="chatx_neo4j_password")
     
     # CORS设置
-    CORS_ORIGINS: List[str] = config(
-        "CORS_ORIGINS", 
-        default="http://localhost:5173,http://localhost:3000",
-        cast=lambda v: [s.strip() for s in v.split(',')] if isinstance(v, str) else v
-    )
+    CORS_ORIGINS: str = config("CORS_ORIGINS", default="http://localhost:5173,http://localhost:3000")
+    
+    @property
+    def cors_origins_list(self) -> List[str]:
+        return [s.strip() for s in self.CORS_ORIGINS.split(',')]
     
     # 文件上传设置
     MAX_FILE_SIZE: int = config("MAX_FILE_SIZE", default=10 * 1024 * 1024, cast=int)  # 10MB
-    ALLOWED_FILE_TYPES: List[str] = config(
+    ALLOWED_FILE_TYPES: str = config(
         "ALLOWED_FILE_TYPES",
-        default="image/jpeg,image/png,image/gif,application/pdf,text/plain,application/json",
-        cast=lambda v: [s.strip() for s in v.split(',')]
+        default="image/jpeg,image/png,image/gif,application/pdf,text/plain,application/json"
     )
+    
+    @property
+    def allowed_file_types_list(self) -> List[str]:
+        return [s.strip() for s in self.ALLOWED_FILE_TYPES.split(',')]
     
     # 环境设置
     ENVIRONMENT: str = config("ENVIRONMENT", default="development")
@@ -82,8 +87,9 @@ class Settings(BaseSettings):
     SECURITY_HEADERS_ENABLED: bool = config("SECURITY_HEADERS_ENABLED", default=True, cast=bool)
     RATE_LIMIT_ENABLED: bool = config("RATE_LIMIT_ENABLED", default=True, cast=bool)
     
-    class Config:
-        env_file = ".env"
-        extra = "ignore"  # 忽略未定义的环境变量
+    model_config = ConfigDict(
+        env_file=".env",
+        extra="ignore"  # 忽略未定义的环境变量
+    )
 
 settings = Settings()

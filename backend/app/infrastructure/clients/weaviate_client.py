@@ -1,44 +1,62 @@
 import weaviate
-from weaviate.classes.init import Auth
-from app.core.config import settings
+from weaviate.classes.config import Configure
 import logging
 from typing import Dict, List, Optional, Any
 import json
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 class WeaviateClient:
     def __init__(self):
         self.client = None
-        self._connect()
     
     def _connect(self):
         """连接到Weaviate"""
+        if self.client is not None:
+            return self.client
+            
         try:
+            # 使用 Weaviate v4 客户端连接（支持gRPC+REST）
             self.client = weaviate.connect_to_local(
-                host=settings.WEAVIATE_URL.replace("http://", "").replace("https://", "")
+                host="localhost",
+                port=8080,
+                grpc_port=settings.WEAVIATE_GRPC_PORT
             )
-            logger.info("成功连接到Weaviate")
+            
+            # 测试连接
+            if self.client.is_ready():
+                logger.info("成功连接到Weaviate")
+            else:
+                raise Exception("Weaviate服务未就绪")
+                
+            return self.client
         except Exception as e:
             logger.error(f"连接Weaviate失败: {e}")
+            self.client = None
             raise
+    
+    def get_client(self):
+        """获取客户端连接，支持延迟连接"""
+        if self.client is None:
+            self._connect()
+        return self.client
     
     def create_collection(self, collection_name: str, properties: List[Dict]) -> bool:
         """创建集合"""
         try:
-            collection_config = {
-                "class": collection_name,
-                "properties": properties,
-                "vectorizer": "none"  # 不使用自动向量化
-            }
+            client = self.get_client()
             
             # 检查集合是否已存在
-            existing_collections = self.client.schema.get()["classes"]
-            if any(col["class"] == collection_name for col in existing_collections):
+            if client.collections.exists(collection_name):
                 logger.info(f"集合 {collection_name} 已存在")
                 return True
             
-            self.client.schema.create_class(collection_config)
+            # 使用 v4 API 创建集合
+            client.collections.create(
+                name=collection_name,
+                vector_config=Configure.VectorIndex.none()  # 不使用自动向量化
+            )
             logger.info(f"成功创建集合: {collection_name}")
             return True
         except Exception as e:
@@ -54,14 +72,16 @@ class WeaviateClient:
     ) -> Optional[str]:
         """添加对象"""
         try:
-            result = self.client.data_object.create(
-                data_object=properties,
-                class_name=collection_name,
+            client = self.get_client()
+            collection = client.collections.get(collection_name)
+            
+            result = collection.data.insert(
+                properties=properties,
                 vector=vector,
                 uuid=object_id
             )
             logger.info(f"成功添加对象到 {collection_name}: {result}")
-            return result
+            return str(result)
         except Exception as e:
             logger.error(f"添加对象失败: {e}")
             return None
@@ -75,30 +95,32 @@ class WeaviateClient:
     ) -> List[Dict]:
         """搜索对象"""
         try:
+            client = self.get_client()
+            collection = client.collections.get(collection_name)
+            
             if vector:
                 # 向量搜索
-                result = (
-                    self.client.query
-                    .get(collection_name)
-                    .with_near_vector({"vector": vector})
-                    .with_limit(limit)
-                    .do()
+                response = collection.query.near_vector(
+                    near_vector=vector,
+                    limit=limit
                 )
             else:
-                # 文本搜索
-                result = (
-                    self.client.query
-                    .get(collection_name)
-                    .with_where({
-                        "path": ["content"],
-                        "operator": "Like",
-                        "valueText": f"*{query}*"
-                    })
-                    .with_limit(limit)
-                    .do()
+                # 文本搜索 - 使用 BM25 搜索
+                response = collection.query.bm25(
+                    query=query,
+                    limit=limit
                 )
             
-            return result.get("data", {}).get("Get", {}).get(collection_name, [])
+            # 转换为兼容格式
+            results = []
+            for obj in response.objects:
+                results.append({
+                    "id": str(obj.uuid),
+                    "properties": obj.properties,
+                    "vector": obj.vector
+                })
+            
+            return results
         except Exception as e:
             logger.error(f"搜索对象失败: {e}")
             return []
@@ -112,10 +134,12 @@ class WeaviateClient:
     ) -> bool:
         """更新对象"""
         try:
-            self.client.data_object.update(
-                data_object=properties,
-                class_name=collection_name,
+            client = self.get_client()
+            collection = client.collections.get(collection_name)
+            
+            collection.data.update(
                 uuid=object_id,
+                properties=properties,
                 vector=vector
             )
             logger.info(f"成功更新对象 {object_id} in {collection_name}")
@@ -127,10 +151,10 @@ class WeaviateClient:
     def delete_object(self, collection_name: str, object_id: str) -> bool:
         """删除对象"""
         try:
-            self.client.data_object.delete(
-                uuid=object_id,
-                class_name=collection_name
-            )
+            client = self.get_client()
+            collection = client.collections.get(collection_name)
+            
+            collection.data.delete_by_id(object_id)
             logger.info(f"成功删除对象 {object_id} from {collection_name}")
             return True
         except Exception as e:
@@ -140,11 +164,17 @@ class WeaviateClient:
     def get_object(self, collection_name: str, object_id: str) -> Optional[Dict]:
         """获取对象"""
         try:
-            result = self.client.data_object.get_by_id(
-                uuid=object_id,
-                class_name=collection_name
-            )
-            return result
+            client = self.get_client()
+            collection = client.collections.get(collection_name)
+            
+            obj = collection.data.get_by_id(object_id)
+            if obj:
+                return {
+                    "id": str(obj.uuid),
+                    "properties": obj.properties,
+                    "vector": obj.vector
+                }
+            return None
         except Exception as e:
             logger.error(f"获取对象失败: {e}")
             return None
@@ -157,16 +187,23 @@ class WeaviateClient:
     ) -> List[str]:
         """批量添加对象"""
         try:
-            added_ids = []
-            with self.client.batch as batch:
-                for i, obj in enumerate(objects):
-                    vector = vectors[i] if vectors and i < len(vectors) else None
-                    object_id = batch.add_data_object(
-                        data_object=obj,
-                        class_name=collection_name,
-                        vector=vector
-                    )
-                    added_ids.append(object_id)
+            client = self.get_client()
+            collection = client.collections.get(collection_name)
+            
+            # 准备批量数据
+            data_objects = []
+            for i, obj in enumerate(objects):
+                vector = vectors[i] if vectors and i < len(vectors) else None
+                data_objects.append({
+                    "properties": obj,
+                    "vector": vector
+                })
+            
+            # 批量插入
+            response = collection.data.insert_many(data_objects)
+            
+            # 获取插入的ID列表
+            added_ids = [str(obj_id) for obj_id in response.uuids.values()]
             
             logger.info(f"批量添加了 {len(added_ids)} 个对象到 {collection_name}")
             return added_ids
@@ -183,19 +220,27 @@ class WeaviateClient:
     ) -> List[Dict]:
         """相似性搜索"""
         try:
-            result = (
-                self.client.query
-                .get(collection_name)
-                .with_near_vector({
-                    "vector": vector,
-                    "distance": 1 - threshold  # Weaviate使用距离，需要转换
-                })
-                .with_limit(limit)
-                .with_additional(["distance", "id"])
-                .do()
+            client = self.get_client()
+            collection = client.collections.get(collection_name)
+            
+            # 使用近邻向量搜索，并设置距离阈值
+            response = collection.query.near_vector(
+                near_vector=vector,
+                limit=limit,
+                distance=1 - threshold  # Weaviate使用距离，需要转换
             )
             
-            return result.get("data", {}).get("Get", {}).get(collection_name, [])
+            # 转换为兼容格式
+            results = []
+            for obj in response.objects:
+                results.append({
+                    "id": str(obj.uuid),
+                    "properties": obj.properties,
+                    "vector": obj.vector,
+                    "distance": obj.metadata.distance if obj.metadata else None
+                })
+            
+            return results
         except Exception as e:
             logger.error(f"相似性搜索失败: {e}")
             return []
@@ -203,8 +248,16 @@ class WeaviateClient:
     def get_collection_info(self, collection_name: str) -> Optional[Dict]:
         """获取集合信息"""
         try:
-            schema = self.client.schema.get(collection_name)
-            return schema
+            client = self.get_client()
+            collection = client.collections.get(collection_name)
+            
+            # 获取集合配置信息
+            config = collection.config.get()
+            return {
+                "name": config.name,
+                "vector_config": config.vector_config,
+                "properties": config.properties if hasattr(config, 'properties') else []
+            }
         except Exception as e:
             logger.error(f"获取集合信息失败: {e}")
             return None

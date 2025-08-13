@@ -18,7 +18,7 @@ from app.utils.deps import (
     get_current_active_user, get_user_service, 
     get_file_service, get_role_service
 )
-from app.core.permissions import require_permission, Permissions
+from app.domain.initialization.permissions import require_permission, Permissions
 
 router = APIRouter()
 
