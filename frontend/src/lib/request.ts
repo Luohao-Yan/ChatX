@@ -1,6 +1,7 @@
 /**
- * 企业级 Fetch HTTP 请求模块
- * 提供类型安全、拦截器、错误处理等功能
+ * 企业级统一HTTP请求模块
+ * 集成token管理、拦截器、错误处理等企业级功能
+ * 替代axios，提供更优雅的API设计
  */
 
 // 参数类型定义
@@ -29,12 +30,48 @@ export interface ApiResponse<T = unknown> {
   headers: Headers
 }
 
-// 错误接口
+// 错误接口 - 兼容axios错误格式
 export interface ApiError extends Error {
   status?: number
-  response?: Response
+  response?: {
+    status: number
+    statusText: string
+    data: unknown
+    headers: Headers
+  }
   data?: unknown
 }
+
+// 兼容axios的RequestError
+export class RequestError extends Error implements ApiError {
+  public status?: number
+  public response?: {
+    status: number
+    statusText: string
+    data: unknown
+    headers: Headers
+  }
+  public data?: unknown
+
+  constructor(message: string, status?: number, response?: Response, data?: unknown) {
+    super(message)
+    this.name = 'RequestError'
+    this.status = status
+    this.data = data
+    
+    if (response) {
+      this.response = {
+        status: response.status,
+        statusText: response.statusText,
+        data: data,
+        headers: response.headers,
+      }
+    }
+  }
+}
+
+// 为了向后兼容，导出AxiosError别名
+export { RequestError as AxiosError }
 
 // 拦截器接口
 export interface RequestInterceptor {
@@ -45,6 +82,54 @@ export interface RequestInterceptor {
 export interface ResponseInterceptor {
   onResponse?: <T>(response: ApiResponse<T>) => ApiResponse<T> | Promise<ApiResponse<T>>
   onResponseError?: (error: ApiError) => ApiError | Promise<ApiError>
+}
+
+// Token管理器
+export class TokenManager {
+  private static instance: TokenManager
+  private tokenProvider: (() => string | null) | null = null
+  private refreshTokenProvider: (() => Promise<string | null>) | null = null
+
+  static getInstance(): TokenManager {
+    if (!TokenManager.instance) {
+      TokenManager.instance = new TokenManager()
+    }
+    return TokenManager.instance
+  }
+
+  // 设置token获取函数
+  setTokenProvider(provider: () => string | null): void {
+    this.tokenProvider = provider
+  }
+
+  // 设置刷新token的函数
+  setRefreshTokenProvider(provider: () => Promise<string | null>): void {
+    this.refreshTokenProvider = provider
+  }
+
+  // 获取token
+  getToken(): string | null {
+    if (this.tokenProvider) {
+      return this.tokenProvider()
+    }
+    return null
+  }
+
+  // 刷新token
+  async refreshToken(): Promise<string | null> {
+    if (this.refreshTokenProvider) {
+      return await this.refreshTokenProvider()
+    }
+    return null
+  }
+
+  // 清除token
+  clearToken(): void {
+    // 由具体的storage实现
+    if (this.tokenProvider) {
+      // 通知token provider清除token
+    }
+  }
 }
 
 class HttpClient {
@@ -247,15 +332,24 @@ class HttpClient {
           clearTimeout(timeoutId)
 
           if (!response.ok) {
-            const error: ApiError = new Error(`HTTP Error: ${response.status} ${response.statusText}`)
-            error.status = response.status
-            error.response = response
-            
+            let errorData: unknown
             try {
-              error.data = await response.json()
+              errorData = await response.json()
             } catch {
-              error.data = await response.text()
+              try {
+                errorData = await response.text()
+              } catch {
+                errorData = null
+              }
             }
+            
+            // 使用RequestError提供更好的错误信息
+            const error = new RequestError(
+              `HTTP Error: ${response.status} ${response.statusText}`,
+              response.status,
+              response,
+              errorData
+            )
             
             throw error
           }
@@ -281,8 +375,7 @@ class HttpClient {
           
           // 处理取消请求的错误
           if (controller.signal.aborted) {
-            const abortError: ApiError = new Error('Request was aborted')
-            abortError.status = 0
+            const abortError = new RequestError('Request was aborted', 0)
             throw abortError
           }
           
@@ -371,9 +464,11 @@ class HttpClient {
         clearTimeout(timeoutId)
 
         if (!response.ok) {
-          const error: ApiError = new Error(`HTTP Error: ${response.status} ${response.statusText}`)
-          error.status = response.status
-          error.response = response
+          const error = new RequestError(
+            `HTTP Error: ${response.status} ${response.statusText}`,
+            response.status,
+            response
+          )
           throw error
         }
 
@@ -383,8 +478,7 @@ class HttpClient {
         
         // 处理取消请求的错误
         if (controller.signal.aborted) {
-          const abortError: ApiError = new Error('Stream request was aborted')
-          abortError.status = 0
+          const abortError = new RequestError('Stream request was aborted', 0)
           throw abortError
         }
         
@@ -516,6 +610,67 @@ export const http = new HttpClient({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
   timeout: 10000,
 })
+
+// 创建全局token管理器实例
+export const tokenManager = TokenManager.getInstance()
+
+// 企业级自动配置：token自动注入
+http.addRequestInterceptor({
+  onRequest: async (config) => {
+    // 自动添加认证token
+    const token = tokenManager.getToken()
+    if (token) {
+      config.headers = {
+        ...config.headers,
+        Authorization: `Bearer ${token}`,
+      }
+    }
+    return config
+  },
+})
+
+// 企业级认证错误处理：检测401但不自动刷新（避免与authStore冲突）
+http.addResponseInterceptor({
+  onResponseError: async (error) => {
+    // 检测到401错误，通知authStore处理，避免在HTTP层重复刷新token
+    if (error.status === 401) {
+      console.log('🚨 [HTTP] Detected 401 error, notifying authStore')
+      
+      // 通知authStore有401错误，让它决定是否需要刷新token
+      window.dispatchEvent(new CustomEvent('auth:token_invalid', { 
+        detail: { 
+          error: error,
+          timestamp: Date.now()
+        }
+      }))
+    }
+
+    // 直接抛出错误，让authStore的API调用逻辑处理
+    throw error
+  },
+})
+
+// 初始化token管理器（使用auth-utils的storage）
+const initializeTokenManager = async () => {
+  try {
+    // 动态导入auth-utils以避免循环依赖
+    const { storage } = await import('./auth-utils')
+    
+    tokenManager.setTokenProvider(() => storage.getAccessToken())
+    // 简化token刷新逻辑：只负责提供token，刷新逻辑完全交给authStore
+    tokenManager.setRefreshTokenProvider(async () => {
+      // tokenManager不直接刷新token，避免循环依赖
+      // 刷新逻辑完全由authStore控制
+      console.log('⚠️ [TOKEN_MANAGER] Refresh requested but delegated to authStore')
+      return null
+    })
+  } catch (error) {
+    console.warn('Token manager initialization failed:', error)
+  }
+}
+
+// 自动初始化
+initializeTokenManager()
 
 // 创建自定义实例的工厂函数
 export const createHttpClient = (config?: { baseURL?: string; timeout?: number }) => {

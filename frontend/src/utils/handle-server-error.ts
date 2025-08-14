@@ -1,4 +1,4 @@
-import { RequestError } from '@/lib/request-adapter'
+import { RequestError } from '@/lib/request'
 import { toast } from 'sonner'
 
 export function handleServerError(error: unknown) {

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Button } from '@/components/ui/button'
+import { IconArrowDown } from '@tabler/icons-react'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { HeaderActions } from '@/components/layout/header-actions'
@@ -8,7 +9,6 @@ import { useTranslation } from 'react-i18next'
 import { AIChatInput } from './components/ai-chat-input'
 import { MessageList, type Message } from './components/message-bubble'
 import { WelcomeScreen } from './components/welcome-screen'
-import { cn } from '@/lib/utils'
 
 // Mock function to simulate AI response
 const simulateAIResponse = async (userMessage: string): Promise<string> => {
@@ -42,6 +42,7 @@ export default function AIChat() {
   const { t } = useTranslation()
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const breadcrumbItems = [
@@ -50,10 +51,35 @@ export default function AIChat() {
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
+    scrollToBottom()
   }, [messages])
+
+  // Check if user is at bottom of scroll area
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current
+      const threshold = 50 // Show button when 50px away from bottom
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < threshold
+      setShowScrollToBottom(!isAtBottom && messages.length > 0)
+    }
+  }
+
+  const scrollToBottom = (smooth = false) => {
+    if (scrollRef.current) {
+      const scrollElement = scrollRef.current
+      if (smooth) {
+        scrollElement.scrollTo({
+          top: scrollElement.scrollHeight,
+          behavior: 'smooth'
+        })
+      } else {
+        // Force immediate scroll for new messages
+        setTimeout(() => {
+          scrollElement.scrollTop = scrollElement.scrollHeight
+        }, 0)
+      }
+    }
+  }
 
   const handleSendMessage = async (content: string) => {
     // Add user message
@@ -91,7 +117,7 @@ export default function AIChat() {
             : msg
         )
       )
-    } catch (error) {
+    } catch (_error) {
       // Handle error
       setMessages(prev => 
         prev.map(msg => 
@@ -105,88 +131,88 @@ export default function AIChat() {
     }
   }
 
-  const handleSuggestionClick = (suggestion: string) => {
-    if (suggestion === '编辑图像') {
-      handleSendMessage('帮我编辑图像')
-    } else if (suggestion === '新闻播报员') {
-      handleSendMessage('AI 未来五-10年的发展。')
-    } else if (suggestion === '角色设定') {
-      handleSendMessage('帮我设定一个角色')
-    }
-  }
 
   const handleCopy = (content: string) => {
     navigator.clipboard.writeText(content)
     // TODO: Show toast notification
   }
 
-  const handleLike = (messageId: string) => {
+  const handleLike = (_messageId: string) => {
     // TODO: Implement like functionality
-    console.log('Like message:', messageId)
   }
 
-  const handleDislike = (messageId: string) => {
+  const handleDislike = (_messageId: string) => {
     // TODO: Implement dislike functionality
-    console.log('Dislike message:', messageId)
   }
 
-  const handleRegenerate = (messageId: string) => {
+  const handleRegenerate = (_messageId: string) => {
     // TODO: Implement regenerate functionality
-    console.log('Regenerate message:', messageId)
   }
 
-  const handleShare = (messageId: string) => {
+  const handleShare = (_messageId: string) => {
     // TODO: Implement share functionality
-    console.log('Share message:', messageId)
   }
 
   const hasMessages = messages.length > 0
 
   return (
-    <>
+    <div className="flex flex-col h-screen">
       {/* Header */}
-      <Header>
+      <Header className="shrink-0">
         <Breadcrumb items={breadcrumbItems} />
         <HeaderActions />
       </Header>
 
       {/* Main Content */}
-      <Main className="flex flex-col h-full">
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Messages Area */}
-          <div className="flex-1 relative">
-            <ScrollArea 
-              ref={scrollRef} 
-              className="h-full"
-            >
-              <div className="min-h-full flex flex-col">
-                {hasMessages ? (
-                  <div className="flex-1">
-                    <MessageList
-                      messages={messages}
-                      onCopy={handleCopy}
-                      onLike={handleLike}
-                      onDislike={handleDislike}
-                      onRegenerate={handleRegenerate}
-                      onShare={handleShare}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex-1 min-h-full">
-                    <WelcomeScreen 
-                      onSendMessage={handleSendMessage}
-                      disabled={isLoading}
-                    />
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
+      <Main className="flex-1 flex flex-col min-h-0">
+        {!hasMessages ? (
+          // Welcome Screen - Full height when no messages
+          <div className="flex-1">
+            <WelcomeScreen 
+              onSendMessage={handleSendMessage}
+              disabled={isLoading}
+            />
           </div>
+        ) : (
+          // Chat Mode - Messages + Fixed Input
+          <>
+            {/* Messages Area */}
+            <div className="flex-1 overflow-hidden relative">
+              <div 
+                ref={scrollRef}
+                className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+                onScroll={handleScroll}
+              >
+                <div className="pb-4">
+                  <MessageList
+                    messages={messages}
+                    onCopy={handleCopy}
+                    onLike={handleLike}
+                    onDislike={handleDislike}
+                    onRegenerate={handleRegenerate}
+                    onShare={handleShare}
+                  />
+                </div>
+              </div>
 
-          {/* Input Area - Only show when there are messages */}
-          {hasMessages && (
-            <div className="shrink-0 bg-background relative z-10">
-              <div className="pb-6 pt-4 px-6">
+              {/* Scroll to Bottom Button */}
+              {showScrollToBottom && (
+                <div className="absolute bottom-4 right-4 z-10">
+                  <Button
+                    size="icon"
+                    variant="default"
+                    className="rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary hover:bg-primary/90 border border-border/20"
+                    onClick={() => scrollToBottom(true)}
+                  >
+                    <IconArrowDown size={16} />
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Fixed Input Area */}
+            <div className="shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="container max-w-4xl py-4">
                 <AIChatInput
                   onSendMessage={handleSendMessage}
                   disabled={isLoading}
@@ -194,9 +220,9 @@ export default function AIChat() {
                 />
               </div>
             </div>
-          )}
-        </div>
+          </>
+        )}
       </Main>
-    </>
+    </div>
   )
 }

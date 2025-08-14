@@ -31,7 +31,6 @@ import {
 } from '@tabler/icons-react'
 import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
 import { TFunction } from 'i18next'
-import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
 // import { title } from 'process'
 
@@ -147,7 +146,7 @@ export const getSidebarData = (t: TFunction): SidebarData => {
       //   ],
       // },
       {
-        title: t('nav.knowledgeManagement'),
+        title: t('nav.knowledgeCenters'),
         items: [
           {
             title: t('nav.myDocuments'),
@@ -236,24 +235,6 @@ export const getSidebarData = (t: TFunction): SidebarData => {
             title: t('nav.helpCenter'),
             url: '/help-center',
             icon: IconHelp,
-          },
-          {
-            title: t('nav.securedByClerk'),
-            icon: ClerkLogo,
-            items: [
-              {
-                title: t('nav.signIn'),
-                url: '/clerk/sign-in',
-              },
-              {
-                title: t('nav.signUp'),
-                url: '/clerk/sign-up',
-              },
-              {
-                title: t('nav.userManagement'),
-                url: '/clerk/user-management',
-              },
-            ],
           },
         ],
       },

@@ -98,6 +98,7 @@ Start the server
 The application includes comprehensive management systems with the following routes:
 
 ### Document Management
+
 - `/documents` - My Documents (main document workspace)
 - `/documents/recent` - Recently accessed documents
 - `/documents/favorites` - Favorited documents
@@ -108,6 +109,7 @@ The application includes comprehensive management systems with the following rou
 - `/documents/settings/folders` - Folder structure management
 
 ### Knowledge Graph
+
 - `/knowledge/graph` - Interactive knowledge graph visualization with real-time data exploration
 
 ## HTTP Client Usage
@@ -117,7 +119,7 @@ This project features a custom enterprise-grade HTTP client built on the fetch A
 ### Basic Usage
 
 ```typescript
-import { http } from '@/lib/request-adapter'
+import { http } from '@/lib/request'
 
 // GET request
 const users = await http.get('/users')
@@ -180,7 +182,7 @@ http.addResponseInterceptor({
 
 ```typescript
 import { useQuery } from '@tanstack/react-query'
-import { http } from '@/lib/request-adapter'
+import { http } from '@/lib/request'
 
 function useUsers() {
   return useQuery({

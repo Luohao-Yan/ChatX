@@ -11,7 +11,7 @@ export const Route = createFileRoute('/_authenticated/documents/settings/knowled
 function FoldersSettingsPage() {
   const topNav = [
     {
-      title: '知识管理中心',
+      title: '知识中心',
       href: '/documents',
       isActive: false,
     },

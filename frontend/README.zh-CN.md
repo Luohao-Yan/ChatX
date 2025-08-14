@@ -87,7 +87,7 @@ ChatX 是一款现代化的聊天应用程序，专为无缝沟通和协作而�
 ### 基础用法
 
 ```typescript
-import { http } from '@/lib/request-adapter'
+import { http } from '@/lib/request'
 
 // GET请求
 const users = await http.get('/users')
@@ -150,7 +150,7 @@ http.addResponseInterceptor({
 
 ```typescript
 import { useQuery } from '@tanstack/react-query'
-import { http } from '@/lib/request-adapter'
+import { http } from '@/lib/request'
 
 function useUsers() {
   return useQuery({

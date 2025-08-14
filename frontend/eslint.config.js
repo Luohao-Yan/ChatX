@@ -28,7 +28,8 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      'no-console': 'error',
+      'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
+      '@typescript-eslint/no-explicit-any': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',

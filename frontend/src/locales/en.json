@@ -8,7 +8,6 @@
     "apps": "Apps",
     "chats": "Chats",
     "users": "Users",
-    "securedByClerk": "Secured by Clerk",
     "signIn": "Sign In",
     "signUp": "Sign Up",
     "userManagement": "User Management",
@@ -35,7 +34,7 @@
     "sharedWithMe": "Shared with Me",
     "trash": "Trash",
     "storageAnalysis": "Storage Analysis",
-    "knowledgeManagement": "Knowledge Management Center",
+    "knowledgeCenters": "Knowledge Center",
     "webBlogKnowledge": "Web/Blog Knowledge Collection",
     "wechatKnowledge": "WeChat Knowledge Collection",
     "organizationLib": "Organization Knowledge Base",
@@ -97,7 +96,9 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System",
-    "selectOption": "Select {{option}}"
+    "selectOption": "Select {{option}}",
+    "comingSoon": "{{feature}} coming soon",
+    "and": "and"
   },
   "validation": {
     "required": "{{field}} is required",
@@ -118,7 +119,92 @@
     "orContinueWith": "Or continue with",
     "alreadyHaveAccount": "Already have an account?",
     "dontHaveAccount": "Don't have an account?",
-    "createAccount": "Create an account"
+    "createAccount": "Create an account",
+    "emailPlaceholder": "Enter your email address",
+    "passwordPlaceholder": "Enter your password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "rememberMeDescription": "Stay signed in for 30 days",
+    "signInWithGithub": "GitHub",
+    "signInWithFacebook": "Facebook",
+    "loginSuccess": "Login successful!",
+    "registerSuccess": "Registration successful!",
+    "signInDescription": "Enter your email and password below to log into your account",
+    "termsAgreement": "By clicking login, you agree to our Terms of Service and Privacy Policy.",
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "description": "Enter your email address and we'll send you a link to reset your password.",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "Enter your email address",
+      "sendResetLink": "Send reset link",
+      "backToSignIn": "Back to sign in",
+      "checkEmailTitle": "Check your email",
+      "checkEmailDescription": "We've sent a password reset link to {{email}}",
+      "resendEmail": "Resend email",
+      "resetEmailSent": "Reset email sent successfully!"
+    },
+    "otp": {
+      "title": "Verification Code",
+      "description": "Enter the 6-digit verification code sent to {{email}}",
+      "codeLabel": "Verification Code",
+      "codePlaceholder": "Enter 6-digit code",
+      "verifyButton": "Verify",
+      "resendCode": "Resend code",
+      "codeResent": "Verification code resent!",
+      "invalidCode": "Invalid verification code",
+      "codeExpired": "Verification code has expired",
+      "backToSignIn": "Back to sign in",
+      "countdown": "Resend in {{seconds}}s"
+    },
+    "register": {
+      "title": "Create Account",
+      "description": "Create your account to get started",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "firstNamePlaceholder": "Enter your first name",
+      "lastNamePlaceholder": "Enter your last name",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "Enter your full name",
+      "username": "Username",
+      "usernamePlaceholder": "Enter your username",
+      "phone": "Phone Number",
+      "phonePlaceholder": "Enter your phone number",
+      "agreeToTerms": "I agree to the Terms of Service and Privacy Policy",
+      "termsOfService": "Terms of Service",
+      "privacyPolicy": "Privacy Policy",
+      "createAccountButton": "Create Account",
+      "existingAccount": "Already have an account?",
+      "signInLink": "Sign in here"
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "userNotFound": "User not found",
+      "emailAlreadyExists": "Email address already in use",
+      "usernameAlreadyExists": "Username already taken",
+      "passwordTooWeak": "Password is too weak",
+      "passwordMismatch": "Passwords do not match",
+      "accountLocked": "Account has been locked. Please contact administrator",
+      "tooManyAttempts": "Too many login attempts. Please try again later",
+      "sessionExpired": "Your session has expired. Please sign in again",
+      "networkError": "Network error. Please check your connection and try again",
+      "serverError": "Server error. Please try again later",
+      "unknownError": "An unknown error occurred. Please try again",
+      "invalidEmail": "Please enter a valid email address",
+      "emailRequired": "Email address is required",
+      "passwordRequired": "Password is required",
+      "passwordMinLength": "Password must be at least 6 characters",
+      "confirmPasswordRequired": "Please confirm your password",
+      "termsRequired": "You must agree to the terms and conditions",
+      "phoneInvalid": "Please enter a valid phone number"
+    },
+    "validation": {
+      "emailInvalid": "Please enter a valid email address",
+      "passwordMinLength": "Password must be at least {{min}} characters",
+      "passwordMaxLength": "Password must not exceed {{max}} characters",
+      "fieldRequired": "This field is required",
+      "usernameTooShort": "Username must be at least 3 characters",
+      "usernameTooLong": "Username must not exceed 20 characters",
+      "phoneInvalid": "Please enter a valid phone number"
+    }
   },
   "dashboard": {
     "title": "Dashboard",
@@ -240,6 +326,63 @@
     "internalServerError": "Internal Server Error!",
     "somethingWentWrong": "Something went wrong",
     "pageNotFound": "Page not found",
-    "accessDenied": "Access denied"
+    "accessDenied": "Access denied",
+    "401": {
+      "title": "401 - Unauthorized",
+      "heading": "Authentication Required",
+      "description": "You need to sign in to access this page. Please provide valid credentials to continue.",
+      "action": "Sign In",
+      "backHome": "Back to Home"
+    },
+    "403": {
+      "title": "403 - Forbidden",
+      "heading": "Access Forbidden",
+      "description": "You don't have permission to access this resource. If you believe this is an error, please contact your administrator.",
+      "action": "Contact Support",
+      "backHome": "Back to Home"
+    },
+    "404": {
+      "title": "404 - Page Not Found",
+      "heading": "Page Not Found",
+      "description": "Sorry, we couldn't find the page you're looking for. The link might be broken or the page may have been moved.",
+      "action": "Go Home",
+      "searchPlaceholder": "Search for pages...",
+      "suggestions": "You might be looking for:",
+      "dashboard": "Dashboard",
+      "documents": "Documents",
+      "settings": "Settings"
+    },
+    "500": {
+      "title": "500 - Internal Server Error",
+      "heading": "Server Error",
+      "description": "We're experiencing technical difficulties. Our team has been notified and is working to resolve the issue.",
+      "action": "Try Again",
+      "backHome": "Back to Home",
+      "reportIssue": "Report Issue"
+    },
+    "503": {
+      "title": "503 - Service Unavailable",
+      "heading": "Service Temporarily Unavailable",
+      "description": "The service is temporarily down for maintenance. Please check back in a few minutes.",
+      "action": "Refresh Page",
+      "backHome": "Back to Home",
+      "estimatedTime": "Estimated time: {{time}} minutes"
+    },
+    "general": {
+      "title": "Oops! Something went wrong",
+      "description": "An unexpected error occurred. Please try again or contact support if the problem persists.",
+      "action": "Try Again",
+      "backHome": "Back to Home",
+      "errorCode": "Error Code: {{code}}",
+      "reportBug": "Report Bug",
+      "contactSupport": "Contact Support"
+    }
+  },
+  "language": {
+    "current": "Language",
+    "english": "English",
+    "chinese": "中文",
+    "switchTo": "Switch to {{language}}",
+    "changeLanguage": "Change Language"
   }
 }

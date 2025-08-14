@@ -9,6 +9,7 @@ import {
   Settings,
   Sparkles,
 } from 'lucide-react'
+import { useAuth } from '@/stores/authStore'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -47,6 +48,15 @@ export function UserDropdown({
 }: UserDropdownProps) {
   const { t } = useTranslation()
   const { isMobile } = useSidebar()
+  const { logout } = useAuth()
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch (error) {
+      console.error('登出失败:', error)
+    }
+  }
 
   const menuContent = (
     <DropdownMenuContent
@@ -120,7 +130,7 @@ export function UserDropdown({
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
-      <DropdownMenuItem>
+      <DropdownMenuItem onClick={handleLogout}>
         <LogOut />
         {t('userMenu.logOut')}
         {showShortcuts && <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>}

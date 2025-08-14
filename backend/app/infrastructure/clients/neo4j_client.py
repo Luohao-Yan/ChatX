@@ -8,10 +8,13 @@ logger = logging.getLogger(__name__)
 class Neo4jClient:
     def __init__(self):
         self.driver = None
-        self._connect()
+        self._connected = False
     
     def _connect(self):
         """连接到Neo4j"""
+        if self._connected:
+            return
+            
         try:
             self.driver = GraphDatabase.driver(
                 settings.NEO4J_URL,
@@ -20,19 +23,23 @@ class Neo4jClient:
             # 测试连接
             with self.driver.session() as session:
                 session.run("RETURN 1")
+            self._connected = True
             logger.info("成功连接到Neo4j")
         except Exception as e:
             logger.error(f"连接Neo4j失败: {e}")
+            self._connected = False
             raise
     
     def close(self):
         """关闭连接"""
         if self.driver:
             self.driver.close()
+            self._connected = False
             logger.info("Neo4j连接已关闭")
     
     def run_query(self, query: str, parameters: Optional[Dict] = None) -> List[Dict]:
         """执行Cypher查询"""
+        self._connect()  # 确保连接已建立
         try:
             with self.driver.session() as session:
                 result = session.run(query, parameters or {})

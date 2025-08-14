@@ -2,6 +2,9 @@ import { HTMLAttributes, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslation } from 'react-i18next'
+import { Link } from '@tanstack/react-router'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,31 +16,61 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { useAuth } from '@/stores/authStore'
 
 type ForgotFormProps = HTMLAttributes<HTMLFormElement>
 
-const formSchema = z.object({
-  email: z.email({
-    error: (iss) => (iss.input === '' ? 'Please enter your email' : undefined),
-  }),
-})
-
 export function ForgotPasswordForm({ className, ...props }: ForgotFormProps) {
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const { forgotPassword } = useAuth()
+
+  const formSchema = z.object({
+    email: z.string()
+      .min(1, t('auth.errors.emailRequired'))
+      .email(t('auth.errors.invalidEmail')),
+  })
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: '' },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true)
-    // eslint-disable-next-line no-console
-    console.log(data)
-
-    setTimeout(() => {
+    
+    try {
+      const result = await forgotPassword(data.email)
+      toast.success(result.message || t('auth.forgotPassword.emailSent'))
+      setEmailSent(true)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('auth.errors.unknownError'))
+    } finally {
       setIsLoading(false)
-    }, 3000)
+    }
+  }
+
+  if (emailSent) {
+    return (
+      <div className={cn('text-center space-y-3', className)}>
+        <div className="text-green-600 dark:text-green-400">
+          ✅ {t('auth.forgotPassword.emailSentSuccess')}
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {t('auth.forgotPassword.checkEmail')}
+        </p>
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            setEmailSent(false)
+            form.reset()
+          }}
+        >
+          {t('auth.forgotPassword.sendAnother')}
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -52,17 +85,28 @@ export function ForgotPasswordForm({ className, ...props }: ForgotFormProps) {
           name='email'
           render={({ field }) => (
             <FormItem className='space-y-1'>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>{t('auth.forgotPassword.emailLabel')}</FormLabel>
               <FormControl>
-                <Input placeholder='name@example.com' {...field} />
+                <Input placeholder={t('auth.forgotPassword.emailPlaceholder')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button className='mt-2' disabled={isLoading}>
-          Continue
+          {isLoading ? t('auth.forgotPassword.sending') : t('auth.forgotPassword.sendResetLink')}
         </Button>
+        
+        <div className="mt-4 text-center text-sm text-muted-foreground">
+          {t('auth.forgotPassword.alreadyHaveCode')}{' '}
+          <Link
+            to="/reset-password"
+            className="underline underline-offset-4 hover:text-primary"
+            search={{ email: form.getValues('email') }}
+          >
+            {t('auth.forgotPassword.resetPassword')}
+          </Link>
+        </div>
       </form>
     </Form>
   )

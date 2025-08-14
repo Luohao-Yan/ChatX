@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
-import { RequestError } from '@/lib/request-adapter'
+import { RequestError } from '@/lib/request'
 import {
   QueryCache,
   QueryClient,
@@ -10,6 +10,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { handleServerError } from '@/utils/handle-server-error'
+import { initializeAuthSystem } from '@/lib/auth-interceptor'
 import { FontProvider } from './context/font-context'
 import { ThemeProvider } from './context/theme-context'
 import { AppearanceProvider } from './context/appearance-context'
@@ -53,7 +54,7 @@ const queryClient = new QueryClient({
       if (error instanceof RequestError) {
         if (error.response?.status === 401) {
           toast.error('Session expired!')
-          useAuthStore.getState().auth.reset()
+          useAuthStore.getState().reset()
           const redirect = `${router.history.location.href}`
           router.navigate({ to: '/sign-in', search: { redirect } })
         }
@@ -82,6 +83,16 @@ declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router
   }
+}
+
+// Initialize auth system
+const cleanupAuthSystem = initializeAuthSystem()
+
+// Cleanup function (used on hot reload in development)
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    cleanupAuthSystem()
+  })
 }
 
 // Render the app

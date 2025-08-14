@@ -187,7 +187,7 @@ export function MessageList({
   className,
 }: MessageListProps) {
   return (
-    <div className={cn("divide-y divide-border/10", className)}>
+    <div className={cn("divide-y divide-border/10 pt-4", className)}>
       {messages.map((message) => (
         <MessageBubble
           key={message.id}

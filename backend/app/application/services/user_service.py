@@ -83,16 +83,19 @@ class UserService:
     async def authenticate_and_login(self, login_data: LoginRequest, 
                                    client_ip: str = None) -> Dict[str, Any]:
         """用户认证和登录"""
+        # 确定登录标识符（用于限流记录）
+        login_identifier = login_data.email or login_data.username
+        
         # 0. 检查登录限流和黑名单
         rate_limiter = await get_rate_limiter_service()
         
         # 检查登录尝试次数
-        login_check = await rate_limiter.check_login_attempts(login_data.email, client_ip)
+        login_check = await rate_limiter.check_login_attempts(login_identifier, client_ip)
         if not login_check["allowed"]:
             raise HTTPException(status_code=429, detail=login_check["message"])
         
         # 检查登录频率限制
-        identifier = client_ip or login_data.email
+        identifier = client_ip or login_identifier
         allowed, limit_info = await rate_limiter.check_rate_limit(identifier, "login")
         if not allowed:
             raise HTTPException(status_code=429, detail=limit_info["message"])
@@ -100,27 +103,32 @@ class UserService:
         # 记录登录请求
         await rate_limiter.record_request(identifier, "login")
         
-        # 1. 获取用户
-        user = await self.user_repo.get_by_email(login_data.email, tenant_id=1)
+        # 1. 获取用户 - 支持邮箱或用户名登录
+        user = None
+        if login_data.email:
+            user = await self.user_repo.get_by_email(login_data.email, tenant_id=1)
+        elif login_data.username:
+            user = await self.user_repo.get_by_username(login_data.username, tenant_id=1)
+        
         if not user:
             # 记录失败登录
-            await rate_limiter.record_failed_login(login_data.email, client_ip)
-            raise HTTPException(status_code=400, detail="邮箱或密码错误")
+            await rate_limiter.record_failed_login(login_identifier, client_ip)
+            raise HTTPException(status_code=400, detail="用户名/邮箱或密码错误")
         
         # 2. 检查用户状态
         can_login, error_msg = self.domain_service.can_user_login(user)
         if not can_login:
-            await rate_limiter.record_failed_login(login_data.email, client_ip)
+            await rate_limiter.record_failed_login(login_identifier, client_ip)
             raise HTTPException(status_code=400, detail=error_msg)
         
         # 3. 验证密码
         if not self.domain_service.authenticate_user(user, login_data.password):
             # 记录失败登录
-            await rate_limiter.record_failed_login(login_data.email, client_ip)
-            raise HTTPException(status_code=400, detail="邮箱或密码错误")
+            await rate_limiter.record_failed_login(login_identifier, client_ip)
+            raise HTTPException(status_code=400, detail="用户名/邮箱或密码错误")
         
         # 登录成功，清除失败记录
-        await rate_limiter.clear_login_attempts(login_data.email, client_ip)
+        await rate_limiter.clear_login_attempts(login_identifier, client_ip)
         
         # 4. 生成令牌
         access_token = security.create_access_token(subject=user.id)

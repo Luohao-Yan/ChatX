@@ -13,7 +13,6 @@
     "knip": "knip"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.35.3",
     "@hookform/resolvers": "^5.1.1",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-avatar": "^1.1.10",
@@ -50,6 +49,7 @@
     "i18next-browser-languagedetector": "^8.2.0",
     "input-otp": "^1.4.2",
     "js-cookie": "^3.0.5",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.525.0",
     "react": "^19.1.0",
     "react-day-picker": "9.8.0",
