@@ -9,7 +9,7 @@ import {
   Settings,
   Sparkles,
 } from 'lucide-react'
-import { useAuth } from '@/stores/authStore'
+import { useAuth } from '@/stores/auth'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {

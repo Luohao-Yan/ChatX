@@ -93,3 +93,9 @@ celerybeat.pid
 
 # Redis/Postgres 数据目录
 docker-data/
+
+# frontend
+frontend/node_modules/
+frontend/dist/
+.vite
+.tanstack

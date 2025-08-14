@@ -5,10 +5,10 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore } from '@/stores/auth'
 import { AuthStatus, AuthErrorType } from '@/config/auth-config'
-import { routeValidator } from '@/lib/auth-utils'
-import { authLogger } from '@/lib/logger'
+import { routeValidator } from '@/services/auth'
+import { authLogger } from '@/utils/logger'
 
 // 认证Hook
 export const useAuth = () => {

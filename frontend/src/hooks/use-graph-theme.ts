@@ -1,6 +1,6 @@
 import { useTheme } from '@/context/theme-context'
 import { useMemo, useEffect, useState } from 'react'
-import { loadAppConfig } from '@/lib/app-config'
+import { loadAppConfig } from '@/utils/app-config'
 import { getColorSchemeVars } from '@/config/color-schemes'
 
 export interface GraphTheme {

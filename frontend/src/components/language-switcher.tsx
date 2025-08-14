@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Check, ChevronDown, Languages } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/utils'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,

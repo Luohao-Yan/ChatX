@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
-import { RequestError } from '@/lib/request'
+import { RequestError } from '@/services/http/request'
 import {
   QueryCache,
   QueryClient,
@@ -8,13 +8,13 @@ import {
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore } from '@/stores/auth'
 import { handleServerError } from '@/utils/handle-server-error'
-import { initializeAuthSystem } from '@/lib/auth-interceptor'
+import { initializeAuthSystem } from '@/services/http/auth-interceptor'
 import { FontProvider } from './context/font-context'
 import { ThemeProvider } from './context/theme-context'
 import { AppearanceProvider } from './context/appearance-context'
-import './lib/i18n'
+import './utils/i18n'
 import './index.css'
 // Generated Routes
 import { routeTree } from './routeTree.gen'

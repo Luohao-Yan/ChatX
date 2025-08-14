@@ -1,6 +1,6 @@
 import Cookies from 'js-cookie'
 import { Outlet } from '@tanstack/react-router'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/utils'
 import { SearchProvider } from '@/context/search-context'
 import { AvatarProvider } from '@/context/avatar-context'
 import { SidebarProvider } from '@/components/ui/sidebar'

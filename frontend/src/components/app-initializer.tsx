@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useAutoLogin } from '@/hooks/use-auth'
-import { authLogger } from '@/lib/logger'
+import { authLogger } from '@/utils/logger'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 

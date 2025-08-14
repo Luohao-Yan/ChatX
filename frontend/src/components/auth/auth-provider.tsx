@@ -8,7 +8,7 @@ import { useRouter } from '@tanstack/react-router'
 import { useAuth, useAuthListener } from '@/hooks/use-auth'
 import { AuthStatus } from '@/config/auth-config'
 // 统一request模块已集成token管理，提供更简洁的企业级解决方案
-import { authLogger, logger } from '@/lib/logger'
+import { authLogger, logger } from '@/utils/logger'
 import { AuthGuard } from './auth-guard'
 
 interface AuthProviderProps {

@@ -130,8 +130,13 @@ class UserService:
         # 登录成功，清除失败记录
         await rate_limiter.clear_login_attempts(login_identifier, client_ip)
         
-        # 4. 生成令牌
-        access_token = security.create_access_token(subject=user.id)
+        # 4. 生成令牌，包含用户信息
+        user_data = {
+            "email": user.email,
+            "username": user.username,
+            "roles": [role.name for role in user.roles] if user.roles else []
+        }
+        access_token = security.create_access_token(subject=user.id, user_data=user_data)
         refresh_token = security.create_refresh_token(subject=user.id)
         
         # 5. 创建会话
@@ -194,8 +199,13 @@ class UserService:
         if not user or not user.is_active:
             raise HTTPException(status_code=401, detail="用户不存在或已被禁用")
         
-        # 4. 生成新的访问令牌
-        access_token = security.create_access_token(subject=user.id)
+        # 4. 生成新的访问令牌，包含用户信息
+        user_data = {
+            "email": user.email,
+            "username": user.username,
+            "roles": [role.name for role in user.roles] if user.roles else []
+        }
+        access_token = security.create_access_token(subject=user.id, user_data=user_data)
         
         # 5. 更新会话最后使用时间（同时更新数据库和缓存）
         session_id = session.get("id")

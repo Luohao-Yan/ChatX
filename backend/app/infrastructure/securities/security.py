@@ -9,7 +9,8 @@ import string
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def create_access_token(
-    subject: Union[str, Any], expires_delta: Optional[timedelta] = None
+    subject: Union[str, Any], expires_delta: Optional[timedelta] = None, 
+    user_data: Optional[dict] = None
 ) -> str:
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -17,7 +18,18 @@ def create_access_token(
         expire = datetime.utcnow() + timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
+    
     to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
+    
+    # 如果提供了用户数据，添加到token中
+    if user_data:
+        if "email" in user_data:
+            to_encode["email"] = user_data["email"]
+        if "username" in user_data:
+            to_encode["username"] = user_data["username"]
+        if "roles" in user_data:
+            to_encode["roles"] = user_data["roles"]
+    
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
