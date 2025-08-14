@@ -316,6 +316,12 @@
       "avatarDisplayDescription": "Choose which avatar to display in the interface.",
       "bottomLeft": "Bottom-left avatar (Default)",
       "topRight": "Top-right avatar",
+      "loginPageLayout": "Login Page Layout",
+      "loginPageLayoutDescription": "Choose the layout style for the login page.",
+      "singleColumn": "Single Column Layout",
+      "singleColumnDescription": "Clean centered login form",
+      "doubleColumn": "Double Column Layout",
+      "doubleColumnDescription": "Image left, form right",
       "updateDisplay": "Update display",
       "selectAtLeastOne": "You have to select at least one item."
     }

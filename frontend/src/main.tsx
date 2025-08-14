@@ -14,6 +14,7 @@ import { initializeAuthSystem } from '@/services/http/auth-interceptor'
 import { FontProvider } from './context/font-context'
 import { ThemeProvider } from './context/theme-context'
 import { AppearanceProvider } from './context/appearance-context'
+import { LoginLayoutProvider } from './context/login-layout-context'
 import './utils/i18n'
 import './index.css'
 // Generated Routes
@@ -56,7 +57,10 @@ const queryClient = new QueryClient({
           toast.error('Session expired!')
           useAuthStore.getState().reset()
           const redirect = `${router.history.location.href}`
-          router.navigate({ to: '/sign-in', search: { redirect } })
+          // 根据用户的登录布局设置重定向到正确的页面
+          const loginLayout = localStorage.getItem('login-layout')
+          const loginPath = loginLayout === 'double-column' ? '/sign-in-2' : '/sign-in'
+          router.navigate({ to: loginPath, search: { redirect } })
         }
         if (error.response?.status === 500) {
           toast.error('Internal Server Error!')
@@ -105,7 +109,9 @@ if (!rootElement.innerHTML) {
         <ThemeProvider defaultTheme='light' storageKey='vite-ui-theme'>
           <AppearanceProvider>
             <FontProvider>
-              <RouterProvider router={router} />
+              <LoginLayoutProvider>
+                <RouterProvider router={router} />
+              </LoginLayoutProvider>
             </FontProvider>
           </AppearanceProvider>
         </ThemeProvider>

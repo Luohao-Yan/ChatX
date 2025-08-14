@@ -67,6 +67,108 @@ ChatX is a modern chat application designed for seamless communication and colla
 
 **Visualization:** [ECharts](https://echarts.apache.org/) & [ECharts for React](https://github.com/hustcc/echarts-for-react)
 
+## 🏗️ Architecture
+
+The project follows a modern, modular architecture with clear separation of concerns:
+
+```
+src/
+├── 🏭 services/              # Infrastructure Services Layer
+│   ├── 📡 http/             # HTTP client & interceptors
+│   │   ├── request.ts       # Core HTTP client
+│   │   ├── auth-interceptor.ts # Authentication interceptor
+│   │   └── index.ts         # Service exports
+│   ├── 🔐 auth/             # Authentication services
+│   │   ├── auth-utils.ts    # Auth utilities & validators
+│   │   └── index.ts         # Auth service exports
+│   ├── 💾 storage/          # Storage services (future)
+│   ├── 🔌 websocket/        # WebSocket services (future)
+│   └── 📤 upload/           # File upload services (future)
+│
+├── 🎯 features/             # Business Feature Modules
+│   ├── 🔒 core/             # Core application features
+│   │   ├── auth/            # Authentication & authorization
+│   │   ├── dashboard/       # Main dashboard
+│   │   └── settings/        # Application settings
+│   ├── 💬 chat/             # Chat functionality
+│   │   ├── ai-chat/         # AI conversation features
+│   │   └── conversations/   # User chat management
+│   ├── 📁 documents/        # Document management
+│   ├── 🧠 knowledge/        # Knowledge management
+│   ├── 👥 users/            # User management
+│   └── ✅ tasks/            # Task management
+│
+├── 🎨 components/           # UI Component Library
+│   ├── 🧩 ui/              # Base UI components (shadcn/ui)
+│   ├── 🏗️ layout/          # Layout components
+│   ├── 📝 forms/           # Form components
+│   ├── 💬 feedback/        # Feedback components
+│   ├── 🧭 navigation/      # Navigation components
+│   ├── 💼 business/        # Business-specific components
+│   └── 🤝 shared/          # Cross-module shared components
+│
+├── 🛠️ utils/               # Utility Functions Library
+│   ├── format.ts           # Data formatting utilities
+│   ├── logger.ts           # Logging utilities
+│   ├── utils.ts            # General utility functions
+│   ├── api-config.ts       # API configuration
+│   └── app-config.ts       # Application configuration
+│
+├── 📦 stores/              # State Management
+│   ├── auth/               # Authentication state
+│   ├── app/                # Global application state
+│   ├── chat/               # Chat-related state
+│   └── user/               # User-specific state
+│
+├── ⚙️ config/              # Configuration Management
+│   ├── api.ts              # API endpoints
+│   ├── auth-config.ts      # Authentication configuration
+│   └── constants.ts        # Application constants
+│
+├── 📐 types/               # TypeScript Type Definitions
+│   ├── api/                # API interface types
+│   ├── entities/           # Business entity types
+│   └── common/             # Common shared types
+│
+└── 🛣️ routes/              # Application Routing
+    ├── (auth)/             # Authentication routes
+    ├── _authenticated/     # Protected routes
+    └── (errors)/           # Error pages
+```
+
+### 🎯 Architecture Principles
+
+#### 🏗️ **Layered Architecture**
+```
+┌─────────────────────────────────────────┐
+│             🎨 UI Layer                 │  ← Components & Routes
+├─────────────────────────────────────────┤
+│           🎯 Feature Layer              │  ← Business Logic
+├─────────────────────────────────────────┤
+│         🏭 Infrastructure Layer         │  ← Services & Utilities
+└─────────────────────────────────────────┘
+```
+
+#### 📦 **Module Dependencies**
+```
+Features ──depends on──→ Services
+    ↓                       ↓
+Components ──depends on──→ Utils
+```
+
+#### 🔗 **Clear Separation of Concerns**
+- **🏭 Services**: Cross-cutting infrastructure (HTTP, auth, storage)
+- **🎯 Features**: Self-contained business modules
+- **🎨 Components**: Reusable UI elements
+- **🛠️ Utils**: Pure utility functions
+- **📦 Stores**: Application state management
+
+This architecture ensures:
+- ✅ **Scalability**: Easy to add new features
+- ✅ **Maintainability**: Clear boundaries and responsibilities  
+- ✅ **Testability**: Isolated modules for unit testing
+- ✅ **Developer Experience**: Intuitive organization and imports
+
 ## Run Locally
 
 Clone the project

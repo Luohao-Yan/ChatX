@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useRouter } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
   BadgeCheck,
@@ -49,10 +49,18 @@ export function UserDropdown({
   const { t } = useTranslation()
   const { isMobile } = useSidebar()
   const { logout } = useAuth()
+  const router = useRouter()
 
   const handleLogout = async () => {
     try {
       await logout()
+      // 退出成功后，根据用户的登录布局设置重定向到正确的页面
+      const loginLayout = localStorage.getItem('login-layout')
+      if (loginLayout === 'double-column') {
+        router.navigate({ to: '/sign-in-2' })
+      } else {
+        router.navigate({ to: '/sign-in' })
+      }
     } catch (error) {
       console.error('登出失败:', error)
     }

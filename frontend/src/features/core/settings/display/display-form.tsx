@@ -6,7 +6,9 @@ import { showSubmittedData } from '@/utils/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { LoginLayoutPreviewGroup } from '@/components/shared/login-layout-preview'
 import { useAvatar } from '@/context/avatar-context'
+import { useLoginLayout } from '@/context/login-layout-context'
 import {
   Form,
   FormControl,
@@ -51,22 +53,26 @@ const createDisplayFormSchema = (t: any) => z.object({
     message: t('settings.display.selectAtLeastOne'),
   }),
   avatarDisplay: z.enum(['bottom-left', 'top-right']),
+  loginPageLayout: z.enum(['single-column', 'double-column']),
 })
 
 type DisplayFormValues = {
   items: string[]
   avatarDisplay: 'bottom-left' | 'top-right'
+  loginPageLayout: 'single-column' | 'double-column'
 }
 
 // This can come from your database or API.
 const defaultValues: Partial<DisplayFormValues> = {
   items: ['recents', 'home'],
   avatarDisplay: 'bottom-left',
+  loginPageLayout: 'single-column',
 }
 
 export function DisplayForm() {
   const { t } = useTranslation()
   const { avatarDisplay, setAvatarDisplay } = useAvatar()
+  const { loginLayout, setLoginLayout } = useLoginLayout()
   const isMobile = useIsMobile()
   
   const displayFormSchema = createDisplayFormSchema(t)
@@ -77,6 +83,7 @@ export function DisplayForm() {
     defaultValues: {
       ...defaultValues,
       avatarDisplay,
+      loginPageLayout: loginLayout,
     },
   })
 
@@ -92,6 +99,7 @@ export function DisplayForm() {
     if (!isMobile) {
       setAvatarDisplay(data.avatarDisplay)
     }
+    setLoginLayout(data.loginPageLayout)
     showSubmittedData(data)
   }
 
@@ -184,6 +192,26 @@ export function DisplayForm() {
                     </FormLabel>
                   </FormItem>
                 </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name='loginPageLayout'
+          render={({ field }) => (
+            <FormItem className='space-y-4'>
+              <FormLabel className='text-base'>{t('settings.display.loginPageLayout')}</FormLabel>
+              <FormDescription>
+                {t('settings.display.loginPageLayoutDescription')}
+              </FormDescription>
+              <FormControl>
+                <LoginLayoutPreviewGroup
+                  value={field.value}
+                  onValueChange={field.onChange}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

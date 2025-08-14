@@ -349,6 +349,12 @@
       "avatarDisplayDescription": "选择在界面中显示哪个头像。",
       "bottomLeft": "底部左侧头像（默认）",
       "topRight": "顶部右侧头像",
+      "loginPageLayout": "登录页面布局",
+      "loginPageLayoutDescription": "选择登录页面的布局样式。",
+      "singleColumn": "单列布局",
+      "singleColumnDescription": "简洁的居中登录表单",
+      "doubleColumn": "双列布局",
+      "doubleColumnDescription": "左侧图片，右侧表单",
       "updateDisplay": "更新显示设置",
       "selectAtLeastOne": "您必须至少选择一个项目。"
     }
