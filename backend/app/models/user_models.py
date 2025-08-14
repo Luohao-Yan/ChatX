@@ -117,6 +117,10 @@ class User(Base):
     # 用户个人信息
     avatar_url = Column(String, nullable=True, comment="用户头像URL")
     phone = Column(String, nullable=True, comment="联系电话")
+    bio = Column(String(500), nullable=True, comment="用户个人简介")
+    urls = Column(JSON, nullable=True, comment="用户个人网站URL列表，JSON格式存储")
+    date_of_birth = Column(DateTime(timezone=True), nullable=True, comment="用户出生日期")
+    preferred_language = Column(String(10), default='zh', nullable=True, comment="用户首选语言")
     
     # 第三方认证集成字段
     third_party_provider = Column(String(50), default=ThirdPartyProvider.LOCAL, nullable=False,

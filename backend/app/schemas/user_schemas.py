@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, field_validator, model_validator, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 
@@ -29,12 +29,20 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
+    bio: Optional[str] = None
+    urls: Optional[List[Dict[str, str]]] = None
+    date_of_birth: Optional[datetime] = None
+    preferred_language: Optional[str] = None
 
 
 class UserProfile(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
+    bio: Optional[str] = None
+    urls: Optional[List[Dict[str, str]]] = None
+    date_of_birth: Optional[datetime] = None
+    preferred_language: Optional[str] = None
 
 
 class UserInDBBase(UserBase):
@@ -42,6 +50,10 @@ class UserInDBBase(UserBase):
     is_verified: bool = False
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
+    bio: Optional[str] = None
+    urls: Optional[List[Dict[str, str]]] = None
+    date_of_birth: Optional[datetime] = None
+    preferred_language: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     last_login: Optional[datetime] = None

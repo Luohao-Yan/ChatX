@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/utils/utils'
 import { showSubmittedData } from '@/utils/show-submitted-data'
 import { Button } from '@/components/ui/button'
+import { useEffect } from 'react'
+import { getUserInfo } from '@/utils/userinfo'
 import {
   Command,
   CommandEmpty,
@@ -52,19 +54,35 @@ type AccountFormValues = {
   language: string
 }
 
-// This can come from your database or API.
-const defaultValues: Partial<AccountFormValues> = {
-  name: '',
-}
-
 export function AccountForm() {
   const { t } = useTranslation()
   const accountFormSchema = createAccountFormSchema(t)
+  
+  const userInfo = getUserInfo()
+  
+  // 从用户数据生成默认值
+  const defaultValues: Partial<AccountFormValues> = {
+    name: userInfo?.full_name || userInfo?.username || '',
+    dob: userInfo?.date_of_birth ? new Date(userInfo.date_of_birth) : undefined,
+    language: userInfo?.preferred_language || 'zh',
+  }
   
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
     defaultValues,
   })
+
+  // 当用户数据加载后，更新表单默认值
+  useEffect(() => {
+    const currentUserInfo = getUserInfo()
+    if (currentUserInfo) {
+      form.reset({
+        name: currentUserInfo.full_name || currentUserInfo.username || '',
+        dob: currentUserInfo.date_of_birth ? new Date(currentUserInfo.date_of_birth) : undefined,
+        language: currentUserInfo.preferred_language || 'zh',
+      })
+    }
+  }, [form])
 
   function onSubmit(data: AccountFormValues) {
     showSubmittedData(data)

@@ -20,6 +20,10 @@ interface AuthUser {
   is_verified: boolean
   avatar_url?: string
   phone?: string
+  bio?: string
+  urls?: { value: string }[]
+  date_of_birth?: string
+  preferred_language?: string
   created_at: string
   updated_at?: string
   last_login?: string
@@ -57,7 +61,7 @@ interface LoginCredentials {
 interface AuthState {
   // 认证状态
   status: AuthStatus
-  user: AuthUser | null
+  userInfo: AuthUser | null
   session: AuthSession | null
   error: AuthError | null
 
@@ -113,7 +117,7 @@ interface AuthState {
 
   // 状态管理
   setStatus: (status: AuthStatus) => void
-  setUser: (user: AuthUser | null) => void
+  setUserInfo: (userInfo: AuthUser | null) => void
   setError: (error: AuthError | null) => void
   setLoading: (loading: boolean) => void
   setTokens: (accessToken: string, refreshToken?: string, rememberMe?: boolean) => void
@@ -142,6 +146,27 @@ const getInitialState = () => {
     console.log('❌ [AUTH_STORE] 无Token')
   }
 
+  // 从缓存加载用户信息
+  let cachedUserInfo: AuthUser | null = null
+  try {
+    const cached = localStorage.getItem('userinfo')
+    if (cached) {
+      const cacheData = JSON.parse(cached)
+      const now = Date.now()
+      const cacheAge = now - cacheData.timestamp
+      
+      // 缓存有效期：30分钟
+      const CACHE_DURATION = 30 * 60 * 1000
+      
+      if (cacheAge <= CACHE_DURATION && cacheData.user) {
+        cachedUserInfo = cacheData.user
+        console.log('💾 [AUTH_STORE] 从缓存加载用户信息:', cachedUserInfo?.username)
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ [AUTH_STORE] 加载缓存用户信息失败:', error)
+  }
+
   // 如果有access token但已过期，且有refresh token，设为IDLE让checkAuthStatus处理刷新
   // 如果没有token或没有refresh token且token过期，直接设为未认证状态
   const hasValidToken = accessToken && validator.isValidToken(accessToken)
@@ -149,7 +174,7 @@ const getInitialState = () => {
   
   return {
     status: (hasValidToken || shouldTryRefresh) ? AuthStatus.IDLE : AuthStatus.UNAUTHENTICATED,
-    user: null,
+    userInfo: cachedUserInfo,
     session: null,
     error: null,
     accessToken,
@@ -354,7 +379,7 @@ export const useAuthStore = create<AuthState>()(devtools(
         console.log('👥 [AUTH_STORE] 用户数据:', response.data)
         
         const userData = response.data as AuthUser
-        set({ user: userData })
+        set({ userInfo: userData })
         
         // 缓存用户信息到本地存储
         get().saveUserToCache(userData)
@@ -378,7 +403,7 @@ export const useAuthStore = create<AuthState>()(devtools(
           timestamp: Date.now(),
           version: '1.0'
         }
-        localStorage.setItem('chatx_user_cache', JSON.stringify(cacheData))
+        localStorage.setItem('userinfo', JSON.stringify(cacheData))
         console.log('💾 [AUTH_STORE] 用户信息已缓存')
       } catch (error) {
         console.warn('⚠️ [AUTH_STORE] 用户信息缓存失败:', error)
@@ -387,7 +412,7 @@ export const useAuthStore = create<AuthState>()(devtools(
 
     loadUserFromCache: (): AuthUser | null => {
       try {
-        const cached = localStorage.getItem('chatx_user_cache')
+        const cached = localStorage.getItem('userinfo')
         if (!cached) return null
 
         const cacheData = JSON.parse(cached)
@@ -399,7 +424,7 @@ export const useAuthStore = create<AuthState>()(devtools(
         
         if (cacheAge > CACHE_DURATION) {
           console.log('⏰ [AUTH_STORE] 用户信息缓存已过期')
-          localStorage.removeItem('chatx_user_cache')
+          localStorage.removeItem('userinfo')
           return null
         }
 
@@ -407,14 +432,14 @@ export const useAuthStore = create<AuthState>()(devtools(
         return cacheData.user
       } catch (error) {
         console.warn('⚠️ [AUTH_STORE] 加载用户信息缓存失败:', error)
-        localStorage.removeItem('chatx_user_cache')
+        localStorage.removeItem('userinfo')
         return null
       }
     },
 
     clearUserCache: () => {
       try {
-        localStorage.removeItem('chatx_user_cache')
+        localStorage.removeItem('userinfo')
         console.log('🗑️ [AUTH_STORE] 用户信息缓存已清除')
       } catch (error) {
         console.warn('⚠️ [AUTH_STORE] 清除用户信息缓存失败:', error)
@@ -430,7 +455,7 @@ export const useAuthStore = create<AuthState>()(devtools(
         return
       }
 
-      if (state.status === AuthStatus.AUTHENTICATED && state.user) {
+      if (state.status === AuthStatus.AUTHENTICATED && state.userInfo) {
         console.log('✅ [AUTH_STORE] 用户已认证，跳过重复检查')
         return
       }
@@ -481,7 +506,7 @@ export const useAuthStore = create<AuthState>()(devtools(
       if (cachedUser && validator.isValidToken(state.accessToken)) {
         console.log('💾 [AUTH_STORE] 从缓存恢复用户信息，跳过API请求')
         set({ 
-          user: cachedUser,
+          userInfo: cachedUser,
           isLoading: false 
         })
         get().setStatus(AuthStatus.AUTHENTICATED)
@@ -589,25 +614,25 @@ export const useAuthStore = create<AuthState>()(devtools(
 
     // === 权限检查 ===
     hasRole: (role: string) => {
-      const user = get().user
-      return user?.roles?.includes(role) || false
+      const userInfo = get().userInfo
+      return userInfo?.roles?.includes(role) || false
     },
 
     hasPermission: (permission: string) => {
-      const user = get().user
-      return user?.permissions?.includes(permission) || false
+      const userInfo = get().userInfo
+      return userInfo?.permissions?.includes(permission) || false
     },
 
     hasAnyRole: (roles: string[]) => {
-      const user = get().user
-      if (!user?.roles) return false
-      return roles.some(role => user.roles!.includes(role))
+      const userInfo = get().userInfo
+      if (!userInfo?.roles) return false
+      return roles.some(role => userInfo.roles!.includes(role))
     },
 
     hasAnyPermission: (permissions: string[]) => {
-      const user = get().user
-      if (!user?.permissions) return false
-      return permissions.some(permission => user.permissions!.includes(permission))
+      const userInfo = get().userInfo
+      if (!userInfo?.permissions) return false
+      return permissions.some(permission => userInfo.permissions!.includes(permission))
     },
 
     // === 状态管理 ===
@@ -618,15 +643,15 @@ export const useAuthStore = create<AuthState>()(devtools(
           from: currentStatus,
           to: status,
           isAuthenticated: status === AuthStatus.AUTHENTICATED,
-          hasUser: !!get().user,
-          userRoles: get().user?.roles,
-          userPermissions: get().user?.permissions
+          hasUserInfo: !!get().userInfo,
+          userRoles: get().userInfo?.roles,
+          userPermissions: get().userInfo?.permissions
         })
       }
       set({ status })
     },
 
-    setUser: (user: AuthUser | null) => set({ user }),
+    setUserInfo: (userInfo: AuthUser | null) => set({ userInfo }),
 
     setError: (error: AuthError | null) => set({ error }),
 
@@ -668,7 +693,7 @@ export const useAuthStore = create<AuthState>()(devtools(
       get().clearUserCache()
 
       set({
-        user: null,
+        userInfo: null,
         session: null,
         error: null,
         accessToken: '',
@@ -767,7 +792,7 @@ export const useAuth = () => {
   return {
     // 状态
     status: store.status,
-    user: store.user,
+    userInfo: store.userInfo,
     session: store.session,
     error: store.error,
     isLoading: store.isLoading,

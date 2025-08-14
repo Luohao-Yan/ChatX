@@ -34,13 +34,13 @@ import { TFunction } from 'i18next'
 import { type SidebarData } from '../types'
 // import { title } from 'process'
 
-export const getSidebarData = (t: TFunction): SidebarData => {
+export const getSidebarData = (t: TFunction, user?: { name: string; email: string; avatar: string }): SidebarData => {
 
   return {
-    user: {
-      name: 'Leon',
-      email: 'chatxforleondev@gmail.com',
-      avatar: '/avatars/chatx.jpg',
+    user: user || {
+      name: 'Guest',
+      email: 'guest@chatx.com',
+      avatar: '/avatars/default.jpg',
     },
     teams: [
       {

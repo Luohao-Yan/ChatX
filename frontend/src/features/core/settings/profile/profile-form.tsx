@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/utils/utils'
 import { showSubmittedData } from '@/utils/show-submitted-data'
+import { useEffect } from 'react'
+import { getUserInfo } from '@/utils/userinfo'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -15,13 +17,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 
 const createProfileFormSchema = (t: any) => z.object({
@@ -52,24 +47,38 @@ type ProfileFormValues = {
   urls?: { value: string }[]
 }
 
-// This can come from your database or API.
-const defaultValues: Partial<ProfileFormValues> = {
-  bio: 'I own a computer.',
-  urls: [
-    { value: 'https://chatx.com' },
-    { value: 'http://twitter.com/chatx' },
-  ],
-}
-
 export default function ProfileForm() {
   const { t } = useTranslation()
   const profileFormSchema = createProfileFormSchema(t)
+
+  const userInfo = getUserInfo()
+
+  // 从用户数据生成默认值
+  const defaultValues: Partial<ProfileFormValues> = {
+    username: userInfo?.username || '',
+    email: userInfo?.email || '',
+    bio: userInfo?.bio || '',
+    urls: userInfo?.urls || [],
+  }
   
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues,
     mode: 'onChange',
   })
+
+  // 当用户数据加载后，更新表单默认值
+  useEffect(() => {
+    const currentUserInfo = getUserInfo()
+    if (currentUserInfo) {
+      form.reset({
+        username: currentUserInfo.username || '',
+        email: currentUserInfo.email || '',
+        bio: currentUserInfo.bio || '',
+        urls: currentUserInfo.urls || [],
+      })
+    }
+  }, [form])
 
   const { fields, append } = useFieldArray({
     name: 'urls',
@@ -104,18 +113,13 @@ export default function ProfileForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t('settings.profile.email')}</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('settings.profile.emailPlaceholder')} />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value='m@example.com'>m@example.com</SelectItem>
-                  <SelectItem value='m@google.com'>m@google.com</SelectItem>
-                  <SelectItem value='m@support.com'>m@support.com</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <Input 
+                  placeholder={t('settings.profile.emailPlaceholder')} 
+                  type="email"
+                  {...field} 
+                />
+              </FormControl>
               <FormDescription>
                 {t('settings.profile.emailDescription')}
               </FormDescription>
