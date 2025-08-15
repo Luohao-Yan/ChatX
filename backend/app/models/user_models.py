@@ -13,11 +13,14 @@
 - role_permissions: 角色权限关联表
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, JSON, Table, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, Table, UniqueConstraint, Index
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
 from app.infrastructure.persistence.database import Base
 from enum import Enum as PyEnum
+from datetime import datetime, timezone
+from typing import Optional
+import uuid
 
 __all__ = [
     'UserStatus', 'ThirdPartyProvider', 'User', 'UserSession', 'UserVerification', 
@@ -48,30 +51,30 @@ class ThirdPartyProvider(str, PyEnum):
     DINGTALK = "dingtalk"     # 钉钉企业认证
     FEISHU = "feishu"         # 飞书企业认证
 
-# RBAC 用户角色关联表
+# RBAC 用户角色关联表（移除外键约束）
 user_roles = Table(
     'sys_user_roles',
     Base.metadata,
-    # 用户ID，关联到sys_users表，级联删除
-    Column('user_id', Integer, ForeignKey('sys_users.id', ondelete='CASCADE'), primary_key=True),
-    # 角色ID，关联到sys_roles表，级联删除
-    Column('role_id', Integer, ForeignKey('sys_roles.id', ondelete='CASCADE'), primary_key=True),
+    # 用户ID，关联到sys_users表
+    Column('user_id', UUID(as_uuid=True), primary_key=True, index=True),
+    # 角色ID，关联到sys_roles表
+    Column('role_id', UUID(as_uuid=True), primary_key=True, index=True),
     # 分配者ID，记录是谁给用户分配了这个角色（可为空）
-    Column('assigned_by', Integer, ForeignKey('sys_users.id'), nullable=True),
+    Column('assigned_by', UUID(as_uuid=True), nullable=True, index=True),
     # 分配时间，自动记录角色分配的时间
     Column('assigned_at', DateTime(timezone=True), server_default=func.now()),
     # 角色过期时间，支持临时角色分配（可为空表示永不过期）
     Column('expires_at', DateTime(timezone=True), nullable=True)
 )
 
-# RBAC 角色权限关联表
+# RBAC 角色权限关联表（移除外键约束）
 role_permissions = Table(
     'sys_role_permissions',
     Base.metadata,
-    # 角色ID，关联到sys_roles表，级联删除
-    Column('role_id', Integer, ForeignKey('sys_roles.id', ondelete='CASCADE'), primary_key=True),
-    # 权限ID，关联到sys_permissions表，级联删除
-    Column('permission_id', Integer, ForeignKey('sys_permissions.id', ondelete='CASCADE'), primary_key=True),
+    # 角色ID，关联到sys_roles表
+    Column('role_id', UUID(as_uuid=True), primary_key=True, index=True),
+    # 权限ID，关联到sys_permissions表
+    Column('permission_id', UUID(as_uuid=True), primary_key=True, index=True),
     # 创建时间，记录权限分配给角色的时间
     Column('created_at', DateTime(timezone=True), server_default=func.now())
 )
@@ -92,18 +95,17 @@ class User(Base):
     """
     __tablename__ = "sys_users"
 
-    # 主键ID，自增长
-    id = Column(Integer, primary_key=True, index=True, comment="用户唯一标识ID")
+    # 主键ID，使用UUID
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="用户唯一标识ID")
     
-    # 多租户支持 - 用户所属租户
-    tenant_id = Column(Integer, ForeignKey("sys_tenants.id"), nullable=False, index=True, 
+    # 多租户支持 - 用户所属租户（移除外键约束）
+    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True, 
                       comment="所属租户ID，用于多租户数据隔离")
     
-    # 用户基本身份信息
-    email = Column(String, index=True, nullable=False, comment="用户邮箱地址，多租户下可重复")
-    username = Column(String, index=True, nullable=False, comment="用户名，多租户下可重复")
-    full_name = Column(String, nullable=True, comment="用户真实姓名")
-    hashed_password = Column(String, nullable=True, comment="加密后的密码hash，第三方认证用户可为空")
+    # 核心认证字段
+    email = Column(String(255), index=True, nullable=False, comment="用户邮箱地址")
+    username = Column(String(100), index=True, nullable=False, comment="用户名")
+    password_hash = Column(String(255), nullable=False, comment="用户密码哈希值")
     
     # 用户账户状态控制
     is_active = Column(Boolean, default=True, comment="账户是否激活，控制登录权限")
@@ -114,59 +116,110 @@ class User(Base):
     status = Column(String(20), default=UserStatus.ACTIVE, nullable=False, index=True, 
                    comment="用户当前状态（激活/停用/暂停/删除等）")
     
-    # 用户个人信息
-    avatar_url = Column(String, nullable=True, comment="用户头像URL")
-    phone = Column(String, nullable=True, comment="联系电话")
-    bio = Column(String(500), nullable=True, comment="用户个人简介")
-    urls = Column(JSON, nullable=True, comment="用户个人网站URL列表，JSON格式存储")
-    date_of_birth = Column(DateTime(timezone=True), nullable=True, comment="用户出生日期")
-    preferred_language = Column(String(10), default='zh', nullable=True, comment="用户首选语言")
+    # 扩展信息字段（JSON存储，提高灵活性）
+    profile = Column(JSON, nullable=True, comment="""用户详细资料，包含：
+    {
+        "full_name": "用户真实姓名",
+        "phone": "手机号码", 
+        "avatar_url": "用户头像URL",
+        "bio": "用户个人简介",
+        "date_of_birth": "生日",
+        "employee_id": "员工工号",
+        "position": "职位名称"
+    }""")
     
-    # 第三方认证集成字段
-    third_party_provider = Column(String(50), default=ThirdPartyProvider.LOCAL, nullable=False,
-                                 comment="认证提供商类型（本地/LDAP/SAML/OAuth2等）")
-    third_party_id = Column(String(255), nullable=True, index=True, 
-                           comment="第三方系统中的用户唯一标识ID")
-    third_party_data = Column(JSON, nullable=True, 
-                             comment="第三方系统返回的用户扩展数据（JSON格式）")
+    preferences = Column(JSON, nullable=True, comment="""用户偏好设置，包含：
+    {
+        "language": "首选语言",
+        "theme": "界面主题",
+        "timezone": "时区设置",
+        "notifications": "通知设置",
+        "urls": ["个人网站链接"]
+    }""")
     
-    # 组织架构关系字段
-    org_id = Column(Integer, ForeignKey("sys_organizations.id"), nullable=True, index=True,
-                   comment="所属组织ID")
-    department_id = Column(Integer, ForeignKey("sys_departments.id"), nullable=True, index=True,
-                          comment="所属部门ID")
-    position = Column(String(100), nullable=True, comment="职位名称")
-    employee_id = Column(String(50), nullable=True, index=True, comment="员工工号")
+    third_party_auth = Column(JSON, nullable=True, comment="""第三方认证信息，包含：
+    {
+        "provider": "认证提供商",
+        "external_id": "外部系统ID",
+        "auth_data": "认证扩展数据"
+    }""")
+    
+    # 组织关系信息（冗余存储，提高查询性能，移除外键）
+    organization_info = Column(JSON, nullable=True, comment="""当前组织信息快照，包含：
+    {
+        "org_id": "组织ID",
+        "org_name": "组织名称",
+        "dept_id": "部门ID", 
+        "dept_name": "部门名称",
+        "dept_path": "部门路径",
+        "is_manager": "是否为部门管理员"
+    }""")
     
     # 时间戳字段
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="账户创建时间")
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="最后更新时间")
     last_login = Column(DateTime(timezone=True), nullable=True, comment="最后登录时间")
+    last_activity = Column(DateTime(timezone=True), nullable=True, comment="最后活动时间，用于在线状态判断")
     
     # 软删除支持字段
     is_deleted = Column(Boolean, default=False, nullable=False, index=True, 
-                       comment="是否已软删除（回收站功能）")
+                       comment="是否已软删除")
     deleted_at = Column(DateTime(timezone=True), nullable=True, comment="删除时间")
-    deleted_by = Column(Integer, ForeignKey("sys_users.id"), nullable=True, 
-                       comment="执行删除操作的用户ID")
+    deleted_by = Column(UUID(as_uuid=True), nullable=True, 
+                       comment="执行删除操作的用户ID（移除外键约束）")
     
-    # SQLAlchemy 关系映射
-    tenant = relationship("Tenant", back_populates="users")  # 所属租户关系
-    organization = relationship("Organization", back_populates="users")  # 所属组织关系
-    department = relationship("Department", back_populates="users")  # 所属部门关系
-    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")  # 用户会话列表（一对多）
-    files = relationship("File", back_populates="owner")  # 用户拥有的文件列表
-    roles = relationship("Role", secondary=user_roles, back_populates="users", 
-                        foreign_keys=[user_roles.c.user_id, user_roles.c.role_id])  # 用户角色列表（多对多）
-    deleted_by_user = relationship("User", foreign_keys=[deleted_by], remote_side="User.id")  # 执行删除操作的用户对象
+    # 注意：移除了复杂的关系映射，通过应用层服务管理关系
     
-    # 数据库表配置和索引
+    # 数据库约束和索引
     __table_args__ = (
-        # 注意：由于多租户架构，email和username在租户级别唯一
-        # 具体的唯一性约束需要在应用层或数据库触发器中实现
-        # 可以考虑添加复合索引：(tenant_id, email) 和 (tenant_id, username)
-        {"extend_existing": True, "comment": "用户主表，存储系统中所有用户的基本信息和状态"},
+        UniqueConstraint('tenant_id', 'email', name='uq_tenant_user_email'),
+        UniqueConstraint('tenant_id', 'username', name='uq_tenant_user_username'),
+        Index('ix_user_status_active', 'tenant_id', 'status', 'is_active'),
+        Index('ix_user_activity', 'last_activity'),
+        {"comment": "用户主表 - 混合架构设计，核心字段关系型+扩展字段JSON"},
     )
+    
+    # 辅助方法
+    @property
+    def display_name(self) -> str:
+        """获取用户显示名称"""
+        if self.profile and self.profile.get('full_name'):
+            return self.profile['full_name']
+        return self.username
+    
+    @property
+    def is_online(self) -> bool:
+        """判断用户是否在线（5分钟内有活动）"""
+        if not self.last_activity:
+            return False
+        return (datetime.now(timezone.utc) - self.last_activity.replace(tzinfo=timezone.utc)).total_seconds() < 300
+    
+    def get_organization_id(self) -> Optional[str]:
+        """获取当前组织ID"""
+        return self.organization_info.get('org_id') if self.organization_info else None
+    
+    def get_department_id(self) -> Optional[str]:
+        """获取当前部门ID"""
+        return self.organization_info.get('dept_id') if self.organization_info else None
+    
+    def update_organization_info(self, org_id: str = None, org_name: str = None, 
+                               dept_id: str = None, dept_name: str = None, 
+                               dept_path: str = None, is_manager: bool = False):
+        """更新组织信息快照"""
+        if not self.organization_info:
+            self.organization_info = {}
+        
+        if org_id:
+            self.organization_info['org_id'] = org_id
+        if org_name:
+            self.organization_info['org_name'] = org_name
+        if dept_id:
+            self.organization_info['dept_id'] = dept_id
+        if dept_name:
+            self.organization_info['dept_name'] = dept_name
+        if dept_path:
+            self.organization_info['dept_path'] = dept_path
+        self.organization_info['is_manager'] = is_manager
 
 class UserSession(Base):
     """用户会话管理模型
@@ -184,10 +237,10 @@ class UserSession(Base):
     __tablename__ = "sys_user_sessions"
 
     # 会话唯一标识
-    id = Column(Integer, primary_key=True, index=True, comment="会话ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="会话ID")
     
-    # 关联用户
-    user_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False, comment="会话所属用户ID")
+    # 关联用户（移除外键约束）
+    user_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="会话所属用户ID")
     
     # 令牌和认证信息
     refresh_token = Column(String, unique=True, index=True, nullable=False, 
@@ -205,8 +258,7 @@ class UserSession(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="会话创建时间")
     last_used = Column(DateTime(timezone=True), server_default=func.now(), comment="最后使用时间")
     
-    # 关系映射
-    user = relationship("User", back_populates="sessions")  # 所属用户对象
+    # 注意：移除了关系映射，通过应用层服务管理关系
     
     # 数据库表配置
     __table_args__ = (
@@ -228,10 +280,10 @@ class UserVerification(Base):
     __tablename__ = "sys_user_verifications"
 
     # 验证记录唯一标识
-    id = Column(Integer, primary_key=True, index=True, comment="验证记录ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="验证记录ID")
     
-    # 关联用户
-    user_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False, comment="验证码所属用户ID")
+    # 关联用户（移除外键约束）
+    user_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="验证码所属用户ID")
     
     # 验证信息
     verification_type = Column(String, nullable=False, comment="验证类型（email/phone/password_reset/two_factor）")
@@ -242,8 +294,7 @@ class UserVerification(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False, comment="验证码过期时间")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="验证码生成时间")
     
-    # 关系映射
-    user = relationship("User")  # 验证码所属用户对象
+    # 注意：移除了关系映射，通过应用层服务管理关系
     
     # 数据库表配置
     __table_args__ = (
@@ -269,10 +320,10 @@ class Role(Base):
     __tablename__ = "sys_roles"
 
     # 角色唯一标识
-    id = Column(Integer, primary_key=True, index=True, comment="角色ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="角色ID")
     
-    # 多租户支持
-    tenant_id = Column(Integer, ForeignKey("sys_tenants.id"), nullable=False, index=True,
+    # 多租户支持（移除外键约束）
+    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True,
                       comment="所属租户ID，用于多租户角色隔离")
     
     # 角色基本信息
@@ -291,8 +342,8 @@ class Role(Base):
     is_system = Column(Boolean, default=False, nullable=False, comment="是否为系统预定义角色（不可删除）")
     is_default = Column(Boolean, default=False, nullable=False, comment="是否为新用户默认角色")
     
-    # 角色层级关系
-    parent_id = Column(Integer, ForeignKey("sys_roles.id"), nullable=True, 
+    # 角色层级关系（移除外键约束）
+    parent_id = Column(UUID(as_uuid=True), nullable=True, index=True,
                       comment="父角色ID，支持角色继承")
     
     # 角色使用限制
@@ -301,22 +352,14 @@ class Role(Base):
     # 时间戳和审计字段
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="角色创建时间")
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="最后更新时间")
-    created_by = Column(Integer, ForeignKey("sys_users.id"), nullable=True, comment="创建者用户ID")
+    created_by = Column(UUID(as_uuid=True), nullable=True, index=True, comment="创建者用户ID")
     
     # 软删除支持字段
     is_deleted = Column(Boolean, default=False, nullable=False, index=True, comment="是否已软删除")
     deleted_at = Column(DateTime(timezone=True), nullable=True, comment="删除时间")
-    deleted_by = Column(Integer, ForeignKey("sys_users.id"), nullable=True, comment="执行删除的用户ID")
+    deleted_by = Column(UUID(as_uuid=True), nullable=True, index=True, comment="执行删除的用户ID")
     
-    # SQLAlchemy 关系映射
-    tenant = relationship("Tenant")  # 所属租户对象
-    parent = relationship("Role", remote_side=[id], back_populates="children")  # 父角色对象
-    children = relationship("Role", back_populates="parent", cascade="all, delete-orphan")  # 子角色列表
-    permissions = relationship("Permission", secondary=role_permissions, back_populates="roles")  # 角色拥有的权限列表（多对多）
-    users = relationship("User", secondary=user_roles, back_populates="roles",
-                        foreign_keys=[user_roles.c.user_id, user_roles.c.role_id])  # 拥有该角色的用户列表（多对多）
-    creator = relationship("User", foreign_keys=[created_by])  # 创建者用户对象
-    deleted_by_user = relationship("User", foreign_keys=[deleted_by])  # 执行删除的用户对象
+    # 注意：移除了关系映射，通过应用层服务管理关系
     
     # 数据库表配置
     __table_args__ = (
@@ -346,7 +389,7 @@ class Permission(Base):
     __tablename__ = "sys_permissions"
 
     # 权限唯一标识
-    id = Column(Integer, primary_key=True, index=True, comment="权限ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="权限ID")
     
     # 权限基本信息
     name = Column(String(100), nullable=False, unique=True, index=True, 
@@ -363,7 +406,7 @@ class Permission(Base):
     # 权限组织和分组
     category = Column(String(100), nullable=True, index=True, comment="权限分类（用户管理/文件管理等）")
     group_name = Column(String(100), nullable=True, index=True, comment="权限分组名称")
-    parent_id = Column(Integer, ForeignKey("sys_permissions.id"), nullable=True, 
+    parent_id = Column(UUID(as_uuid=True), nullable=True, index=True,
                       comment="父权限ID，支持权限层级")
     
     # 权限控制配置
@@ -383,13 +426,9 @@ class Permission(Base):
     # 软删除支持字段
     is_deleted = Column(Boolean, default=False, nullable=False, index=True, comment="是否已软删除")
     deleted_at = Column(DateTime(timezone=True), nullable=True, comment="删除时间")
-    deleted_by = Column(Integer, ForeignKey("sys_users.id"), nullable=True, comment="执行删除的用户ID")
+    deleted_by = Column(UUID(as_uuid=True), nullable=True, index=True, comment="执行删除的用户ID")
     
-    # SQLAlchemy 关系映射
-    parent = relationship("Permission", remote_side=[id], back_populates="children")  # 父权限对象
-    children = relationship("Permission", back_populates="parent", cascade="all, delete-orphan")  # 子权限列表
-    roles = relationship("Role", secondary=role_permissions, back_populates="permissions")  # 拥有该权限的角色列表（多对多）
-    deleted_by_user = relationship("User", foreign_keys=[deleted_by])  # 执行删除的用户对象
+    # 注意：移除了关系映射，通过应用层服务管理关系
     
     # 数据库表配置
     __table_args__ = (
@@ -412,13 +451,11 @@ class UserPermission(Base):
     __tablename__ = "sys_user_permissions"
 
     # 权限记录唯一标识
-    id = Column(Integer, primary_key=True, index=True, comment="用户权限记录ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="用户权限记录ID")
     
-    # 权限关联关系
-    user_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False, index=True,
-                    comment="用户ID")
-    permission_id = Column(Integer, ForeignKey("sys_permissions.id"), nullable=False, index=True,
-                          comment="权限ID")
+    # 权限关联关系（移除外键约束）
+    user_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="用户ID")
+    permission_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="权限ID")
     
     # 权限授予状态
     granted = Column(Boolean, default=True, nullable=False, 
@@ -428,9 +465,8 @@ class UserPermission(Base):
     resource_id = Column(String(100), nullable=True, comment="特定资源ID，为空表示全局权限")
     conditions = Column(JSON, nullable=True, comment="权限执行的额外条件（JSON格式）")
     
-    # 权限授予审计信息
-    granted_by = Column(Integer, ForeignKey("sys_users.id"), nullable=True, 
-                       comment="授权者用户ID")
+    # 权限授予审计信息（移除外键约束）
+    granted_by = Column(UUID(as_uuid=True), nullable=True, index=True, comment="授权者用户ID")
     reason = Column(String(500), nullable=True, comment="授权原因说明")
     
     # 权限有效期控制
@@ -441,10 +477,7 @@ class UserPermission(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="权限分配时间")
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="最后更新时间")
     
-    # SQLAlchemy 关系映射
-    user = relationship("User", foreign_keys=[user_id])  # 被授权的用户对象
-    permission = relationship("Permission")  # 权限对象
-    granter = relationship("User", foreign_keys=[granted_by])  # 授权者用户对象
+    # 注意：移除了关系映射，通过应用层服务管理关系
     
     # 数据库表配置
     __table_args__ = (

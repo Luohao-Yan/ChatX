@@ -28,6 +28,7 @@ import {
   IconShare,
   // IconGauge,      // 仪表盘图标，非常适合质量评估
   IconScale,
+  IconBrain,
 } from '@tabler/icons-react'
 import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
 import { TFunction } from 'i18next'
@@ -265,6 +266,11 @@ export const getSidebarData = (t: TFunction, user?: { name: string; email: strin
             title: t('nav.permissionsManagement'),
             url: '/management/permissions',
             icon: IconLockAccess,
+          },
+          {
+            title: t('nav.aiModelsManagement'),
+            url: '/management/ai-models',
+            icon: IconBrain,
           },
 
         ],

@@ -1,6 +1,6 @@
-from pydantic import BaseModel, EmailStr, field_validator, model_validator, ConfigDict
+from pydantic import BaseModel, EmailStr, field_validator, model_validator, ConfigDict, computed_field
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class UserBase(BaseModel):
@@ -57,6 +57,7 @@ class UserInDBBase(UserBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
+    last_activity: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -64,6 +65,31 @@ class UserInDBBase(UserBase):
 class User(UserInDBBase):
     roles: Optional[List[str]] = None  # 角色名列表
     permissions: Optional[List[str]] = None  # 权限名列表
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    @computed_field
+    @property
+    def is_online(self) -> bool:
+        """计算用户是否在线（最近5分钟内有活动）"""
+        if not self.last_activity:
+            return False
+        
+        now = datetime.now(timezone.utc)
+        # 如果最后活动时间在5分钟内，认为是在线
+        time_diff = now - self.last_activity.replace(tzinfo=timezone.utc)
+        return time_diff.total_seconds() < 300  # 5分钟 = 300秒
+    
+    @field_validator('roles', mode='before')
+    @classmethod
+    def extract_role_names(cls, v):
+        """从 Role 对象中提取角色名"""
+        if v is None:
+            return None
+        if isinstance(v, list):
+            # 如果是 Role 对象列表，提取名称
+            return [role.name if hasattr(role, 'name') else str(role) for role in v]
+        return v
 
 
 class UserInDB(UserInDBBase):

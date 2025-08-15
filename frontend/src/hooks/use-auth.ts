@@ -19,7 +19,7 @@ export const useAuth = () => {
   return {
     // 状态
     status: store.status,
-    user: store.user,
+    user: store.userInfo,
     session: store.session,
     error: store.error,
     isLoading: store.isLoading,

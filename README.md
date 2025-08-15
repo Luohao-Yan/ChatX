@@ -143,9 +143,10 @@ cd backend
 
 **就这么简单！** 系统会自动处理所有复杂的初始化工作。
 
-#### 🎉 启动完成后你将看到：
+#### 🎉 启动完成后你将看到
 
 **本地开发模式** (`./dev-start.sh`):
+
 ```
 🎉 企业级FastAPI应用启动完成
 📚 API文档: http://localhost:8000/docs
@@ -156,6 +157,7 @@ cd backend
 ```
 
 **Docker部署模式** (`./start.sh`):
+
 ```
 🎉 ChatX 后端服务启动完成！
 📚 服务地址 (通过 Nginx 统一入口)：
@@ -669,7 +671,7 @@ async def register_user(
     user_data: UserCreate,
     user_service: UserService = Depends(get_user_service)  # DI
 ):
-    """用户注册 - 薄控制器"""
+    """用户注册"""
     return await user_service.register_user(user_data)
 
 # Example: Application Service Pattern

@@ -16,6 +16,7 @@ from app.middleware.logging_middleware import (
     RequestLoggingMiddleware,
     SecurityLoggingMiddleware,
 )
+from app.middleware.activity_middleware import UserActivityMiddleware
 
 
 def setup_middleware(app: FastAPI) -> None:
@@ -56,7 +57,22 @@ def setup_middleware(app: FastAPI) -> None:
     # 5. 租户配额中间件
     app.add_middleware(TenantQuotaMiddleware)
     
-    # 6. CORS中间件（最后）
+    # 6. 用户活动跟踪中间件
+    app.add_middleware(
+        UserActivityMiddleware,
+        exclude_paths=[
+            "/",
+            "/health",
+            "/metrics", 
+            "/docs",
+            "/redoc",
+            "/openapi.json",
+            "/static",
+            "/favicon.ico"
+        ]
+    )
+    
+    # 7. CORS中间件（最后）
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,

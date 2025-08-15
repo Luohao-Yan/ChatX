@@ -1,14 +1,33 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FastAPIFile, Form, Request
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    UploadFile,
+    File as FastAPIFile,
+    Form,
+    Request,
+)
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 
 from app.application.services.file_service import FileApplicationService
 from app.schemas.file_schemas import (
-    FileCreate, FileUpdate, FileInfo, FileDetail, FileListResponse,
-    FolderCreate, Folder as FolderSchema, FolderTree, FileSearchParams,
-    FileUploadResponse, MultiFileUploadResponse, FileShare as FileShareSchema,
-    FileShareCreate, FileStatistics, UserFileStatistics
+    FileCreate,
+    FileUpdate,
+    FileInfo,
+    FileDetail,
+    FileListResponse,
+    FolderCreate,
+    Folder as FolderSchema,
+    FolderTree,
+    FileSearchParams,
+    FileUploadResponse,
+    MultiFileUploadResponse,
+    FileShare as FileShareSchema,
+    FileShareCreate,
+    FileStatistics,
+    UserFileStatistics,
 )
 from app.models.user_models import User
 from app.utils.deps import get_current_active_user, get_file_service
@@ -20,11 +39,12 @@ def get_client_info(request: Request) -> dict:
     """获取客户端信息"""
     return {
         "ip_address": request.client.host if request.client else None,
-        "user_agent": request.headers.get("user-agent")
+        "user_agent": request.headers.get("user-agent"),
     }
 
 
 # ==================== 文件上传 ====================
+
 
 @router.post("/upload", response_model=FileUploadResponse)
 async def upload_single_file(
@@ -38,9 +58,9 @@ async def upload_single_file(
     file_service: FileApplicationService = Depends(get_file_service),
     request: Request = None,
 ):
-    """上传单个文件 - 薄控制器"""
+    """上传单个文件"""
     client_info = get_client_info(request)
-    
+
     file_create = FileCreate(
         title=title,
         description=description,
@@ -48,7 +68,7 @@ async def upload_single_file(
         visibility=visibility,
         parent_folder_id=parent_folder_id,
     )
-    
+
     uploaded_file = await file_service.upload_file(
         file=file,
         user=current_user,
@@ -56,7 +76,7 @@ async def upload_single_file(
         ip_address=client_info["ip_address"],
         user_agent=client_info["user_agent"],
     )
-    
+
     return FileUploadResponse(
         file_id=uploaded_file.id,
         message="文件上传成功",
@@ -73,14 +93,14 @@ async def upload_multiple_files(
     file_service: FileApplicationService = Depends(get_file_service),
     request: Request = None,
 ):
-    """批量上传文件 - 薄控制器"""
+    """批量上传文件"""
     if len(files) > 20:
         raise HTTPException(status_code=400, detail="一次最多只能上传20个文件")
-    
+
     client_info = get_client_info(request)
     uploaded_files = []
     failed_files = []
-    
+
     for file in files:
         try:
             file_create = FileCreate(
@@ -88,7 +108,7 @@ async def upload_multiple_files(
                 visibility=visibility,
                 parent_folder_id=parent_folder_id,
             )
-            
+
             uploaded_file = await file_service.upload_file(
                 file=file,
                 user=current_user,
@@ -96,12 +116,12 @@ async def upload_multiple_files(
                 ip_address=client_info["ip_address"],
                 user_agent=client_info["user_agent"],
             )
-            
+
             uploaded_files.append(FileInfo.from_orm(uploaded_file))
-            
+
         except Exception as e:
             failed_files.append({"filename": file.filename, "error": str(e)})
-    
+
     return MultiFileUploadResponse(
         uploaded_files=uploaded_files,
         failed_files=failed_files,
@@ -111,6 +131,7 @@ async def upload_multiple_files(
 
 
 # ==================== 文件管理 ====================
+
 
 @router.get("/search", response_model=FileListResponse)
 async def search_files(
@@ -126,7 +147,7 @@ async def search_files(
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):
-    """搜索和筛选文件 - 薄控制器"""
+    """搜索和筛选文件"""
     search_params = FileSearchParams(
         keyword=keyword,
         file_type=file_type,
@@ -138,9 +159,9 @@ async def search_files(
         page=page,
         per_page=per_page,
     )
-    
+
     result = await file_service.search_files(search_params, current_user)
-    
+
     return FileListResponse(
         files=[FileInfo.from_orm(f) for f in result["files"]],
         total=result["total"],
@@ -156,17 +177,17 @@ async def get_file_detail(
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):
-    """获取文件详情 - 薄控制器"""
+    """获取文件详情"""
     file = await file_service.get_file_by_id(file_id, current_user)
     if not file:
         raise HTTPException(status_code=404, detail="文件不存在")
-    
+
     # 增加查看次数由服务层处理
     await file_service.file_repo.update(file_id, {"view_count": file.view_count + 1})
-    
+
     # 记录活动
     await file_service._log_activity(file_id, current_user.id, "view")
-    
+
     return FileDetail.from_orm(file)
 
 
@@ -177,7 +198,7 @@ async def update_file(
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):
-    """更新文件信息 - 薄控制器"""
+    """更新文件信息"""
     updated_file = await file_service.update_file(file_id, file_update, current_user)
     return FileInfo.from_orm(updated_file)
 
@@ -189,7 +210,7 @@ async def delete_file(
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):
-    """删除文件 - 薄控制器"""
+    """删除文件"""
     success = await file_service.delete_file(file_id, current_user, permanent)
     return {
         "message": "文件删除成功" if success else "文件删除失败",
@@ -203,13 +224,13 @@ async def download_file(
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):
-    """下载文件 - 薄控制器"""
+    """下载文件"""
     file = await file_service.get_file_by_id(file_id, current_user)
     if not file:
         raise HTTPException(status_code=404, detail="文件不存在")
-    
+
     file_data = await file_service.download_file(file_id, current_user)
-    
+
     return StreamingResponse(
         BytesIO(file_data),
         media_type=file.mime_type,
@@ -222,13 +243,14 @@ async def download_file(
 
 # ==================== 文件夹管理 ====================
 
+
 @router.post("/folders", response_model=FolderSchema)
 async def create_folder(
     folder_create: FolderCreate,
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):
-    """创建文件夹 - 薄控制器"""
+    """创建文件夹"""
     folder = await file_service.create_folder(folder_create, current_user)
     return FolderSchema.from_orm(folder)
 
@@ -236,9 +258,9 @@ async def create_folder(
 @router.get("/folders/tree", response_model=List[FolderTree])
 async def get_folder_tree(
     current_user: User = Depends(get_current_active_user),
-    file_service: FileApplicationService = Depends(get_file_service)
+    file_service: FileApplicationService = Depends(get_file_service),
 ):
-    """获取文件夹树形结构 - 薄控制器"""
+    """获取文件夹树形结构"""
     return await file_service.get_folder_tree(current_user)
 
 
@@ -250,11 +272,11 @@ async def get_folder_files(
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):
-    """获取文件夹下的文件 - 薄控制器"""
+    """获取文件夹下的文件"""
     search_params = FileSearchParams(folder_id=folder_id, page=page, per_page=per_page)
-    
+
     result = await file_service.search_files(search_params, current_user)
-    
+
     return FileListResponse(
         files=[FileInfo.from_orm(f) for f in result["files"]],
         total=result["total"],
@@ -266,6 +288,7 @@ async def get_folder_files(
 
 # ==================== 文件分享 ====================
 
+
 @router.post("/{file_id}/share", response_model=FileShareSchema)
 async def share_file(
     file_id: int,
@@ -273,7 +296,7 @@ async def share_file(
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):
-    """分享文件 - 薄控制器"""
+    """分享文件"""
     share = await file_service.share_file(file_id, current_user, share_create)
     return FileShareSchema.from_orm(share)
 
@@ -284,7 +307,7 @@ async def get_file_shares(
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):
-    """获取文件的分享列表 - 薄控制器"""
+    """获取文件的分享列表"""
     shares = await file_service.get_file_shares(file_id, current_user)
     return [FileShareSchema.from_orm(share) for share in shares]
 
@@ -296,9 +319,11 @@ async def get_shared_files(
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):
-    """获取分享给我的文件 - 薄控制器"""
-    files = await file_service.get_shared_files(current_user, (page-1)*per_page, per_page)
-    
+    """获取分享给我的文件"""
+    files = await file_service.get_shared_files(
+        current_user, (page - 1) * per_page, per_page
+    )
+
     return FileListResponse(
         files=[FileInfo.from_orm(f) for f in files],
         total=len(files),  # 这里简化处理，实际需要单独查询总数
@@ -310,14 +335,15 @@ async def get_shared_files(
 
 # ==================== 统计信息 ====================
 
+
 @router.get("/statistics/overview", response_model=FileStatistics)
 async def get_file_statistics(
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):
-    """获取文件统计信息 - 薄控制器"""
+    """获取文件统计信息"""
     stats = await file_service.get_file_statistics(current_user)
-    
+
     return FileStatistics(
         total_files=stats["total_files"],
         total_size=stats["total_size"],

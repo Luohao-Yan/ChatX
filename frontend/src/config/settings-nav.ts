@@ -4,6 +4,7 @@ import {
   IconPalette,
   IconTool,
   IconUserCog,
+  IconPuzzle2,
 } from '@tabler/icons-react'
 import type { TFunction } from 'i18next'
 import type { ComponentType } from 'react'
@@ -38,5 +39,10 @@ export const getSettingsNavItems = (t: TFunction): SettingsNavItem[] => [
     title: t('nav.display'),
     icon: IconBrowserCheck,
     href: '/settings/display' as const,
+  },
+  {
+    title: t('nav.mcp'),
+    icon: IconPuzzle2,
+    href: '/settings/mcp' as const,
   },
 ]

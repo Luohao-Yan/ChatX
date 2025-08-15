@@ -33,12 +33,15 @@
 | | 文件夹管理 | 文件夹创建、树形结构 | `POST /files/folders`<br>`GET /files/folders/tree` | `/documents` | ✅ 已实现 |
 | | 文件分享 | 文件分享链接管理 | `POST /files/{id}/share`<br>`GET /files/shared-with-me` | `/documents/shared` | ✅ 已实现 |
 | | 文件统计 | 存储分析、使用统计 | `GET /files/statistics/overview` | `/documents/storage` | ✅ 已实现 |
-| **AI模型管理平台** | 模型接入管理 | 统一管理多种AI模型提供商 | `POST /ai-models/`<br>`GET /ai-models/providers` | `/settings/ai-models` | 🚧 规划中 |
-| | 模型配置 | OpenAI、Azure、AWS、Gemini等配置 | `PUT /ai-models/{id}/config` | AI模型设置页面 | 🚧 规划中 |
-| | 模型切换 | 动态切换AI模型和参数调优 | `POST /ai-models/switch` | AI聊天界面 | 🚧 规划中 |
-| | 使用统计 | AI模型调用统计和成本分析 | `GET /ai-models/statistics` | AI仪表板 | 🚧 规划中 |
-| **MCP协议支持** | MCP集成 | Model Context Protocol协议支持 | `POST /mcp/connect`<br>`GET /mcp/contexts` | MCP管理页面 | 🚧 规划中 |
-| | 上下文管理 | 跨模型上下文共享和管理 | `POST /mcp/contexts` | AI聊天界面 | 🚧 规划中 |
+| **AI模型管理平台** | 模型接入管理 | 统一管理多种AI模型提供商，支持OpenAI、Anthropic、Google、Azure、Hugging Face、Cohere等 | `POST /ai-models/`<br>`GET /ai-models/`<br>`PUT /ai-models/{id}`<br>`DELETE /ai-models/{id}` | `/management/ai-models` | ✅ 已实现 |
+| | 模型配置 | 模型名称、提供商、API端点、Token限制、价格配置 | `POST /ai-models/config`<br>`PUT /ai-models/{id}/config` | AI模型管理页面 | ✅ 已实现 |
+| | 模型类型支持 | 支持对话模型、嵌入模型、图像模型三种类型 | API支持模型类型字段 | AI模型管理页面 | ✅ 已实现 |
+| | 模型状态管理 | 启用/禁用模型、连接测试、统计信息 | `POST /ai-models/{id}/toggle`<br>`POST /ai-models/{id}/test` | AI模型管理页面 | ✅ 已实现 |
+| | 模型统计概览 | 总模型数、启用模型数、分类型统计 | 前端实现 | AI模型管理页面 | ✅ 已实现 |
+| **MCP协议支持** | MCP连接管理 | Model Context Protocol连接配置和管理 | `POST /mcp/connections`<br>`GET /mcp/connections`<br>`PUT /mcp/connections/{id}`<br>`DELETE /mcp/connections/{id}` | `/settings/mcp` | ✅ 已实现 |
+| | 连接配置 | 连接名称、端点URL、描述信息配置 | MCP连接API | MCP设置页面 | ✅ 已实现 |
+| | 连接状态管理 | 连接测试、状态监控、最后同步时间 | `POST /mcp/connections/{id}/test` | MCP设置页面 | ✅ 已实现 |
+| | 连接列表管理 | 添加、编辑、删除MCP连接 | MCP连接API | MCP设置页面 | ✅ 已实现 |
 | **数据连接器平台** | 连接器管理 | Connect框架多数据源连接器 | `POST /connectors/`<br>`GET /connectors/types` | `/settings/connectors` | 🚧 规划中 |
 | | 数据源配置 | MySQL、MongoDB、API等数据源 | `POST /connectors/{id}/config` | 数据源配置页面 | 🚧 规划中 |
 | | 数据同步 | 实时数据同步和ETL处理 | `POST /connectors/{id}/sync` | 数据同步监控 | 🚧 规划中 |
@@ -184,15 +187,47 @@
 
 #### 模型配置管理
 - `POST /ai-models/` - 创建AI模型配置
+  - **请求体**: `{ name, provider, modelId, apiEndpoint, type, tokenLimit, pricePerToken?, description?, enabled }`
+  - **响应**: 创建的模型配置对象
 - `GET /ai-models/` - 获取所有AI模型配置
-- `GET /ai-models/providers` - 获取支持的AI模型提供商列表
-- `PUT /ai-models/{model_id}/config` - 更新模型配置
+  - **响应**: 模型配置列表，包含统计信息
+- `GET /ai-models/{model_id}` - 获取单个模型配置详情
+- `PUT /ai-models/{model_id}` - 更新模型配置
+  - **请求体**: 更新的模型配置字段
 - `DELETE /ai-models/{model_id}` - 删除模型配置
+- `POST /ai-models/{model_id}/toggle` - 启用/禁用模型
 - `POST /ai-models/{model_id}/test` - 测试模型连接
+  - **响应**: 连接测试结果
 
-#### 模型调用管理
-- `POST /ai-models/switch` - 切换当前使用的AI模型
-- `POST /ai-models/{model_id}/chat` - 调用指定模型进行对话
+#### 模型提供商管理
+- `GET /ai-models/providers` - 获取支持的提供商列表
+  - **响应**: `["OpenAI", "Anthropic", "Google", "Azure", "Hugging Face", "Cohere", "Custom"]`
+- `GET /ai-models/types` - 获取支持的模型类型
+  - **响应**: `["chat", "embedding", "image"]`
+
+#### 模型统计
+- `GET /ai-models/statistics` - 获取模型使用统计
+  - **响应**: `{ totalModels, enabledModels, chatModels, embeddingModels, imageModels }`
+
+### MCP协议管理接口
+
+#### MCP连接管理
+- `POST /mcp/connections` - 创建MCP连接
+  - **请求体**: `{ name, endpoint, description? }`
+  - **响应**: 创建的连接对象
+- `GET /mcp/connections` - 获取所有MCP连接
+  - **响应**: 连接列表，包含状态和最后同步时间
+- `GET /mcp/connections/{connection_id}` - 获取单个连接详情
+- `PUT /mcp/connections/{connection_id}` - 更新连接配置
+  - **请求体**: 更新的连接配置字段
+- `DELETE /mcp/connections/{connection_id}` - 删除连接
+- `POST /mcp/connections/{connection_id}/test` - 测试连接
+  - **响应**: 连接测试结果和状态
+
+#### MCP上下文管理
+- `GET /mcp/contexts` - 获取可用的上下文列表
+- `POST /mcp/contexts` - 创建新的上下文
+- `GET /mcp/contexts/{context_id}` - 获取特定上下文信息
 - `GET /ai-models/{model_id}/statistics` - 获取模型使用统计
 - `GET /ai-models/usage-report` - 获取所有模型使用报告
 
@@ -559,17 +594,173 @@ backend/
 frontend/
 ├── src/
 │   ├── components/     # 公共组件
+│   │   ├── ui/        # 基础UI组件 (shadcn/ui)
+│   │   └── layout/    # 布局组件
 │   ├── features/      # 功能模块
+│   │   ├── core/      # 核心功能 (设置、认证等)
+│   │   │   └── settings/
+│   │   │       └── mcp/           # MCP管理功能
+│   │   └── management/            # 管理功能
+│   │       └── ai-models/         # AI模型管理功能
 │   ├── routes/        # 路由页面
+│   │   └── _authenticated/        # 需认证的路由
+│   │       ├── management/
+│   │       │   └── ai-models.tsx  # AI模型管理页面
+│   │       └── settings/
+│   │           └── mcp.tsx        # MCP设置页面
 │   ├── hooks/         # 自定义Hooks
 │   ├── lib/           # 工具库
 │   ├── stores/        # 状态管理
-│   └── locales/       # 国际化文件
+│   ├── locales/       # 国际化文件
+│   │   ├── zh.json    # 中文翻译 (新增AI模型和MCP翻译)
+│   │   └── en.json    # 英文翻译 (新增AI模型和MCP翻译)
+│   └── config/        # 配置文件
+│       └── settings-nav.ts       # 设置导航配置
 └── package.json       # 依赖管理
 ```
 
 ---
 
-**版本**: v1.4.2  
+## 新增功能详细说明
+
+### AI 大模型接入管理
+
+**功能位置**: 管理中心 → AI 大模型接入管理 (`/management/ai-models`)
+
+**核心功能**:
+
+1. **多提供商支持**
+   - OpenAI (GPT-4, GPT-3.5, DALL-E等)
+   - Anthropic (Claude 3.5 Sonnet等)
+   - Google (Gemini系列)
+   - Microsoft Azure (Azure OpenAI)
+   - Hugging Face (开源模型)
+   - Cohere (企业级AI模型)
+   - 自定义提供商
+
+2. **模型配置管理**
+   - 模型名称和显示名称
+   - 模型ID (API调用标识符)
+   - API端点URL配置
+   - Token限制设置 (最大上下文长度)
+   - 单Token价格配置 (成本控制)
+   - 模型描述和用途说明
+
+3. **模型类型分类**
+   - **对话模型**: 用于AI聊天、文本生成
+   - **嵌入模型**: 用于向量化、语义搜索
+   - **图像模型**: 用于图像生成、视觉理解
+
+4. **状态管理**
+   - 启用/禁用模型切换
+   - 连接测试功能
+   - 最后更新时间追踪
+   - 模型使用统计
+
+5. **统计概览**
+   - 总模型数量统计
+   - 启用模型数量统计
+   - 按类型分类统计 (对话/嵌入/图像)
+   - 可视化统计卡片
+
+6. **管理操作**
+   - 添加新模型配置
+   - 编辑现有模型参数
+   - 删除不需要的模型
+   - 批量操作支持
+
+**技术特点**:
+- 完全响应式设计，支持移动端操作
+- 完整的表单验证和错误处理
+- 支持中英文国际化
+- 实时状态更新和测试功能
+
+### MCP (Model Context Protocol) 管理
+
+**功能位置**: 设置 → MCP (`/settings/mcp`)
+
+**核心功能**:
+
+1. **连接管理**
+   - MCP服务器连接配置
+   - 连接名称和描述管理
+   - 端点URL配置
+   - 连接状态监控
+
+2. **协议支持**
+   - Model Context Protocol标准支持
+   - 跨模型上下文共享
+   - 统一的上下文协议接口
+   - 标准化的模型通信
+
+3. **连接操作**
+   - 添加新的MCP连接
+   - 编辑现有连接配置
+   - 删除不需要的连接
+   - 连接测试和验证
+
+4. **状态监控**
+   - 连接状态实时显示 (已连接/未连接)
+   - 最后同步时间记录
+   - 连接健康状态检查
+   - 自动重连机制
+
+5. **配置管理**
+   - 连接参数配置
+   - 认证信息管理
+   - 超时设置
+   - 重试策略配置
+
+**技术特点**:
+- 支持MCP协议标准
+- 实时连接状态监控
+- 完整的错误处理和重试机制
+- 移动端友好的响应式界面
+- 中英文完整国际化支持
+
+### 国际化支持增强
+
+**覆盖范围**:
+- AI大模型管理界面完整国际化
+- MCP管理界面完整国际化
+- 表单验证消息国际化
+- 错误提示消息国际化
+- 导航菜单国际化
+- 状态标签和按钮国际化
+
+**支持语言**:
+- 中文 (简体)
+- English (英文)
+
+**技术实现**:
+- 基于 react-i18next 框架
+- 动态语言切换
+- 组件级别的国际化支持
+- 验证消息动态国际化
+- 选项列表动态国际化
+
+### 用户界面优化
+
+**响应式设计**:
+- 移动端优化 (手机、平板)
+- 桌面端适配 (1920px+)
+- 自适应布局和字体
+- 触摸友好的交互元素
+
+**用户体验**:
+- 直观的操作流程
+- 实时反馈和状态提示
+- 优雅的加载和错误状态
+- 键盘快捷键支持
+
+**视觉设计**:
+- 统一的设计语言
+- 清晰的信息层次
+- 适当的视觉反馈
+- 美观的图标和颜色搭配
+
+---
+
+**版本**: v1.5.0  
 **最后更新**: 2025年1月  
 **文档状态**: 🟢 最新

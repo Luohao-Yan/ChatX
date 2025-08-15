@@ -32,9 +32,12 @@ import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as AuthenticatedAiChatsIndexRouteImport } from './routes/_authenticated/ai-chats/index'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
+import { Route as AuthenticatedSettingsMcpRouteImport } from './routes/_authenticated/settings/mcp'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
+import { Route as AuthenticatedManagementUsersRouteImport } from './routes/_authenticated/management/users'
+import { Route as AuthenticatedManagementAiModelsRouteImport } from './routes/_authenticated/management/ai-models'
 import { Route as AuthenticatedKnowledgeWechatRouteImport } from './routes/_authenticated/knowledge/wechat'
 import { Route as AuthenticatedKnowledgeWebBlogsRouteImport } from './routes/_authenticated/knowledge/web-blogs'
 import { Route as AuthenticatedKnowledgeOrganizationsRouteImport } from './routes/_authenticated/knowledge/organizations'
@@ -168,6 +171,12 @@ const AuthenticatedSettingsNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedSettingsMcpRoute =
+  AuthenticatedSettingsMcpRouteImport.update({
+    id: '/mcp',
+    path: '/mcp',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedSettingsDisplayRoute =
   AuthenticatedSettingsDisplayRouteImport.update({
     id: '/display',
@@ -185,6 +194,18 @@ const AuthenticatedSettingsAccountRoute =
     id: '/account',
     path: '/account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedManagementUsersRoute =
+  AuthenticatedManagementUsersRouteImport.update({
+    id: '/management/users',
+    path: '/management/users',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManagementAiModelsRoute =
+  AuthenticatedManagementAiModelsRouteImport.update({
+    id: '/management/ai-models',
+    path: '/management/ai-models',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedKnowledgeWechatRoute =
   AuthenticatedKnowledgeWechatRouteImport.update({
@@ -283,9 +304,12 @@ export interface FileRoutesByFullPath {
   '/knowledge/organizations': typeof AuthenticatedKnowledgeOrganizationsRoute
   '/knowledge/web-blogs': typeof AuthenticatedKnowledgeWebBlogsRoute
   '/knowledge/wechat': typeof AuthenticatedKnowledgeWechatRoute
+  '/management/ai-models': typeof AuthenticatedManagementAiModelsRoute
+  '/management/users': typeof AuthenticatedManagementUsersRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
+  '/settings/mcp': typeof AuthenticatedSettingsMcpRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/ai-chats': typeof AuthenticatedAiChatsIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
@@ -321,9 +345,12 @@ export interface FileRoutesByTo {
   '/knowledge/organizations': typeof AuthenticatedKnowledgeOrganizationsRoute
   '/knowledge/web-blogs': typeof AuthenticatedKnowledgeWebBlogsRoute
   '/knowledge/wechat': typeof AuthenticatedKnowledgeWechatRoute
+  '/management/ai-models': typeof AuthenticatedManagementAiModelsRoute
+  '/management/users': typeof AuthenticatedManagementUsersRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
+  '/settings/mcp': typeof AuthenticatedSettingsMcpRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/ai-chats': typeof AuthenticatedAiChatsIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
@@ -362,9 +389,12 @@ export interface FileRoutesById {
   '/_authenticated/knowledge/organizations': typeof AuthenticatedKnowledgeOrganizationsRoute
   '/_authenticated/knowledge/web-blogs': typeof AuthenticatedKnowledgeWebBlogsRoute
   '/_authenticated/knowledge/wechat': typeof AuthenticatedKnowledgeWechatRoute
+  '/_authenticated/management/ai-models': typeof AuthenticatedManagementAiModelsRoute
+  '/_authenticated/management/users': typeof AuthenticatedManagementUsersRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
+  '/_authenticated/settings/mcp': typeof AuthenticatedSettingsMcpRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/ai-chats/': typeof AuthenticatedAiChatsIndexRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
@@ -403,9 +433,12 @@ export interface FileRouteTypes {
     | '/knowledge/organizations'
     | '/knowledge/web-blogs'
     | '/knowledge/wechat'
+    | '/management/ai-models'
+    | '/management/users'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
+    | '/settings/mcp'
     | '/settings/notifications'
     | '/ai-chats'
     | '/apps'
@@ -441,9 +474,12 @@ export interface FileRouteTypes {
     | '/knowledge/organizations'
     | '/knowledge/web-blogs'
     | '/knowledge/wechat'
+    | '/management/ai-models'
+    | '/management/users'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
+    | '/settings/mcp'
     | '/settings/notifications'
     | '/ai-chats'
     | '/apps'
@@ -481,9 +517,12 @@ export interface FileRouteTypes {
     | '/_authenticated/knowledge/organizations'
     | '/_authenticated/knowledge/web-blogs'
     | '/_authenticated/knowledge/wechat'
+    | '/_authenticated/management/ai-models'
+    | '/_authenticated/management/users'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
+    | '/_authenticated/settings/mcp'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/ai-chats/'
     | '/_authenticated/apps/'
@@ -675,6 +714,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/settings/mcp': {
+      id: '/_authenticated/settings/mcp'
+      path: '/mcp'
+      fullPath: '/settings/mcp'
+      preLoaderRoute: typeof AuthenticatedSettingsMcpRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/settings/display': {
       id: '/_authenticated/settings/display'
       path: '/display'
@@ -695,6 +741,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/account'
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/management/users': {
+      id: '/_authenticated/management/users'
+      path: '/management/users'
+      fullPath: '/management/users'
+      preLoaderRoute: typeof AuthenticatedManagementUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/management/ai-models': {
+      id: '/_authenticated/management/ai-models'
+      path: '/management/ai-models'
+      fullPath: '/management/ai-models'
+      preLoaderRoute: typeof AuthenticatedManagementAiModelsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/knowledge/wechat': {
       id: '/_authenticated/knowledge/wechat'
@@ -787,6 +847,7 @@ interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
   AuthenticatedSettingsAppearanceRoute: typeof AuthenticatedSettingsAppearanceRoute
   AuthenticatedSettingsDisplayRoute: typeof AuthenticatedSettingsDisplayRoute
+  AuthenticatedSettingsMcpRoute: typeof AuthenticatedSettingsMcpRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
@@ -796,6 +857,7 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
     AuthenticatedSettingsAccountRoute: AuthenticatedSettingsAccountRoute,
     AuthenticatedSettingsAppearanceRoute: AuthenticatedSettingsAppearanceRoute,
     AuthenticatedSettingsDisplayRoute: AuthenticatedSettingsDisplayRoute,
+    AuthenticatedSettingsMcpRoute: AuthenticatedSettingsMcpRoute,
     AuthenticatedSettingsNotificationsRoute:
       AuthenticatedSettingsNotificationsRoute,
     AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
@@ -819,6 +881,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedKnowledgeOrganizationsRoute: typeof AuthenticatedKnowledgeOrganizationsRoute
   AuthenticatedKnowledgeWebBlogsRoute: typeof AuthenticatedKnowledgeWebBlogsRoute
   AuthenticatedKnowledgeWechatRoute: typeof AuthenticatedKnowledgeWechatRoute
+  AuthenticatedManagementAiModelsRoute: typeof AuthenticatedManagementAiModelsRoute
+  AuthenticatedManagementUsersRoute: typeof AuthenticatedManagementUsersRoute
   AuthenticatedAiChatsIndexRoute: typeof AuthenticatedAiChatsIndexRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
@@ -845,6 +909,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedKnowledgeOrganizationsRoute,
   AuthenticatedKnowledgeWebBlogsRoute: AuthenticatedKnowledgeWebBlogsRoute,
   AuthenticatedKnowledgeWechatRoute: AuthenticatedKnowledgeWechatRoute,
+  AuthenticatedManagementAiModelsRoute: AuthenticatedManagementAiModelsRoute,
+  AuthenticatedManagementUsersRoute: AuthenticatedManagementUsersRoute,
   AuthenticatedAiChatsIndexRoute: AuthenticatedAiChatsIndexRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,

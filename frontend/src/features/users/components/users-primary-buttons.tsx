@@ -1,20 +1,22 @@
-import { IconMailPlus, IconUserPlus } from '@tabler/icons-react'
+import { IconRefresh, IconUserPlus } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { useUsers } from '../context/users-context'
 
 export function UsersPrimaryButtons() {
-  const { setOpen } = useUsers()
+  const { setOpen, refreshUsers, loading } = useUsers()
+  
   return (
     <div className='flex gap-2'>
       <Button
         variant='outline'
         className='space-x-1'
-        onClick={() => setOpen('invite')}
+        onClick={() => refreshUsers()}
+        disabled={loading}
       >
-        <span>Invite User</span> <IconMailPlus size={18} />
+        <span>刷新</span> <IconRefresh size={18} className={loading ? 'animate-spin' : ''} />
       </Button>
       <Button className='space-x-1' onClick={() => setOpen('add')}>
-        <span>Add User</span> <IconUserPlus size={18} />
+        <span>添加用户</span> <IconUserPlus size={18} />
       </Button>
     </div>
   )

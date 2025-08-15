@@ -35,17 +35,17 @@ export class AuthStorage {
   static setAccessToken(token: string, rememberMe = false): void {
     try {
       const isProduction = window.location.protocol === 'https:'
-      console.log('🍪 [AUTH_STORAGE] 设置AccessToken', { 
-        rememberMe, 
-        isProduction, 
+      console.log('🍪 [AUTH_STORAGE] 设置AccessToken', {
+        rememberMe,
+        isProduction,
         tokenLength: token.length,
-        protocol: window.location.protocol 
+        protocol: window.location.protocol
       })
-      
+
       if (rememberMe) {
         // 记住我：使用Cookie持久化存储
         const days = authConfig.sessionConfig.rememberMeDuration
-        Cookies.set(this.ACCESS_TOKEN_KEY, token, { 
+        Cookies.set(this.ACCESS_TOKEN_KEY, token, {
           expires: days,
           secure: isProduction, // 只在HTTPS下设置secure
           sameSite: 'lax'       // 放宽sameSite限制
@@ -57,7 +57,7 @@ export class AuthStorage {
           sameSite: 'lax'       // 放宽sameSite限制
         })
       }
-      
+
       console.log('✅ [AUTH_STORAGE] AccessToken设置完成')
     } catch (error) {
       console.error('❌ [AUTH_STORAGE] AccessToken设置失败:', error)
@@ -71,8 +71,8 @@ export class AuthStorage {
   static getAccessToken(): string | null {
     try {
       const token = Cookies.get(this.ACCESS_TOKEN_KEY) || null
-      console.log('🍪 [AUTH_STORAGE] 获取AccessToken', { 
-        hasToken: !!token, 
+      console.log('🍪 [AUTH_STORAGE] 获取AccessToken', {
+        hasToken: !!token,
         tokenLength: token?.length || 0,
         tokenPreview: token ? token.substring(0, 20) + '...' : 'none'
       })
@@ -90,16 +90,16 @@ export class AuthStorage {
   static setRefreshToken(token: string, rememberMe = false): void {
     try {
       const isProduction = window.location.protocol === 'https:'
-      console.log('🍪 [AUTH_STORAGE] 设置RefreshToken', { 
-        rememberMe, 
-        isProduction, 
+      console.log('🍪 [AUTH_STORAGE] 设置RefreshToken', {
+        rememberMe,
+        isProduction,
         tokenLength: token.length,
-        protocol: window.location.protocol 
+        protocol: window.location.protocol
       })
-      
+
       if (rememberMe) {
         const days = authConfig.sessionConfig.rememberMeDuration
-        Cookies.set(this.REFRESH_TOKEN_KEY, token, { 
+        Cookies.set(this.REFRESH_TOKEN_KEY, token, {
           expires: days,
           secure: isProduction, // 只在HTTPS下设置secure
           sameSite: 'lax',      // 放宽sameSite限制
@@ -112,7 +112,7 @@ export class AuthStorage {
           httpOnly: false
         })
       }
-      
+
       console.log('✅ [AUTH_STORAGE] RefreshToken设置完成')
     } catch (error) {
       console.error('❌ [AUTH_STORAGE] RefreshToken设置失败:', error)
@@ -126,8 +126,8 @@ export class AuthStorage {
   static getRefreshToken(): string | null {
     try {
       const token = Cookies.get(this.REFRESH_TOKEN_KEY) || null
-      console.log('🍪 [AUTH_STORAGE] 获取RefreshToken', { 
-        hasToken: !!token, 
+      console.log('🍪 [AUTH_STORAGE] 获取RefreshToken', {
+        hasToken: !!token,
         tokenLength: token?.length || 0,
         tokenPreview: token ? token.substring(0, 20) + '...' : 'none'
       })
@@ -146,7 +146,7 @@ export class AuthStorage {
     try {
       Cookies.remove(this.ACCESS_TOKEN_KEY)
       Cookies.remove(this.REFRESH_TOKEN_KEY)
-      
+
       // 清除其他相关存储
       localStorage.removeItem('user_preferences')
       sessionStorage.clear()
@@ -178,7 +178,7 @@ export class TokenValidator {
     try {
       const payload = jwtDecode<JWTPayload>(token)
       const currentTime = Date.now() / 1000
-      
+
       console.log('🔍 [TOKEN_VALIDATOR] Token解析成功', {
         exp: payload.exp,
         currentTime,
@@ -187,7 +187,7 @@ export class TokenValidator {
         sub: payload.sub,
         email: payload.email
       })
-      
+
       // 检查是否过期
       if (payload.exp <= currentTime) {
         console.log('❌ [TOKEN_VALIDATOR] Token已过期')
@@ -220,7 +220,7 @@ export class TokenValidator {
       const currentTime = Date.now() / 1000
       const thresholdMinutes = authConfig.tokenConfig.refreshThreshold
       const threshold = thresholdMinutes * 60 // 转换为秒
-      
+
       return payload.exp - currentTime <= threshold
     } catch (error) {
       authLogger.error('Token expiration check failed', error instanceof Error ? error : new Error(String(error)))
@@ -297,7 +297,7 @@ export class AuthErrorHandler {
    */
   static handleAuthError(error: unknown): { type: AuthErrorType; message: string } {
     let errorType: AuthErrorType
-    
+
     // 类型守卫和安全检查
     const errorObj = error as any
 
@@ -360,7 +360,7 @@ export class RouteValidator {
     if (!returnUrl || returnUrl === loginPath) {
       return loginPath
     }
-    
+
     const url = new URL(loginPath, window.location.origin)
     url.searchParams.set('returnUrl', returnUrl)
     return url.pathname + url.search
@@ -379,7 +379,7 @@ export class SessionManager {
     if (!authConfig.securityConfig.enableSessionTimeout) return
 
     this.resetSessionTimer()
-    
+
     // 监听用户活动
     const activities = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart']
     activities.forEach(event => {
@@ -432,7 +432,7 @@ export class SessionManager {
    */
   static isSessionActive(): boolean {
     if (!authConfig.securityConfig.enableSessionTimeout) return true
-    
+
     const timeoutMs = authConfig.securityConfig.sessionTimeoutMinutes * 60 * 1000
     return Date.now() - this.lastActivity < timeoutMs
   }
@@ -447,7 +447,7 @@ export class DeviceManager {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')
     ctx?.fillText('Device fingerprint', 10, 10)
-    
+
     const fingerprint = [
       navigator.userAgent,
       navigator.language,
@@ -455,7 +455,7 @@ export class DeviceManager {
       new Date().getTimezoneOffset(),
       canvas.toDataURL(),
     ].join('|')
-    
+
     return btoa(fingerprint).slice(0, 32)
   }
 

@@ -523,3 +523,22 @@ class UserService:
                 status_code=429, 
                 detail="验证码发送过于频繁，请稍后再试"
             )
+    
+    async def update_user_activity(self, user_id: int, activity_time: datetime = None) -> bool:
+        """更新用户最后活动时间
+        
+        Args:
+            user_id: 用户ID
+            activity_time: 活动时间，默认为当前时间
+            
+        Returns:
+            bool: 更新是否成功
+        """
+        if activity_time is None:
+            activity_time = datetime.now(timezone.utc)
+        
+        try:
+            await self.user_repo.update(user_id, {"last_activity": activity_time})
+            return True
+        except Exception:
+            return False

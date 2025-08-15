@@ -10,11 +10,12 @@
 - TenantFeatureAccess: 租户功能访问权限模型
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, JSON, BigInteger
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, JSON, BigInteger
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
 from app.infrastructure.persistence.database import Base
 from enum import Enum
+import uuid
 
 __all__ = [
     'TenantType', 'TenantStatus', 'Tenant', 'TenantAuditLog', 
@@ -58,7 +59,7 @@ class Tenant(Base):
     __tablename__ = "sys_tenants"
 
     # 租户唯一标识ID
-    id = Column(Integer, primary_key=True, index=True, comment="租户唯一标识ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="租户唯一标识ID")
     
     # 租户基本身份信息
     name = Column(String(255), nullable=False, index=True, comment="租户名称（组织名称）")
@@ -118,10 +119,7 @@ class Tenant(Base):
     is_deleted = Column(Boolean, default=False, nullable=False, comment="是否已软删除")
     deleted_at = Column(DateTime(timezone=True), nullable=True, comment="删除时间")
     
-    # SQLAlchemy关系映射
-    users = relationship("User", back_populates="tenant")  # 租户下的用户列表
-    organizations = relationship("Organization", back_populates="tenant")  # 租户下的组织列表
-    audit_logs = relationship("TenantAuditLog", back_populates="tenant")  # 租户审计日志列表
+    # 注意：移除了关系映射，通过应用层服务管理关系
 
 class TenantAuditLog(Base):
     """租户审计日志模型
@@ -138,13 +136,11 @@ class TenantAuditLog(Base):
     __tablename__ = "sys_tenant_audit_logs"
 
     # 审计日志记录ID
-    id = Column(Integer, primary_key=True, index=True, comment="审计日志记录ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="审计日志记录ID")
     
-    # 审计关联信息
-    tenant_id = Column(Integer, ForeignKey("sys_tenants.id"), nullable=False, index=True,
-                      comment="所属租户ID")
-    user_id = Column(Integer, ForeignKey("sys_users.id"), nullable=True, index=True,
-                    comment="操作用户ID（系统操作时可为空）")
+    # 审计关联信息（移除外键约束）
+    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="所属租户ID")
+    user_id = Column(UUID(as_uuid=True), nullable=True, index=True, comment="操作用户ID（系统操作时可为空）")
     
     # 操作审计信息
     action = Column(String(100), nullable=False, index=True, comment="操作类型（create/update/delete/login等）")
@@ -162,9 +158,7 @@ class TenantAuditLog(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True,
                        comment="审计记录创建时间")
     
-    # SQLAlchemy关系映射
-    tenant = relationship("Tenant", back_populates="audit_logs")  # 所属租户对象
-    user = relationship("User")  # 操作用户对象
+    # 注意：移除了关系映射，通过应用层服务管理关系
 
 class TenantUsageMetric(Base):
     """租户使用量指标模型
@@ -181,11 +175,10 @@ class TenantUsageMetric(Base):
     __tablename__ = "sys_tenant_usage_metrics"
 
     # 使用量指标记录ID
-    id = Column(Integer, primary_key=True, index=True, comment="使用量指标记录ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="使用量指标记录ID")
     
-    # 指标关联信息
-    tenant_id = Column(Integer, ForeignKey("sys_tenants.id"), nullable=False, index=True,
-                      comment="所属租户ID")
+    # 指标关联信息（移除外键约束）
+    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="所属租户ID")
     
     # 指标数据信息
     metric_name = Column(String(100), nullable=False, index=True, comment="指标名称（api_calls/storage_used等）")
@@ -202,8 +195,7 @@ class TenantUsageMetric(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True,
                        comment="指标记录创建时间")
     
-    # SQLAlchemy关系映射
-    tenant = relationship("Tenant")  # 所属租户对象
+    # 注意：移除了关系映射，通过应用层服务管理关系
 
 class TenantFeature(Base):
     """租户功能配置模型
@@ -220,7 +212,7 @@ class TenantFeature(Base):
     __tablename__ = "sys_tenant_features"
 
     # 功能定义唯一ID
-    id = Column(Integer, primary_key=True, index=True, comment="功能定义唯一ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="功能定义唯一ID")
     
     # 功能基本信息
     name = Column(String(100), nullable=False, unique=True, index=True, comment="功能唯一名称标识")
@@ -254,13 +246,11 @@ class TenantFeatureAccess(Base):
     __tablename__ = "sys_tenant_feature_access"
 
     # 功能访问权限记录ID
-    id = Column(Integer, primary_key=True, index=True, comment="功能访问权限记录ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="功能访问权限记录ID")
     
-    # 功能访问关联信息
-    tenant_id = Column(Integer, ForeignKey("sys_tenants.id"), nullable=False, index=True,
-                      comment="租户ID")
-    feature_id = Column(Integer, ForeignKey("sys_tenant_features.id"), nullable=False, index=True,
-                       comment="功能定义ID")
+    # 功能访问关联信息（移除外键约束）
+    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="租户ID")
+    feature_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="功能定义ID")
     
     # 功能访问配置
     is_enabled = Column(Boolean, default=True, nullable=False, comment="功能是否对该租户开放")
@@ -271,9 +261,7 @@ class TenantFeatureAccess(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="权限配置创建时间")
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="权限配置最后更新时间")
     
-    # SQLAlchemy关系映射
-    tenant = relationship("Tenant")  # 所属租户对象
-    feature = relationship("TenantFeature")  # 关联的功能定义对象
+    # 注意：移除了关系映射，通过应用层服务管理关系
     
     # 数据库表配置
     __table_args__ = (

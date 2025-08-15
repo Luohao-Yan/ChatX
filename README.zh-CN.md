@@ -594,7 +594,7 @@ async def register_user(
     user_data: UserCreate,
     user_service: UserService = Depends(get_user_service)  # DI
 ):
-    """用户注册 - 薄控制器"""
+    """用户注册"""
     return await user_service.register_user(user_data)
 
 # 示例: 应用服务模式

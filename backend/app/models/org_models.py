@@ -6,10 +6,11 @@
 - Department: 部门模型
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, JSON
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
 from app.infrastructure.persistence.database import Base
+import uuid
 
 __all__ = ['Organization', 'Department']
 
@@ -29,11 +30,10 @@ class Organization(Base):
     __tablename__ = "sys_organizations"
 
     # 组织唯一标识ID
-    id = Column(Integer, primary_key=True, index=True, comment="组织机构唯一标识ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="组织机构唯一标识ID")
     
-    # 多租户支持
-    tenant_id = Column(Integer, ForeignKey("sys_tenants.id"), nullable=False, index=True,
-                      comment="所属租户ID，用于多租户数据隔离")
+    # 多租户支持（移除外键约束）
+    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="所属租户ID，用于多租户数据隔离")
     
     # 组织基本信息
     name = Column(String(255), nullable=False, index=True, comment="组织名称")
@@ -47,9 +47,8 @@ class Organization(Base):
     email = Column(String(100), nullable=True, comment="联系邮箱")
     website = Column(String(200), nullable=True, comment="官方网站")
     
-    # 组织层级关系
-    parent_id = Column(Integer, ForeignKey("sys_organizations.id"), nullable=True, index=True,
-                      comment="父组织ID（null表示顶级组织）")
+    # 组织层级关系（移除外键约束）
+    parent_id = Column(UUID(as_uuid=True), nullable=True, index=True, comment="父组织ID（null表示顶级组织）")
     path = Column(String(1000), nullable=False, index=True, comment="组织完整路径（/org1/org2/org3）")
     level = Column(Integer, default=0, nullable=False, comment="组织层级深度（0为顶级）")
     sort_order = Column(Integer, default=0, nullable=False, comment="同级组织排序顺序")
@@ -69,16 +68,9 @@ class Organization(Base):
     # 软删除支持字段
     is_deleted = Column(Boolean, default=False, nullable=False, index=True, comment="是否已软删除")
     deleted_at = Column(DateTime(timezone=True), nullable=True, comment="删除时间")
-    deleted_by = Column(Integer, nullable=True, comment="执行删除操作的用户ID")
+    deleted_by = Column(UUID(as_uuid=True), nullable=True, index=True, comment="执行删除操作的用户ID")
     
-    # SQLAlchemy关系映射
-    tenant = relationship("Tenant", back_populates="organizations")  # 所属租户对象
-    parent = relationship("Organization", remote_side=[id], back_populates="children")  # 父组织对象
-    children = relationship("Organization", back_populates="parent", cascade="all, delete-orphan")  # 子组织列表
-    users = relationship("User", back_populates="organization")  # 组织内用户列表
-    departments = relationship("Department", back_populates="organization", cascade="all, delete-orphan")  # 组织内部门列表
-    # deleted_by_user 关系移除，避免循环依赖
-    # 可以通过应用层查询获取相关用户信息
+    # 注意：移除了关系映射，通过应用层服务管理关系
 
 class Department(Base):
     """部门模型
@@ -96,25 +88,22 @@ class Department(Base):
     __tablename__ = "sys_departments"
 
     # 部门唯一标识ID
-    id = Column(Integer, primary_key=True, index=True, comment="部门唯一标识ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="部门唯一标识ID")
     
     # 部门基本信息
     name = Column(String(255), nullable=False, index=True, comment="部门名称")
     code = Column(String(50), nullable=False, index=True, comment="部门编码，组织内唯一")
     description = Column(Text, nullable=True, comment="部门描述信息")
     
-    # 部门组织关系
-    org_id = Column(Integer, ForeignKey("sys_organizations.id"), nullable=False, index=True,
-                   comment="所属组织ID")
-    parent_id = Column(Integer, ForeignKey("sys_departments.id"), nullable=True, index=True,
-                      comment="父部门ID（null表示顶级部门）")
+    # 部门组织关系（移除外键约束）
+    org_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="所属组织ID")
+    parent_id = Column(UUID(as_uuid=True), nullable=True, index=True, comment="父部门ID（null表示顶级部门）")
     path = Column(String(1000), nullable=False, index=True, comment="部门完整路径（/dept1/dept2/dept3）")
     level = Column(Integer, default=0, nullable=False, comment="部门层级深度（0为顶级）")
     sort_order = Column(Integer, default=0, nullable=False, comment="同级部门排序顺序")
     
-    # 部门负责人（不使用外键约束，避免循环依赖）
-    manager_id = Column(Integer, nullable=True, index=True,
-                       comment="部门经理/负责人用户ID")
+    # 部门负责人（移除外键约束，改为UUID）
+    manager_id = Column(UUID(as_uuid=True), nullable=True, index=True, comment="部门经理/负责人用户ID")
     
     # 部门联系信息
     phone = Column(String(20), nullable=True, comment="部门联系电话")
@@ -136,12 +125,6 @@ class Department(Base):
     # 软删除支持字段
     is_deleted = Column(Boolean, default=False, nullable=False, index=True, comment="是否已软删除")
     deleted_at = Column(DateTime(timezone=True), nullable=True, comment="删除时间")
-    deleted_by = Column(Integer, nullable=True, comment="执行删除操作的用户ID")
+    deleted_by = Column(UUID(as_uuid=True), nullable=True, index=True, comment="执行删除操作的用户ID")
     
-    # SQLAlchemy关系映射
-    organization = relationship("Organization", back_populates="departments")  # 所属组织对象
-    parent = relationship("Department", remote_side=[id], back_populates="children")  # 父部门对象
-    children = relationship("Department", back_populates="parent", cascade="all, delete-orphan")  # 子部门列表
-    users = relationship("User", back_populates="department")  # 部门内用户列表
-    # manager 和 deleted_by_user 关系移除，避免循环依赖
-    # 可以通过应用层查询获取相关用户信息
+    # 注意：移除了关系映射，通过应用层服务管理关系

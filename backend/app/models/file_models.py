@@ -15,11 +15,12 @@
 - FileActivity: 文件操作日志模型
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, BigInteger, Index
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, BigInteger, Index
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
 from app.infrastructure.persistence.database import Base
 from enum import Enum
+import uuid
 
 __all__ = [
     'FileStatus', 'FileType', 'VisibilityLevel', 'File', 'Folder', 'FileVersion',
@@ -80,7 +81,7 @@ class File(Base):
     __tablename__ = "sys_files"
 
     # 文件唯一标识ID
-    id = Column(Integer, primary_key=True, index=True, comment="文件唯一标识ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="文件唯一标识ID")
     
     # 基本文件信息
     original_name = Column(String(255), nullable=False, index=True, comment="用户上传时的原始文件名")
@@ -109,8 +110,8 @@ class File(Base):
     visibility = Column(String(20), default=VisibilityLevel.PRIVATE, nullable=False, index=True, comment="文件可见性级别（private/internal/shared/public）")
     
     # 文件所有权和组织关系
-    owner_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False, index=True, comment="文件所有者用户ID")
-    parent_folder_id = Column(Integer, ForeignKey("sys_folders.id"), nullable=True, index=True, comment="父文件夹ID（null表示根目录）")
+    owner_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="文件所有者用户ID")
+    parent_folder_id = Column(UUID(as_uuid=True), nullable=True, index=True, comment="父文件夹ID（null表示根目录）")
     
     # 文件使用统计信息
     download_count = Column(Integer, default=0, nullable=False, comment="文件下载次数统计")
@@ -121,14 +122,6 @@ class File(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="文件最后更新时间")
     deleted_at = Column(DateTime(timezone=True), nullable=True, comment="文件删除时间（软删除）")
     last_accessed = Column(DateTime(timezone=True), nullable=True, comment="文件最后访问时间")
-    
-    # SQLAlchemy关系映射
-    owner = relationship("User", back_populates="files")  # 文件所有者对象
-    folder = relationship("Folder", back_populates="files")  # 父文件夹对象
-    versions = relationship("FileVersion", back_populates="file", cascade="all, delete-orphan")  # 文件版本历史列表
-    shares = relationship("FileShare", back_populates="file", cascade="all, delete-orphan")  # 文件分享记录列表
-    comments = relationship("FileComment", back_populates="file", cascade="all, delete-orphan")  # 文件评论列表
-    tag_relations = relationship("FileTagRelation", back_populates="file", cascade="all, delete-orphan")  # 文件标签关联列表
     
     # 数据库索引配置（优化查询性能）
     __table_args__ = (
@@ -156,31 +149,25 @@ class Folder(Base):
     __tablename__ = "sys_folders"
 
     # 文件夹唯一标识ID
-    id = Column(Integer, primary_key=True, index=True, comment="文件夹唯一标识ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="文件夹唯一标识ID")
     
     # 文件夹基本信息
     name = Column(String(255), nullable=False, index=True, comment="文件夹名称")
     description = Column(Text, nullable=True, comment="文件夹描述信息")
     
     # 文件夹层级结构关系
-    parent_id = Column(Integer, ForeignKey("sys_folders.id"), nullable=True, index=True, comment="父文件夹ID（null表示根目录）")
+    parent_id = Column(UUID(as_uuid=True), nullable=True, index=True, comment="父文件夹ID（null表示根目录）")
     path = Column(String(1000), nullable=False, index=True, comment="文件夹完整路径（/root/folder1/folder2）")
     level = Column(Integer, default=0, nullable=False, comment="文件夹层级深度（0为根目录）")
     
     # 文件夹所有权和可见性控制
-    owner_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False, index=True, comment="文件夹所有者用户ID")
+    owner_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="文件夹所有者用户ID")
     visibility = Column(String(20), default=VisibilityLevel.PRIVATE, nullable=False, comment="文件夹可见性级别")
     is_system = Column(Boolean, default=False, nullable=False, comment="是否为系统预定义文件夹（不可删除）")
     
     # 时间戳记录
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="文件夹创建时间")
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="文件夹最后更新时间")
-    
-    # SQLAlchemy关系映射
-    owner = relationship("User")  # 文件夹所有者对象
-    parent = relationship("Folder", remote_side=[id])  # 父文件夹对象
-    children = relationship("Folder", cascade="all, delete-orphan", overlaps="parent")  # 子文件夹列表
-    files = relationship("File", back_populates="folder")  # 文件夹内的文件列表
     
     # 数据库索引配置
     __table_args__ = (
@@ -204,10 +191,10 @@ class FileVersion(Base):
     __tablename__ = "sys_file_versions"
 
     # 版本记录唯一标识ID
-    id = Column(Integer, primary_key=True, index=True, comment="文件版本记录ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="文件版本记录ID")
     
     # 版本关联信息
-    file_id = Column(Integer, ForeignKey("sys_files.id"), nullable=False, index=True, comment="关联的文件ID")
+    file_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="关联的文件ID")
     version_number = Column(Integer, nullable=False, comment="版本号（从1开始递增）")
     
     # 版本文件信息
@@ -218,14 +205,10 @@ class FileVersion(Base):
     
     # 版本变更信息
     change_description = Column(Text, nullable=True, comment="版本变更描述")
-    created_by = Column(Integer, ForeignKey("sys_users.id"), nullable=False, comment="版本创建者用户ID")
+    created_by = Column(UUID(as_uuid=True), nullable=False, comment="版本创建者用户ID")
     
     # 版本创建时间
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="版本创建时间")
-    
-    # SQLAlchemy关系映射
-    file = relationship("File", back_populates="versions")  # 所属文件对象
-    creator = relationship("User")  # 版本创建者用户对象
 
 class FileShare(Base):
     """文件分享模型
@@ -242,12 +225,12 @@ class FileShare(Base):
     __tablename__ = "sys_file_shares"
 
     # 分享记录唯一标识ID
-    id = Column(Integer, primary_key=True, index=True, comment="文件分享记录ID")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="文件分享记录ID")
     
     # 关联信息
-    file_id = Column(Integer, ForeignKey("sys_files.id"), nullable=False, index=True)
-    shared_by = Column(Integer, ForeignKey("sys_users.id"), nullable=False)
-    shared_with = Column(Integer, ForeignKey("sys_users.id"), nullable=True)  # 为空表示公开分享
+    file_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    shared_by = Column(UUID(as_uuid=True), nullable=False)
+    shared_with = Column(UUID(as_uuid=True), nullable=True)  # 为空表示公开分享
     
     # 分享配置
     access_type = Column(String(20), default="read", nullable=False)  # read, write, admin
@@ -266,11 +249,6 @@ class FileShare(Base):
     # 时间戳
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # 关系
-    file = relationship("File", back_populates="shares")
-    sharer = relationship("User", foreign_keys=[shared_by])
-    recipient = relationship("User", foreign_keys=[shared_with])
 
 class FileComment(Base):
     __tablename__ = "sys_file_comments"
@@ -278,9 +256,9 @@ class FileComment(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     # 关联信息
-    file_id = Column(Integer, ForeignKey("sys_files.id"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False)
-    parent_id = Column(Integer, ForeignKey("sys_file_comments.id"), nullable=True)  # 回复功能
+    file_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    user_id = Column(UUID(as_uuid=True), nullable=False)
+    parent_id = Column(Integer, nullable=True)  # 回复功能
     
     # 评论内容
     content = Column(Text, nullable=False)
@@ -289,12 +267,6 @@ class FileComment(Base):
     # 时间戳
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # 关系
-    file = relationship("File", back_populates="comments")
-    user = relationship("User")
-    parent = relationship("FileComment", remote_side=[id])
-    replies = relationship("FileComment", cascade="all, delete-orphan", overlaps="parent")
 
 class FileCategory(Base):
     __tablename__ = "sys_file_categories"
@@ -308,23 +280,18 @@ class FileCategory(Base):
     icon = Column(String(50), nullable=True)  # 图标名称
     
     # 层级关系
-    parent_id = Column(Integer, ForeignKey("sys_file_categories.id"), nullable=True, index=True)
+    parent_id = Column(Integer, nullable=True, index=True)
     path = Column(String(500), nullable=False, index=True)
     level = Column(Integer, default=0, nullable=False)
     
     # 权限和状态
-    owner_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False, index=True)
+    owner_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     is_system = Column(Boolean, default=False, nullable=False)  # 系统预设分类
     is_active = Column(Boolean, default=True, nullable=False)
     
     # 时间戳
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # 关系
-    owner = relationship("User")
-    parent = relationship("FileCategory", remote_side=[id])
-    children = relationship("FileCategory", cascade="all, delete-orphan", overlaps="parent")
     
     # 索引
     __table_args__ = (
@@ -343,16 +310,13 @@ class FileTag(Base):
     color = Column(String(7), nullable=True)  # HEX颜色值
     
     # 权限和状态
-    owner_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False, index=True)
+    owner_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     is_system = Column(Boolean, default=False, nullable=False)  # 系统预设标签
     usage_count = Column(Integer, default=0, nullable=False)  # 使用次数
     
     # 时间戳
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # 关系
-    owner = relationship("User")
     
     # 索引
     __table_args__ = (
@@ -366,17 +330,12 @@ class FileTagRelation(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     # 关联信息
-    file_id = Column(Integer, ForeignKey("sys_files.id"), nullable=False, index=True)
-    tag_id = Column(Integer, ForeignKey("sys_file_tags.id"), nullable=False, index=True)
+    file_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    tag_id = Column(Integer, nullable=False, index=True)
     
     # 关联信息
-    created_by = Column(Integer, ForeignKey("sys_users.id"), nullable=False)
+    created_by = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
-    # 关系
-    file = relationship("File", back_populates="tag_relations")
-    tag = relationship("FileTag")
-    creator = relationship("User")
     
     # 唯一约束
     __table_args__ = (
@@ -389,8 +348,8 @@ class FileActivity(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     # 关联信息
-    file_id = Column(Integer, ForeignKey("sys_files.id"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("sys_users.id"), nullable=False)
+    file_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    user_id = Column(UUID(as_uuid=True), nullable=False)
     
     # 活动信息
     action = Column(String(50), nullable=False, index=True)  # upload, download, view, edit, delete, share
@@ -400,10 +359,6 @@ class FileActivity(Base):
     
     # 时间戳
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    
-    # 关系
-    file = relationship("File")
-    user = relationship("User")
     
     # 索引
     __table_args__ = (

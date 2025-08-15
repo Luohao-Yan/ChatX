@@ -3,8 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.application.services.rbac_service import PermissionApplicationService
 from app.schemas.rbac_schemas import (
-    PermissionCreate, PermissionUpdate, PermissionSchema,
-    RolePermissionAssign
+    PermissionCreate,
+    PermissionUpdate,
+    PermissionSchema,
+    RolePermissionAssign,
 )
 from app.models.user_models import User
 from app.utils.deps import get_current_active_user, get_permission_service
@@ -18,10 +20,12 @@ router = APIRouter()
 async def create_permission(
     permission_data: PermissionCreate,
     current_user: User = Depends(get_current_active_user),
-    permission_service: PermissionApplicationService = Depends(get_permission_service)
+    permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
-    """创建新权限 - 薄控制器"""
-    permission = await permission_service.create_permission(permission_data, current_user)
+    """创建新权限"""
+    permission = await permission_service.create_permission(
+        permission_data, current_user
+    )
     return PermissionSchema.from_orm(permission)
 
 
@@ -30,9 +34,9 @@ async def create_permission(
 async def get_permissions(
     include_deleted: bool = False,
     current_user: User = Depends(get_current_active_user),
-    permission_service: PermissionApplicationService = Depends(get_permission_service)
+    permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
-    """获取权限列表 - 薄控制器"""
+    """获取权限列表"""
     permissions = await permission_service.get_all_permissions(include_deleted)
     return [PermissionSchema.from_orm(perm) for perm in permissions]
 
@@ -41,9 +45,9 @@ async def get_permissions(
 @require_permission(Permissions.PERMISSION_READ)
 async def get_permission_hierarchy(
     current_user: User = Depends(get_current_active_user),
-    permission_service: PermissionApplicationService = Depends(get_permission_service)
+    permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
-    """获取权限层级结构 - 薄控制器"""
+    """获取权限层级结构"""
     return await permission_service.get_permission_hierarchy()
 
 
@@ -52,9 +56,9 @@ async def get_permission_hierarchy(
 async def get_permissions_by_category(
     category: str,
     current_user: User = Depends(get_current_active_user),
-    permission_service: PermissionApplicationService = Depends(get_permission_service)
+    permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
-    """根据分类获取权限 - 薄控制器"""
+    """根据分类获取权限"""
     permissions = await permission_service.get_permissions_by_category(category)
     return [PermissionSchema.from_orm(perm) for perm in permissions]
 
@@ -65,9 +69,9 @@ async def update_permission(
     permission_id: int,
     permission_update: PermissionUpdate,
     current_user: User = Depends(get_current_active_user),
-    permission_service: PermissionApplicationService = Depends(get_permission_service)
+    permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
-    """更新权限 - 薄控制器"""
+    """更新权限"""
     updated_permission = await permission_service.update_permission(
         permission_id, permission_update, current_user
     )
@@ -81,9 +85,9 @@ async def update_permission(
 async def delete_permission(
     permission_id: int,
     current_user: User = Depends(get_current_active_user),
-    permission_service: PermissionApplicationService = Depends(get_permission_service)
+    permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
-    """删除权限 - 薄控制器"""
+    """删除权限"""
     success = await permission_service.delete_permission(permission_id, current_user)
     return {"message": "权限删除成功" if success else "权限删除失败"}
 
@@ -93,9 +97,9 @@ async def delete_permission(
 async def get_role_permissions(
     role_id: int,
     current_user: User = Depends(get_current_active_user),
-    permission_service: PermissionApplicationService = Depends(get_permission_service)
+    permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
-    """获取角色权限列表 - 薄控制器"""
+    """获取角色权限列表"""
     permissions = await permission_service.get_role_permissions(role_id, current_user)
     return [PermissionSchema.from_orm(perm) for perm in permissions]
 
@@ -105,8 +109,8 @@ async def get_role_permissions(
 async def get_user_permissions(
     user_id: int,
     current_user: User = Depends(get_current_active_user),
-    permission_service: PermissionApplicationService = Depends(get_permission_service)
+    permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
-    """获取用户权限（通过角色继承） - 薄控制器"""
+    """获取用户权限（通过角色继承）"""
     permissions = await permission_service.get_user_permissions(user_id, current_user)
     return [PermissionSchema.from_orm(perm) for perm in permissions]
