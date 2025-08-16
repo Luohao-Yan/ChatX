@@ -25,7 +25,9 @@ import {
   IconEye,
   IconChevronLeft,
   IconChevronRight,
-  IconRestore
+  IconRestore,
+  IconFileImport,
+  IconX
 } from '@tabler/icons-react'
 import {
   Table,
@@ -54,10 +56,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { UserForm } from './user-form'
+import { RecycleBinDialog } from './recycle-bin-dialog'
+import { BatchImportDialog } from './batch-import-dialog'
 import { useUsersApi } from '@/features/users/services/users-api'
 import { User } from '@/features/users/data/schema'
 import { toast } from 'sonner'
-import { Link } from '@tanstack/react-router'
 import { useAuth } from '@/stores/auth'
 
 export default function UsersManagement() {
@@ -72,6 +75,8 @@ export default function UsersManagement() {
   const [viewingUser, setViewingUser] = useState<User | null>(null)
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isRecycleBinOpen, setIsRecycleBinOpen] = useState(false)
+  const [isBatchImportOpen, setIsBatchImportOpen] = useState(false)
   
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1)
@@ -171,7 +176,7 @@ export default function UsersManagement() {
       toast.success(`用户${userData.username}创建成功`)
     } catch (error) {
       console.error('Failed to create user:', error)
-      toast.error('创建用户失败，请检查输入信息')
+      // 错误处理由UserForm组件负责，这里不需要显示toast
       throw error // 重新抛出错误，让表单处理
     }
   }
@@ -188,7 +193,7 @@ export default function UsersManagement() {
       toast.success(`用户${editingUser.username}更新成功`)
     } catch (error) {
       console.error('Failed to update user:', error)
-      toast.error('更新用户失败，请检查输入信息')
+      // 错误处理由UserForm组件负责，这里不需要显示toast
       throw error // 重新抛出错误，让表单处理
     }
   }
@@ -219,15 +224,15 @@ export default function UsersManagement() {
     if (isOnline) {
       return (
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span className="text-xs text-green-600">在线</span>
+          <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-emerald-100 dark:ring-emerald-900/30"></div>
+          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">在线</span>
         </div>
       )
     }
     return (
       <div className="flex items-center gap-1">
-        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-        <span className="text-xs text-gray-500">离线</span>
+        <div className="w-2.5 h-2.5 bg-muted-foreground/40 rounded-full"></div>
+        <span className="text-xs text-muted-foreground">离线</span>
       </div>
     )
   }
@@ -429,56 +434,215 @@ export default function UsersManagement() {
         </div>
         <Separator className='my-4 lg:my-6' />
 
-        {/* 统计卡片 */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                总用户数
-              </CardTitle>
-              <IconUsers size={16} className="text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{(users || []).length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                活跃用户
-              </CardTitle>
-              <IconUserCheck size={16} className="text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{(users || []).filter(u => u.is_active).length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                已验证用户
-              </CardTitle>
-              <IconToggleRight size={16} className="text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{(users || []).filter(u => u.is_verified).length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                未激活用户
-              </CardTitle>
-              <IconUserX size={16} className="text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{(users || []).filter(u => !u.is_active).length}</div>
+        {/* 统计卡片 - 紧凑优化布局 */}
+        <div className="mb-3">
+          <Card className="border-border/50">
+            <CardContent className="p-3">
+              {/* 主要统计行 */}
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-9 h-9 bg-muted rounded-lg flex items-center justify-center">
+                    <IconUsers size={16} className="text-foreground" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold text-foreground">
+                      {(users || []).length}
+                    </div>
+                    <p className="text-muted-foreground text-xs">系统总用户</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mb-0.5"></div>
+                  <p className="text-xs text-muted-foreground">实时统计</p>
+                </div>
+              </div>
+
+              {/* 详细统计横排 */}
+              <div className="flex justify-between items-center gap-2">
+                {/* 活跃用户 */}
+                <div className="flex items-center space-x-2 px-2.5 py-1.5 bg-muted/30 rounded-lg flex-1">
+                  <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                    <IconUserCheck size={12} className="text-foreground" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-base font-bold text-foreground leading-none">
+                      {(users || []).filter(u => u.is_active).length}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">活跃</p>
+                  </div>
+                </div>
+
+                {/* 已验证用户 */}
+                <div className="flex items-center space-x-2 px-2.5 py-1.5 bg-muted/30 rounded-lg flex-1">
+                  <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                    <IconToggleRight size={12} className="text-foreground" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-base font-bold text-foreground leading-none">
+                      {(users || []).filter(u => u.is_verified).length}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">已验证</p>
+                  </div>
+                </div>
+
+                {/* 未激活用户 */}
+                <div className="flex items-center space-x-2 px-2.5 py-1.5 bg-muted/30 rounded-lg flex-1">
+                  <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                    <IconUserX size={12} className="text-foreground" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-base font-bold text-foreground leading-none">
+                      {(users || []).filter(u => !u.is_active).length}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">未激活</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 统计进度条 */}
+              <div className="mt-3 space-y-1.5">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>活跃率</span>
+                  <span>{(users || []).length > 0 ? Math.round(((users || []).filter(u => u.is_active).length / (users || []).length) * 100) : 0}%</span>
+                </div>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary rounded-full transition-all duration-500"
+                    style={{ 
+                      width: `${(users || []).length > 0 ? ((users || []).filter(u => u.is_active).length / (users || []).length) * 100 : 0}%` 
+                    }}
+                  ></div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* 用户列表 */}
-        <Card>
+        {/* 移动端功能区域 - 紧凑设计 */}
+        <div className="md:hidden space-y-3">
+          {/* 搜索栏 */}
+          <div className="relative">
+            <IconSearch size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="搜索用户..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 w-full h-9 rounded-lg border-border/50 focus:border-primary text-sm"
+            />
+          </div>
+
+          {/* 批量操作区域 */}
+          {selectedUsers.length > 0 && (
+            <div className="flex items-center justify-between p-2.5 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                <span className="text-xs font-medium text-primary">
+                  已选择 {selectedUsers.length} 个
+                </span>
+              </div>
+              <div className="flex gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBatchDisable}
+                  disabled={isProcessing}
+                  className="h-7 px-2.5 text-xs"
+                >
+                  停用
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBatchDelete}
+                  disabled={isProcessing}
+                  className="h-7 px-2.5 text-xs"
+                >
+                  删除
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* 紧凑操作按钮组 */}
+          <div className="flex gap-2">
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex-1 h-10 rounded-lg shadow-sm hover:shadow transition-all duration-200">
+                  <IconPlus size={16} className="mr-2" />
+                  <span className="text-sm font-medium">添加用户</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>添加新用户</DialogTitle>
+                  <DialogDescription>
+                    填写用户信息以创建新账户
+                  </DialogDescription>
+                </DialogHeader>
+                <UserForm 
+                  onSubmit={handleAddUser} 
+                  onCancel={() => setIsAddDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            <Button 
+              variant="outline" 
+              className="flex-1 h-10 rounded-lg border-border/50 hover:border-primary/50 hover:bg-primary/5 shadow-sm hover:shadow transition-all duration-200"
+              onClick={() => setIsBatchImportOpen(true)}
+            >
+              <IconFileImport size={16} className="mr-2 text-primary" />
+              <span className="text-sm font-medium">批量导入</span>
+            </Button>
+          </div>
+
+          {/* 次要操作按钮组 */}
+          <div className="flex gap-1.5">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => fetchUsers()}
+              className="flex-1 h-8 rounded-md border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
+            >
+              <IconRefresh size={14} className="mr-1.5 text-muted-foreground" />
+              <span className="text-xs">刷新</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsRecycleBinOpen(true)}
+              className="flex-1 h-8 rounded-md border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
+            >
+              <IconRestore size={14} className="mr-1.5 text-muted-foreground" />
+              <span className="text-xs">回收站</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={async () => {
+                try {
+                  await fetch('/api/v1/users/cache/clear', { 
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    }
+                  })
+                  toast.success('缓存已清除')
+                  await fetchUsers()
+                } catch (_error) {
+                  toast.error('清除缓存失败')
+                }
+              }}
+              className="flex-1 h-8 rounded-md border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
+            >
+              <IconX size={14} className="mr-1.5 text-muted-foreground" />
+              <span className="text-xs">清缓存</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* 桌面端用户列表 */}
+        <Card className="hidden md:block">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -487,97 +651,122 @@ export default function UsersManagement() {
                   查看和管理系统中的所有用户
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
                 {/* 批量操作按钮 */}
                 {selectedUsers.length > 0 && (
-                  <div className="flex items-center gap-2 mr-4">
-                    <span className="text-sm text-muted-foreground">
+                  <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto md:mr-4">
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">
                       已选择 {selectedUsers.length} 个用户
                     </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleBatchDisable}
-                      disabled={isProcessing}
-                    >
-                      批量停用
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleBatchDelete}
-                      disabled={isProcessing}
-                    >
-                      批量删除
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleBatchDisable}
+                        disabled={isProcessing}
+                        className="flex-1 md:flex-none"
+                      >
+                        批量停用
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleBatchDelete}
+                        disabled={isProcessing}
+                        className="flex-1 md:flex-none"
+                      >
+                        批量删除
+                      </Button>
+                    </div>
                   </div>
                 )}
                 
-                <div className="relative">
-                  <IconSearch size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="搜索用户..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 w-64"
-                  />
-                </div>
-                <Button variant="outline" size="sm" onClick={() => fetchUsers()}>
-                  <IconRefresh size={16} className="mr-2" />
-                  刷新
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={async () => {
-                    try {
-                      await fetch('/api/v1/users/cache/clear', { 
-                        method: 'POST',
-                        headers: {
-                          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-                        }
-                      })
-                      toast.success('缓存已清除')
-                      await fetchUsers() // 重新获取数据
-                    } catch (_error) {
-                      toast.error('清除缓存失败')
-                    }
-                  }}
-                >
-                  清除缓存
-                </Button>
-                <Link to="/management/users/recycle-bin">
-                  <Button variant="outline" size="sm">
-                    <IconRestore size={16} className="mr-2" />
-                    回收站
-                  </Button>
-                </Link>
-                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <IconPlus size={16} className="mr-2" />
-                      添加用户
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>添加新用户</DialogTitle>
-                      <DialogDescription>
-                        填写用户信息以创建新账户
-                      </DialogDescription>
-                    </DialogHeader>
-                    <UserForm 
-                      onSubmit={handleAddUser} 
-                      onCancel={() => setIsAddDialogOpen(false)}
+                <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                  <div className="relative w-full md:w-64">
+                    <IconSearch size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="搜索用户..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 w-full"
                     />
-                  </DialogContent>
-                </Dialog>
+                  </div>
+                  
+                  <div className="flex gap-2 overflow-x-auto md:overflow-visible">
+                    <Button variant="outline" size="sm" onClick={() => fetchUsers()} className="whitespace-nowrap">
+                      <IconRefresh size={16} className="mr-1 md:mr-2" />
+                      <span className="hidden md:inline">刷新</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={async () => {
+                        try {
+                          await fetch('/api/v1/users/cache/clear', { 
+                            method: 'POST',
+                            headers: {
+                              'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                          })
+                          toast.success('缓存已清除')
+                          await fetchUsers() // 重新获取数据
+                        } catch (_error) {
+                          toast.error('清除缓存失败')
+                        }
+                      }}
+                      className="whitespace-nowrap"
+                    >
+                      <span className="hidden md:inline">清除缓存</span>
+                      <span className="md:hidden">缓存</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setIsRecycleBinOpen(true)}
+                      className="whitespace-nowrap"
+                    >
+                      <IconRestore size={16} className="mr-1 md:mr-2" />
+                      <span className="hidden md:inline">回收站</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setIsBatchImportOpen(true)}
+                      className="whitespace-nowrap"
+                    >
+                      <IconFileImport size={16} className="mr-1 md:mr-2" />
+                      <span className="hidden md:inline">批量导入</span>
+                    </Button>
+                  </div>
+                  
+                  <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full md:w-auto whitespace-nowrap">
+                        <IconPlus size={16} className="mr-1 md:mr-2" />
+                        添加用户
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>添加新用户</DialogTitle>
+                        <DialogDescription>
+                          填写用户信息以创建新账户
+                        </DialogDescription>
+                      </DialogHeader>
+                      <UserForm 
+                        onSubmit={handleAddUser} 
+                        onCancel={() => setIsAddDialogOpen(false)}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             </div>
           </CardHeader>
           <CardContent>
+            {/* 桌面端表格视图 */}
             <div className="rounded-md border overflow-x-auto">
-              <Table>
+              <Table className="min-w-[800px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[50px]">
@@ -711,11 +900,12 @@ export default function UsersManagement() {
                 </TableBody>
               </Table>
             </div>
+
             
-            {/* 分页控制 */}
-            <div className="flex items-center justify-between px-2 py-4">
+            {/* 桌面端分页控制 */}
+            <div className="hidden md:flex flex-col md:flex-row items-start md:items-center justify-between px-2 py-4 gap-4">
               <div className="flex items-center space-x-2">
-                <p className="text-sm font-medium">每页显示</p>
+                <p className="text-sm font-medium whitespace-nowrap">每页显示</p>
                 <Select
                   value={`${pageSize}`}
                   onValueChange={(value) => {
@@ -735,11 +925,11 @@ export default function UsersManagement() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-sm font-medium">条记录</p>
+                <p className="text-sm font-medium whitespace-nowrap">条记录</p>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <p className="text-sm font-medium">
+              <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-2">
+                <p className="text-sm font-medium whitespace-nowrap">
                   第 {currentPage} 页，共 {Math.ceil(totalUsers / pageSize)} 页
                 </p>
                 <div className="flex items-center space-x-1">
@@ -752,9 +942,10 @@ export default function UsersManagement() {
                       fetchUsers(newPage, pageSize)
                     }}
                     disabled={currentPage <= 1}
+                    className="whitespace-nowrap"
                   >
                     <IconChevronLeft size={16} />
-                    上一页
+                    <span className="hidden md:inline ml-1">上一页</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -765,8 +956,9 @@ export default function UsersManagement() {
                       fetchUsers(newPage, pageSize)
                     }}
                     disabled={currentPage >= Math.ceil(totalUsers / pageSize)}
+                    className="whitespace-nowrap"
                   >
-                    下一页
+                    <span className="hidden md:inline mr-1">下一页</span>
                     <IconChevronRight size={16} />
                   </Button>
                 </div>
@@ -774,6 +966,265 @@ export default function UsersManagement() {
             </div>
           </CardContent>
         </Card>
+
+        {/* 移动端用户列表 */}
+        <div className="md:hidden space-y-4">
+          {/* 移动端全选控制 */}
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={isAllSelected}
+                onCheckedChange={handleSelectAll}
+                ref={(ref) => {
+                  if (ref) {
+                    const checkbox = ref.querySelector('input[type="checkbox"]') as HTMLInputElement
+                    if (checkbox) {
+                      checkbox.indeterminate = isIndeterminate
+                    }
+                  }
+                }}
+              />
+              <span className="text-sm font-medium">
+                {selectedUsers.length > 0 ? `已选择 ${selectedUsers.length} 个用户` : '全选'}
+              </span>
+            </div>
+            {selectedUsers.length > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBatchDisable}
+                  disabled={isProcessing}
+                >
+                  停用
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBatchDelete}
+                  disabled={isProcessing}
+                >
+                  删除
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* 用户卡片列表 */}
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="text-muted-foreground">加载中...</div>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-muted-foreground">没有找到用户</div>
+            </div>
+          ) : (
+            filteredUsers.map((user, index) => (
+              <div key={user.id} className="bg-card border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200 space-y-4">
+                {/* 用户基本信息区域 */}
+                <div className="flex items-start gap-4">
+                  {/* 选择框和序号 */}
+                  <div className="flex flex-col items-center gap-2 pt-1">
+                    <Checkbox
+                      checked={selectedUsers.includes(user.id)}
+                      onCheckedChange={(checked) => 
+                        handleSelectUser(user.id, !!checked)
+                      }
+                    />
+                    <span className="text-xs text-muted-foreground font-mono">
+                      #{(currentPage - 1) * pageSize + index + 1}
+                    </span>
+                  </div>
+
+                  {/* 头像 */}
+                  <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 ring-2 ring-primary/5">
+                    {user.avatar_url ? (
+                      <img 
+                        src={user.avatar_url} 
+                        alt={user.username}
+                        className="w-14 h-14 rounded-xl object-cover"
+                      />
+                    ) : (
+                      <span className="text-xl font-semibold text-primary">
+                        {user.username.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 用户信息 */}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    {/* 主要信息 */}
+                    <div className="space-y-0.5">
+                      <h3 className="font-semibold text-lg leading-tight truncate text-foreground">
+                        {user.full_name || user.username}
+                      </h3>
+                      <p className="text-sm text-muted-foreground truncate">
+                        @{user.username}
+                      </p>
+                    </div>
+                    
+                    {/* 联系信息 */}
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className="truncate flex-1">{user.email}</span>
+                    </div>
+                  </div>
+
+                  {/* 右侧信息区域 */}
+                  <div className="flex flex-col items-end gap-3">
+                    {/* 状态标识 */}
+                    <div className="flex flex-col items-end gap-2">
+                      {getStatusBadge(user)}
+                      <span className="text-xs text-muted-foreground">
+                        {user.created_at ? new Date(user.created_at).toLocaleDateString('zh-CN') : '未知'}
+                      </span>
+                    </div>
+                    
+                    {/* 在线状态 */}
+                    <div>
+                      {getOnlineIndicator(user)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 分隔线 */}
+                <div className="border-t border-border/50"></div>
+
+                {/* 操作按钮区域 */}
+                <div className="grid grid-cols-4 gap-2">
+                  {/* 查看 */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewingUser(user)}
+                    className="h-8 px-2 text-xs gap-1 hover:bg-primary/5 justify-center"
+                  >
+                    <IconEye size={14} />
+                    查看
+                  </Button>
+                  
+                  {/* 编辑 */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingUser(user)}
+                    className="h-8 px-2 text-xs gap-1 hover:bg-primary/5 justify-center"
+                  >
+                    <IconEdit size={14} />
+                    编辑
+                  </Button>
+
+                  {/* 启用/停用 */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleToggleActive(user)}
+                    disabled={!canDisableUser(user)}
+                    className={`h-8 px-2 text-xs gap-1 justify-center ${
+                      user.is_active 
+                        ? 'hover:bg-emerald-50 dark:hover:bg-emerald-950/20' 
+                        : 'hover:bg-muted/50'
+                    } ${!canDisableUser(user) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {user.is_active ? (
+                      <>
+                        <IconToggleRight size={14} className="text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-emerald-700 dark:text-emerald-300">停用</span>
+                      </>
+                    ) : (
+                      <>
+                        <IconToggleLeft size={14} className="text-muted-foreground" />
+                        启用
+                      </>
+                    )}
+                  </Button>
+
+                  {/* 删除 */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDeletingUser(user)}
+                    disabled={!canDeleteUser(user)}
+                    className={`h-8 px-2 text-xs gap-1 justify-center ${
+                      !canDeleteUser(user) 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:bg-destructive/5 text-destructive hover:text-destructive border-destructive/20'
+                    }`}
+                  >
+                    <IconTrash size={14} />
+                    删除
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+
+          {/* 移动端分页控制 */}
+          <div className="space-y-4 pt-4">
+            {/* 分页信息 */}
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                第 {currentPage} 页，共 {Math.ceil(totalUsers / pageSize)} 页
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                显示 {filteredUsers.length} 条，共 {totalUsers} 条记录
+              </p>
+            </div>
+
+            {/* 分页按钮 */}
+            <div className="flex items-center justify-center gap-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const newPage = currentPage - 1
+                  setCurrentPage(newPage)
+                  fetchUsers(newPage, pageSize)
+                }}
+                disabled={currentPage <= 1}
+                className="flex-1 max-w-[120px] h-11"
+              >
+                <IconChevronLeft size={16} className="mr-2" />
+                上一页
+              </Button>
+              
+              <div className="flex items-center gap-2">
+                <Select
+                  value={`${pageSize}`}
+                  onValueChange={(value) => {
+                    setPageSize(Number(value))
+                    setCurrentPage(1)
+                    fetchUsers(1, Number(value))
+                  }}
+                >
+                  <SelectTrigger className="h-9 w-[80px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[10, 20, 50].map((size) => (
+                      <SelectItem key={size} value={`${size}`}>
+                        {size}条/页
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const newPage = currentPage + 1
+                  setCurrentPage(newPage)
+                  fetchUsers(newPage, pageSize)
+                }}
+                disabled={currentPage >= Math.ceil(totalUsers / pageSize)}
+                className="flex-1 max-w-[120px] h-11"
+              >
+                下一页
+                <IconChevronRight size={16} className="ml-2" />
+              </Button>
+            </div>
+          </div>
+        </div>
 
         {/* 编辑用户对话框 */}
         <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
@@ -879,6 +1330,20 @@ export default function UsersManagement() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* 回收站弹窗 */}
+        <RecycleBinDialog
+          open={isRecycleBinOpen}
+          onOpenChange={setIsRecycleBinOpen}
+          onUserRestored={() => fetchUsers()}
+        />
+
+        {/* 批量导入弹窗 */}
+        <BatchImportDialog
+          open={isBatchImportOpen}
+          onOpenChange={setIsBatchImportOpen}
+          onImportSuccess={() => fetchUsers()}
+        />
       </Main>
     </>
   )

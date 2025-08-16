@@ -31,7 +31,6 @@ import { Route as AuthenticatedDocumentsIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as AuthenticatedAiChatsIndexRouteImport } from './routes/_authenticated/ai-chats/index'
-import { Route as AuthenticatedUsersRecycleBinRouteImport } from './routes/_authenticated/users/recycle-bin'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsMcpRouteImport } from './routes/_authenticated/settings/mcp'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
@@ -49,7 +48,6 @@ import { Route as AuthenticatedDocumentsStorageRouteImport } from './routes/_aut
 import { Route as AuthenticatedDocumentsSharedRouteImport } from './routes/_authenticated/documents/shared'
 import { Route as AuthenticatedDocumentsRecentRouteImport } from './routes/_authenticated/documents/recent'
 import { Route as AuthenticatedDocumentsFavoritesRouteImport } from './routes/_authenticated/documents/favorites'
-import { Route as AuthenticatedManagementUsersRecycleBinRouteImport } from './routes/_authenticated/management/users/recycle-bin'
 import { Route as AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRouteImport } from './routes/_authenticated/documents/settings/knowledgeQualityAssessment'
 import { Route as AuthenticatedDocumentsSettingsCategoriesRouteImport } from './routes/_authenticated/documents/settings/categories'
 
@@ -167,12 +165,6 @@ const AuthenticatedAiChatsIndexRoute =
     path: '/ai-chats/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedUsersRecycleBinRoute =
-  AuthenticatedUsersRecycleBinRouteImport.update({
-    id: '/users/recycle-bin',
-    path: '/users/recycle-bin',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/notifications',
@@ -275,12 +267,6 @@ const AuthenticatedDocumentsFavoritesRoute =
     path: '/documents/favorites',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedManagementUsersRecycleBinRoute =
-  AuthenticatedManagementUsersRecycleBinRouteImport.update({
-    id: '/recycle-bin',
-    path: '/recycle-bin',
-    getParentRoute: () => AuthenticatedManagementUsersRoute,
-  } as any)
 const AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute =
   AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRouteImport.update({
     id: '/documents/settings/knowledgeQualityAssessment',
@@ -319,13 +305,12 @@ export interface FileRoutesByFullPath {
   '/knowledge/web-blogs': typeof AuthenticatedKnowledgeWebBlogsRoute
   '/knowledge/wechat': typeof AuthenticatedKnowledgeWechatRoute
   '/management/ai-models': typeof AuthenticatedManagementAiModelsRoute
-  '/management/users': typeof AuthenticatedManagementUsersRouteWithChildren
+  '/management/users': typeof AuthenticatedManagementUsersRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/mcp': typeof AuthenticatedSettingsMcpRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/users/recycle-bin': typeof AuthenticatedUsersRecycleBinRoute
   '/ai-chats': typeof AuthenticatedAiChatsIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
@@ -336,7 +321,6 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthenticatedUsersIndexRoute
   '/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
   '/documents/settings/knowledgeQualityAssessment': typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
-  '/management/users/recycle-bin': typeof AuthenticatedManagementUsersRecycleBinRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof authForgotPasswordRoute
@@ -362,13 +346,12 @@ export interface FileRoutesByTo {
   '/knowledge/web-blogs': typeof AuthenticatedKnowledgeWebBlogsRoute
   '/knowledge/wechat': typeof AuthenticatedKnowledgeWechatRoute
   '/management/ai-models': typeof AuthenticatedManagementAiModelsRoute
-  '/management/users': typeof AuthenticatedManagementUsersRouteWithChildren
+  '/management/users': typeof AuthenticatedManagementUsersRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/mcp': typeof AuthenticatedSettingsMcpRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/users/recycle-bin': typeof AuthenticatedUsersRecycleBinRoute
   '/ai-chats': typeof AuthenticatedAiChatsIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
@@ -379,7 +362,6 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersIndexRoute
   '/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
   '/documents/settings/knowledgeQualityAssessment': typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
-  '/management/users/recycle-bin': typeof AuthenticatedManagementUsersRecycleBinRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -408,13 +390,12 @@ export interface FileRoutesById {
   '/_authenticated/knowledge/web-blogs': typeof AuthenticatedKnowledgeWebBlogsRoute
   '/_authenticated/knowledge/wechat': typeof AuthenticatedKnowledgeWechatRoute
   '/_authenticated/management/ai-models': typeof AuthenticatedManagementAiModelsRoute
-  '/_authenticated/management/users': typeof AuthenticatedManagementUsersRouteWithChildren
+  '/_authenticated/management/users': typeof AuthenticatedManagementUsersRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/_authenticated/settings/mcp': typeof AuthenticatedSettingsMcpRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/_authenticated/users/recycle-bin': typeof AuthenticatedUsersRecycleBinRoute
   '/_authenticated/ai-chats/': typeof AuthenticatedAiChatsIndexRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
@@ -425,7 +406,6 @@ export interface FileRoutesById {
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
   '/_authenticated/documents/settings/knowledgeQualityAssessment': typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
-  '/_authenticated/management/users/recycle-bin': typeof AuthenticatedManagementUsersRecycleBinRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -460,7 +440,6 @@ export interface FileRouteTypes {
     | '/settings/display'
     | '/settings/mcp'
     | '/settings/notifications'
-    | '/users/recycle-bin'
     | '/ai-chats'
     | '/apps'
     | '/chats'
@@ -471,7 +450,6 @@ export interface FileRouteTypes {
     | '/users'
     | '/documents/settings/categories'
     | '/documents/settings/knowledgeQualityAssessment'
-    | '/management/users/recycle-bin'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -503,7 +481,6 @@ export interface FileRouteTypes {
     | '/settings/display'
     | '/settings/mcp'
     | '/settings/notifications'
-    | '/users/recycle-bin'
     | '/ai-chats'
     | '/apps'
     | '/chats'
@@ -514,7 +491,6 @@ export interface FileRouteTypes {
     | '/users'
     | '/documents/settings/categories'
     | '/documents/settings/knowledgeQualityAssessment'
-    | '/management/users/recycle-bin'
   id:
     | '__root__'
     | '/_authenticated'
@@ -548,7 +524,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/mcp'
     | '/_authenticated/settings/notifications'
-    | '/_authenticated/users/recycle-bin'
     | '/_authenticated/ai-chats/'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
@@ -559,7 +534,6 @@ export interface FileRouteTypes {
     | '/_authenticated/users/'
     | '/_authenticated/documents/settings/categories'
     | '/_authenticated/documents/settings/knowledgeQualityAssessment'
-    | '/_authenticated/management/users/recycle-bin'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -733,13 +707,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiChatsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/users/recycle-bin': {
-      id: '/_authenticated/users/recycle-bin'
-      path: '/users/recycle-bin'
-      fullPath: '/users/recycle-bin'
-      preLoaderRoute: typeof AuthenticatedUsersRecycleBinRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/settings/notifications': {
       id: '/_authenticated/settings/notifications'
       path: '/notifications'
@@ -859,13 +826,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsFavoritesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/management/users/recycle-bin': {
-      id: '/_authenticated/management/users/recycle-bin'
-      path: '/recycle-bin'
-      fullPath: '/management/users/recycle-bin'
-      preLoaderRoute: typeof AuthenticatedManagementUsersRecycleBinRouteImport
-      parentRoute: typeof AuthenticatedManagementUsersRoute
-    }
     '/_authenticated/documents/settings/knowledgeQualityAssessment': {
       id: '/_authenticated/documents/settings/knowledgeQualityAssessment'
       path: '/documents/settings/knowledgeQualityAssessment'
@@ -908,21 +868,6 @@ const AuthenticatedSettingsRouteRouteWithChildren =
     AuthenticatedSettingsRouteRouteChildren,
   )
 
-interface AuthenticatedManagementUsersRouteChildren {
-  AuthenticatedManagementUsersRecycleBinRoute: typeof AuthenticatedManagementUsersRecycleBinRoute
-}
-
-const AuthenticatedManagementUsersRouteChildren: AuthenticatedManagementUsersRouteChildren =
-  {
-    AuthenticatedManagementUsersRecycleBinRoute:
-      AuthenticatedManagementUsersRecycleBinRoute,
-  }
-
-const AuthenticatedManagementUsersRouteWithChildren =
-  AuthenticatedManagementUsersRoute._addFileChildren(
-    AuthenticatedManagementUsersRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -937,8 +882,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedKnowledgeWebBlogsRoute: typeof AuthenticatedKnowledgeWebBlogsRoute
   AuthenticatedKnowledgeWechatRoute: typeof AuthenticatedKnowledgeWechatRoute
   AuthenticatedManagementAiModelsRoute: typeof AuthenticatedManagementAiModelsRoute
-  AuthenticatedManagementUsersRoute: typeof AuthenticatedManagementUsersRouteWithChildren
-  AuthenticatedUsersRecycleBinRoute: typeof AuthenticatedUsersRecycleBinRoute
+  AuthenticatedManagementUsersRoute: typeof AuthenticatedManagementUsersRoute
   AuthenticatedAiChatsIndexRoute: typeof AuthenticatedAiChatsIndexRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
@@ -966,9 +910,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedKnowledgeWebBlogsRoute: AuthenticatedKnowledgeWebBlogsRoute,
   AuthenticatedKnowledgeWechatRoute: AuthenticatedKnowledgeWechatRoute,
   AuthenticatedManagementAiModelsRoute: AuthenticatedManagementAiModelsRoute,
-  AuthenticatedManagementUsersRoute:
-    AuthenticatedManagementUsersRouteWithChildren,
-  AuthenticatedUsersRecycleBinRoute: AuthenticatedUsersRecycleBinRoute,
+  AuthenticatedManagementUsersRoute: AuthenticatedManagementUsersRoute,
   AuthenticatedAiChatsIndexRoute: AuthenticatedAiChatsIndexRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,

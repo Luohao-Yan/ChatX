@@ -730,3 +730,213 @@ class UserService:
             return True
         except Exception:
             return False
+
+    async def batch_import_users(self, excel_content: bytes, operator: User) -> Dict[str, Any]:
+        """批量导入用户
+        
+        Args:
+            excel_content: Excel文件内容
+            operator: 操作者
+            
+        Returns:
+            Dict: 导入结果
+        """
+        import pandas as pd
+        import io
+        from app.schemas.user_schemas import UserBatchImportResponse, UserBatchImportResult
+        
+        try:
+            # 读取Excel文件
+            df = pd.read_excel(io.BytesIO(excel_content), engine='openpyxl')
+            
+            # 跳过前两行（标题和说明），从第3行开始读取数据
+            if len(df) > 2:
+                df = df.iloc[2:].reset_index(drop=True)
+            
+            # 定义字段映射
+            column_mapping = {
+                '用户名*': 'username',
+                '电子邮箱*': 'email', 
+                '密码*': 'password',
+                '真实姓名*': 'full_name',
+                '手机号码': 'phone',
+                '租户ID': 'tenant_id',
+                '组织ID': 'organization_id',
+                '团队ID（部门）': 'team_id',
+                '角色': 'roles',
+                '是否激活': 'is_active',
+                '邮箱已验证': 'is_verified',
+                '个人简介': 'bio',
+                '偏好语言': 'preferred_language',
+                '性别': 'gender',
+                '国家': 'country',
+                '城市': 'city'
+            }
+            
+            # 重命名列
+            df = df.rename(columns=column_mapping)
+            
+            # 删除所有为空的行
+            df = df.dropna(how='all')
+            
+            results = []
+            success_count = 0
+            error_count = 0
+            warning_count = 0
+            
+            for index, row in df.iterrows():
+                row_number = index + 4  # 考虑跳过的行数
+                result = UserBatchImportResult(
+                    row_number=row_number,
+                    username=str(row.get('username', '')),
+                    email=str(row.get('email', '')),
+                    status='success',
+                    message='',
+                    user_id=None
+                )
+                
+                try:
+                    # 检查必填字段
+                    required_fields = ['username', 'email', 'password', 'full_name']
+                    missing_fields = []
+                    for field in required_fields:
+                        if pd.isna(row.get(field)) or str(row.get(field)).strip() == '':
+                            missing_fields.append(field)
+                    
+                    if missing_fields:
+                        result.status = 'error'
+                        result.message = f"缺少必填字段: {', '.join(missing_fields)}"
+                        error_count += 1
+                        results.append(result)
+                        continue
+                    
+                    # 处理布尔值字段
+                    is_active = True
+                    if not pd.isna(row.get('is_active')):
+                        is_active_str = str(row.get('is_active')).lower()
+                        is_active = is_active_str in ['true', '1', 'yes', '是']
+                    
+                    is_verified = False
+                    if not pd.isna(row.get('is_verified')):
+                        is_verified_str = str(row.get('is_verified')).lower()
+                        is_verified = is_verified_str in ['true', '1', 'yes', '是']
+                    
+                    # 处理角色字段
+                    roles = None
+                    if not pd.isna(row.get('roles')):
+                        roles_str = str(row.get('roles')).strip()
+                        if roles_str:
+                            roles = [role.strip() for role in roles_str.split(',')]
+                    
+                    # 创建用户数据
+                    user_data = UserCreate(
+                        username=str(row.get('username')).strip(),
+                        email=str(row.get('email')).strip(),
+                        password=str(row.get('password')).strip(),
+                        full_name=str(row.get('full_name')).strip()
+                    )
+                    
+                    # 检查用户名和邮箱是否已存在
+                    existing_user = await self.user_repo.get_by_email(user_data.email)
+                    if existing_user:
+                        result.status = 'error'
+                        result.message = f"邮箱 {user_data.email} 已被使用"
+                        error_count += 1
+                        results.append(result)
+                        continue
+                        
+                    existing_user = await self.user_repo.get_by_username(user_data.username)
+                    if existing_user:
+                        result.status = 'error'
+                        result.message = f"用户名 {user_data.username} 已被使用"
+                        error_count += 1
+                        results.append(result)
+                        continue
+                    
+                    # 验证密码复杂度
+                    is_valid, error_msg = self.domain_service.validate_user_registration(
+                        user_data.email, user_data.username, user_data.password
+                    )
+                    if not is_valid:
+                        result.status = 'error'
+                        result.message = error_msg
+                        error_count += 1
+                        results.append(result)
+                        continue
+                    
+                    # 创建用户
+                    new_user = await self.user_repo.create(user_data)
+                    
+                    # 更新可选字段
+                    update_data = {}
+                    optional_fields = {
+                        'phone': 'phone',
+                        'bio': 'bio', 
+                        'preferred_language': 'preferred_language',
+                        'gender': 'gender',
+                        'country': 'country',
+                        'city': 'city'
+                    }
+                    
+                    for excel_field, db_field in optional_fields.items():
+                        if not pd.isna(row.get(excel_field)):
+                            value = str(row.get(excel_field)).strip()
+                            if value:
+                                update_data[db_field] = value
+                    
+                    # 更新状态字段
+                    update_data['is_active'] = is_active
+                    update_data['is_verified'] = is_verified
+                    
+                    # 处理角色
+                    if roles:
+                        update_data['roles'] = roles
+                    
+                    if update_data:
+                        await self.user_repo.update(new_user.id, update_data)
+                    
+                    result.status = 'success'
+                    result.message = '用户创建成功'
+                    result.user_id = new_user.id
+                    success_count += 1
+                    
+                    # 检查是否有租户、组织、团队信息的警告
+                    warnings = []
+                    if not pd.isna(row.get('tenant_id')) and str(row.get('tenant_id')).strip():
+                        warnings.append('租户ID已记录但需要手动关联')
+                    if not pd.isna(row.get('organization_id')) and str(row.get('organization_id')).strip():
+                        warnings.append('组织ID已记录但需要手动关联')
+                    if not pd.isna(row.get('team_id')) and str(row.get('team_id')).strip():
+                        warnings.append('团队ID已记录但需要手动关联')
+                    
+                    if warnings:
+                        result.status = 'warning'
+                        result.message += f" (警告: {'; '.join(warnings)})"
+                        warning_count += 1
+                        success_count -= 1  # 从成功计数中减去，加入警告计数
+                    
+                except Exception as e:
+                    result.status = 'error'
+                    result.message = f"创建失败: {str(e)}"
+                    error_count += 1
+                
+                results.append(result)
+            
+            # 生成摘要
+            total_count = len(results)
+            summary = f"导入完成。总计 {total_count} 条记录，成功 {success_count} 条，警告 {warning_count} 条，失败 {error_count} 条。"
+            
+            return UserBatchImportResponse(
+                total_count=total_count,
+                success_count=success_count,
+                error_count=error_count,
+                warning_count=warning_count,
+                results=results,
+                summary=summary
+            )
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Excel文件处理失败: {str(e)}"
+            )

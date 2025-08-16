@@ -21,8 +21,8 @@ interface UsersContextType {
   // Actions
   fetchUsers: () => Promise<void>
   createUser: (userData: UserCreate) => Promise<void>
-  updateUser: (id: number, userData: UserUpdate) => Promise<void>
-  deleteUser: (id: number) => Promise<void>
+  updateUser: (id: string, userData: UserUpdate) => Promise<void>
+  deleteUser: (id: string) => Promise<void>
   refreshUsers: () => Promise<void>
 }
 
@@ -73,7 +73,7 @@ export default function UsersProvider({ children }: Props) {
   }, [setOpen])
 
   // 更新用户
-  const updateUser = useCallback(async (id: number, userData: UserUpdate) => {
+  const updateUser = useCallback(async (id: string, userData: UserUpdate) => {
     try {
       const updatedUser = await usersApi.updateUser(id, userData)
       setUsers(prev => prev.map(user => 
@@ -91,7 +91,7 @@ export default function UsersProvider({ children }: Props) {
   }, [setOpen])
 
   // 删除用户
-  const deleteUser = useCallback(async (id: number) => {
+  const deleteUser = useCallback(async (id: string) => {
     try {
       await usersApi.deleteUser(id)
       const deletedUser = users.find(user => user.id === id)

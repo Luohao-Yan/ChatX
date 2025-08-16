@@ -33,3 +33,7 @@ neo4j==5.15.0
 httpx==0.26.0
 aiofiles==23.2.1
 Pillow==10.2.0
+
+# Excel processing
+openpyxl==3.1.5
+pandas==2.3.1

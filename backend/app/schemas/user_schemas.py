@@ -206,3 +206,43 @@ class UserRoleAssign(BaseModel):
 class UserRoleRevoke(BaseModel):
     user_id: str
     role_ids: List[int]
+
+
+class UserBatchImportItem(BaseModel):
+    """批量导入用户项"""
+    username: str
+    email: EmailStr
+    password: str
+    full_name: str
+    phone: Optional[str] = None
+    tenant_id: Optional[str] = None
+    organization_id: Optional[str] = None
+    team_id: Optional[str] = None
+    roles: Optional[List[str]] = None
+    is_active: bool = True
+    is_verified: bool = False
+    bio: Optional[str] = None
+    preferred_language: str = "zh-CN"
+    gender: Optional[str] = None
+    country: Optional[str] = None
+    city: Optional[str] = None
+
+
+class UserBatchImportResult(BaseModel):
+    """批量导入结果项"""
+    row_number: int
+    username: str
+    email: str
+    status: str  # success, error, warning
+    message: str
+    user_id: Optional[str] = None
+
+
+class UserBatchImportResponse(BaseModel):
+    """批量导入响应"""
+    total_count: int
+    success_count: int
+    error_count: int
+    warning_count: int
+    results: List[UserBatchImportResult]
+    summary: str

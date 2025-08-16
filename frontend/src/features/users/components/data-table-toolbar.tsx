@@ -8,6 +8,7 @@ import { DataTableFacetedFilter } from './data-table-faceted-filter'
 import { User } from '../data/schema'
 import { useUsers } from '../context/users-context'
 import { useUsersApi } from '../services/users-api'
+import { RecycleBinDialog } from '@/features/management/users/recycle-bin-dialog'
 import { toast } from 'sonner'
 
 const statuses = [
@@ -44,6 +45,7 @@ export function DataTableToolbar({ table }: DataTableToolbarProps) {
   const { setOpen } = useUsers()
   const usersApi = useUsersApi()
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isRecycleBinOpen, setIsRecycleBinOpen] = useState(false)
   const isFiltered = table.getState().columnFilters.length > 0
 
   const selectedRows = table.getFilteredSelectedRowModel().rows
@@ -157,12 +159,19 @@ export function DataTableToolbar({ table }: DataTableToolbarProps) {
         <Button
           variant='outline'
           size='sm'
-          onClick={() => window.location.href = '/users/recycle-bin'}
+          onClick={() => setIsRecycleBinOpen(true)}
         >
           回收站
         </Button>
         <DataTableViewOptions table={table} />
       </div>
+      
+      {/* 回收站弹窗 */}
+      <RecycleBinDialog
+        open={isRecycleBinOpen}
+        onOpenChange={setIsRecycleBinOpen}
+        onUserRestored={() => window.location.reload()}
+      />
     </div>
   )
 }

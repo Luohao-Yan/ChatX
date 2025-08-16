@@ -11,6 +11,17 @@ export interface User extends BaseEntity {
   last_login?: string
   roles?: string[]
   permissions?: string[]
+  tenant_id?: string
+  organization_id?: string
+  team_id?: string
+  is_superuser?: boolean
+  deleted_at?: string
+  is_online?: boolean
+  bio?: string
+  preferred_language?: string
+  gender?: string
+  country?: string
+  city?: string
 }
 
 export interface UserProfile {
