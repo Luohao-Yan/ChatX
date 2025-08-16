@@ -60,7 +60,17 @@
     "rolesManagement": "角色管理",
     "permissionsManagement": "权限管理",
     "aiModelsManagement": "AI 大模型接入管理",
-    "mcp": "MCP"
+    "mcp": "MCP",
+    "managementOverview": "管理概览",
+    "organizationStructure": "组织架构",
+    "organizationHierarchy": "组织层级",
+    "organizationChart": "组织架构图",
+    "securityPermissions": "安全权限",
+    "rolesPermissions": "角色权限",
+    "accessControl": "访问控制",
+    "securityAudit": "安全审计",
+    "systemConfiguration": "系统配置",
+    "integrationManagement": "集成管理"
   },
   "userMenu": {
     "upgradeToPro": "升级到专业版",

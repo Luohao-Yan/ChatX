@@ -26,6 +26,7 @@ import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authen
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedManagementIndexRouteImport } from './routes/_authenticated/management/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedDocumentsIndexRouteImport } from './routes/_authenticated/documents/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
@@ -48,6 +49,15 @@ import { Route as AuthenticatedDocumentsStorageRouteImport } from './routes/_aut
 import { Route as AuthenticatedDocumentsSharedRouteImport } from './routes/_authenticated/documents/shared'
 import { Route as AuthenticatedDocumentsRecentRouteImport } from './routes/_authenticated/documents/recent'
 import { Route as AuthenticatedDocumentsFavoritesRouteImport } from './routes/_authenticated/documents/favorites'
+import { Route as AuthenticatedManagementSystemIntegrationsRouteImport } from './routes/_authenticated/management/system/integrations'
+import { Route as AuthenticatedManagementSystemConfigRouteImport } from './routes/_authenticated/management/system/config'
+import { Route as AuthenticatedManagementSystemAiModelsRouteImport } from './routes/_authenticated/management/system/ai-models'
+import { Route as AuthenticatedManagementSecurityRolesRouteImport } from './routes/_authenticated/management/security/roles'
+import { Route as AuthenticatedManagementSecurityAuditRouteImport } from './routes/_authenticated/management/security/audit'
+import { Route as AuthenticatedManagementSecurityAccessRouteImport } from './routes/_authenticated/management/security/access'
+import { Route as AuthenticatedManagementOrganizationUsersRouteImport } from './routes/_authenticated/management/organization/users'
+import { Route as AuthenticatedManagementOrganizationHierarchyRouteImport } from './routes/_authenticated/management/organization/hierarchy'
+import { Route as AuthenticatedManagementOrganizationChartRouteImport } from './routes/_authenticated/management/organization/chart'
 import { Route as AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRouteImport } from './routes/_authenticated/documents/settings/knowledgeQualityAssessment'
 import { Route as AuthenticatedDocumentsSettingsCategoriesRouteImport } from './routes/_authenticated/documents/settings/categories'
 
@@ -136,6 +146,12 @@ const AuthenticatedSettingsIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedManagementIndexRoute =
+  AuthenticatedManagementIndexRouteImport.update({
+    id: '/management/',
+    path: '/management/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedHelpCenterIndexRoute =
   AuthenticatedHelpCenterIndexRouteImport.update({
@@ -267,6 +283,60 @@ const AuthenticatedDocumentsFavoritesRoute =
     path: '/documents/favorites',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedManagementSystemIntegrationsRoute =
+  AuthenticatedManagementSystemIntegrationsRouteImport.update({
+    id: '/management/system/integrations',
+    path: '/management/system/integrations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManagementSystemConfigRoute =
+  AuthenticatedManagementSystemConfigRouteImport.update({
+    id: '/management/system/config',
+    path: '/management/system/config',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManagementSystemAiModelsRoute =
+  AuthenticatedManagementSystemAiModelsRouteImport.update({
+    id: '/management/system/ai-models',
+    path: '/management/system/ai-models',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManagementSecurityRolesRoute =
+  AuthenticatedManagementSecurityRolesRouteImport.update({
+    id: '/management/security/roles',
+    path: '/management/security/roles',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManagementSecurityAuditRoute =
+  AuthenticatedManagementSecurityAuditRouteImport.update({
+    id: '/management/security/audit',
+    path: '/management/security/audit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManagementSecurityAccessRoute =
+  AuthenticatedManagementSecurityAccessRouteImport.update({
+    id: '/management/security/access',
+    path: '/management/security/access',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManagementOrganizationUsersRoute =
+  AuthenticatedManagementOrganizationUsersRouteImport.update({
+    id: '/management/organization/users',
+    path: '/management/organization/users',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManagementOrganizationHierarchyRoute =
+  AuthenticatedManagementOrganizationHierarchyRouteImport.update({
+    id: '/management/organization/hierarchy',
+    path: '/management/organization/hierarchy',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManagementOrganizationChartRoute =
+  AuthenticatedManagementOrganizationChartRouteImport.update({
+    id: '/management/organization/chart',
+    path: '/management/organization/chart',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute =
   AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRouteImport.update({
     id: '/documents/settings/knowledgeQualityAssessment',
@@ -316,11 +386,21 @@ export interface FileRoutesByFullPath {
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/documents': typeof AuthenticatedDocumentsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
+  '/management': typeof AuthenticatedManagementIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
   '/documents/settings/knowledgeQualityAssessment': typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
+  '/management/organization/chart': typeof AuthenticatedManagementOrganizationChartRoute
+  '/management/organization/hierarchy': typeof AuthenticatedManagementOrganizationHierarchyRoute
+  '/management/organization/users': typeof AuthenticatedManagementOrganizationUsersRoute
+  '/management/security/access': typeof AuthenticatedManagementSecurityAccessRoute
+  '/management/security/audit': typeof AuthenticatedManagementSecurityAuditRoute
+  '/management/security/roles': typeof AuthenticatedManagementSecurityRolesRoute
+  '/management/system/ai-models': typeof AuthenticatedManagementSystemAiModelsRoute
+  '/management/system/config': typeof AuthenticatedManagementSystemConfigRoute
+  '/management/system/integrations': typeof AuthenticatedManagementSystemIntegrationsRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof authForgotPasswordRoute
@@ -357,11 +437,21 @@ export interface FileRoutesByTo {
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/documents': typeof AuthenticatedDocumentsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
+  '/management': typeof AuthenticatedManagementIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
   '/documents/settings/knowledgeQualityAssessment': typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
+  '/management/organization/chart': typeof AuthenticatedManagementOrganizationChartRoute
+  '/management/organization/hierarchy': typeof AuthenticatedManagementOrganizationHierarchyRoute
+  '/management/organization/users': typeof AuthenticatedManagementOrganizationUsersRoute
+  '/management/security/access': typeof AuthenticatedManagementSecurityAccessRoute
+  '/management/security/audit': typeof AuthenticatedManagementSecurityAuditRoute
+  '/management/security/roles': typeof AuthenticatedManagementSecurityRolesRoute
+  '/management/system/ai-models': typeof AuthenticatedManagementSystemAiModelsRoute
+  '/management/system/config': typeof AuthenticatedManagementSystemConfigRoute
+  '/management/system/integrations': typeof AuthenticatedManagementSystemIntegrationsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -401,11 +491,21 @@ export interface FileRoutesById {
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/documents/': typeof AuthenticatedDocumentsIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/_authenticated/management/': typeof AuthenticatedManagementIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
   '/_authenticated/documents/settings/knowledgeQualityAssessment': typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
+  '/_authenticated/management/organization/chart': typeof AuthenticatedManagementOrganizationChartRoute
+  '/_authenticated/management/organization/hierarchy': typeof AuthenticatedManagementOrganizationHierarchyRoute
+  '/_authenticated/management/organization/users': typeof AuthenticatedManagementOrganizationUsersRoute
+  '/_authenticated/management/security/access': typeof AuthenticatedManagementSecurityAccessRoute
+  '/_authenticated/management/security/audit': typeof AuthenticatedManagementSecurityAuditRoute
+  '/_authenticated/management/security/roles': typeof AuthenticatedManagementSecurityRolesRoute
+  '/_authenticated/management/system/ai-models': typeof AuthenticatedManagementSystemAiModelsRoute
+  '/_authenticated/management/system/config': typeof AuthenticatedManagementSystemConfigRoute
+  '/_authenticated/management/system/integrations': typeof AuthenticatedManagementSystemIntegrationsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -445,11 +545,21 @@ export interface FileRouteTypes {
     | '/chats'
     | '/documents'
     | '/help-center'
+    | '/management'
     | '/settings/'
     | '/tasks'
     | '/users'
     | '/documents/settings/categories'
     | '/documents/settings/knowledgeQualityAssessment'
+    | '/management/organization/chart'
+    | '/management/organization/hierarchy'
+    | '/management/organization/users'
+    | '/management/security/access'
+    | '/management/security/audit'
+    | '/management/security/roles'
+    | '/management/system/ai-models'
+    | '/management/system/config'
+    | '/management/system/integrations'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -486,11 +596,21 @@ export interface FileRouteTypes {
     | '/chats'
     | '/documents'
     | '/help-center'
+    | '/management'
     | '/settings'
     | '/tasks'
     | '/users'
     | '/documents/settings/categories'
     | '/documents/settings/knowledgeQualityAssessment'
+    | '/management/organization/chart'
+    | '/management/organization/hierarchy'
+    | '/management/organization/users'
+    | '/management/security/access'
+    | '/management/security/audit'
+    | '/management/security/roles'
+    | '/management/system/ai-models'
+    | '/management/system/config'
+    | '/management/system/integrations'
   id:
     | '__root__'
     | '/_authenticated'
@@ -529,11 +649,21 @@ export interface FileRouteTypes {
     | '/_authenticated/chats/'
     | '/_authenticated/documents/'
     | '/_authenticated/help-center/'
+    | '/_authenticated/management/'
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
     | '/_authenticated/documents/settings/categories'
     | '/_authenticated/documents/settings/knowledgeQualityAssessment'
+    | '/_authenticated/management/organization/chart'
+    | '/_authenticated/management/organization/hierarchy'
+    | '/_authenticated/management/organization/users'
+    | '/_authenticated/management/security/access'
+    | '/_authenticated/management/security/audit'
+    | '/_authenticated/management/security/roles'
+    | '/_authenticated/management/system/ai-models'
+    | '/_authenticated/management/system/config'
+    | '/_authenticated/management/system/integrations'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -671,6 +801,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/'
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/management/': {
+      id: '/_authenticated/management/'
+      path: '/management'
+      fullPath: '/management'
+      preLoaderRoute: typeof AuthenticatedManagementIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/help-center/': {
       id: '/_authenticated/help-center/'
@@ -826,6 +963,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsFavoritesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/management/system/integrations': {
+      id: '/_authenticated/management/system/integrations'
+      path: '/management/system/integrations'
+      fullPath: '/management/system/integrations'
+      preLoaderRoute: typeof AuthenticatedManagementSystemIntegrationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/management/system/config': {
+      id: '/_authenticated/management/system/config'
+      path: '/management/system/config'
+      fullPath: '/management/system/config'
+      preLoaderRoute: typeof AuthenticatedManagementSystemConfigRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/management/system/ai-models': {
+      id: '/_authenticated/management/system/ai-models'
+      path: '/management/system/ai-models'
+      fullPath: '/management/system/ai-models'
+      preLoaderRoute: typeof AuthenticatedManagementSystemAiModelsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/management/security/roles': {
+      id: '/_authenticated/management/security/roles'
+      path: '/management/security/roles'
+      fullPath: '/management/security/roles'
+      preLoaderRoute: typeof AuthenticatedManagementSecurityRolesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/management/security/audit': {
+      id: '/_authenticated/management/security/audit'
+      path: '/management/security/audit'
+      fullPath: '/management/security/audit'
+      preLoaderRoute: typeof AuthenticatedManagementSecurityAuditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/management/security/access': {
+      id: '/_authenticated/management/security/access'
+      path: '/management/security/access'
+      fullPath: '/management/security/access'
+      preLoaderRoute: typeof AuthenticatedManagementSecurityAccessRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/management/organization/users': {
+      id: '/_authenticated/management/organization/users'
+      path: '/management/organization/users'
+      fullPath: '/management/organization/users'
+      preLoaderRoute: typeof AuthenticatedManagementOrganizationUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/management/organization/hierarchy': {
+      id: '/_authenticated/management/organization/hierarchy'
+      path: '/management/organization/hierarchy'
+      fullPath: '/management/organization/hierarchy'
+      preLoaderRoute: typeof AuthenticatedManagementOrganizationHierarchyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/management/organization/chart': {
+      id: '/_authenticated/management/organization/chart'
+      path: '/management/organization/chart'
+      fullPath: '/management/organization/chart'
+      preLoaderRoute: typeof AuthenticatedManagementOrganizationChartRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/documents/settings/knowledgeQualityAssessment': {
       id: '/_authenticated/documents/settings/knowledgeQualityAssessment'
       path: '/documents/settings/knowledgeQualityAssessment'
@@ -888,10 +1088,20 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedDocumentsIndexRoute: typeof AuthenticatedDocumentsIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
+  AuthenticatedManagementIndexRoute: typeof AuthenticatedManagementIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
   AuthenticatedDocumentsSettingsCategoriesRoute: typeof AuthenticatedDocumentsSettingsCategoriesRoute
   AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute: typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
+  AuthenticatedManagementOrganizationChartRoute: typeof AuthenticatedManagementOrganizationChartRoute
+  AuthenticatedManagementOrganizationHierarchyRoute: typeof AuthenticatedManagementOrganizationHierarchyRoute
+  AuthenticatedManagementOrganizationUsersRoute: typeof AuthenticatedManagementOrganizationUsersRoute
+  AuthenticatedManagementSecurityAccessRoute: typeof AuthenticatedManagementSecurityAccessRoute
+  AuthenticatedManagementSecurityAuditRoute: typeof AuthenticatedManagementSecurityAuditRoute
+  AuthenticatedManagementSecurityRolesRoute: typeof AuthenticatedManagementSecurityRolesRoute
+  AuthenticatedManagementSystemAiModelsRoute: typeof AuthenticatedManagementSystemAiModelsRoute
+  AuthenticatedManagementSystemConfigRoute: typeof AuthenticatedManagementSystemConfigRoute
+  AuthenticatedManagementSystemIntegrationsRoute: typeof AuthenticatedManagementSystemIntegrationsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -916,12 +1126,31 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedDocumentsIndexRoute: AuthenticatedDocumentsIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
+  AuthenticatedManagementIndexRoute: AuthenticatedManagementIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
   AuthenticatedDocumentsSettingsCategoriesRoute:
     AuthenticatedDocumentsSettingsCategoriesRoute,
   AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute:
     AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute,
+  AuthenticatedManagementOrganizationChartRoute:
+    AuthenticatedManagementOrganizationChartRoute,
+  AuthenticatedManagementOrganizationHierarchyRoute:
+    AuthenticatedManagementOrganizationHierarchyRoute,
+  AuthenticatedManagementOrganizationUsersRoute:
+    AuthenticatedManagementOrganizationUsersRoute,
+  AuthenticatedManagementSecurityAccessRoute:
+    AuthenticatedManagementSecurityAccessRoute,
+  AuthenticatedManagementSecurityAuditRoute:
+    AuthenticatedManagementSecurityAuditRoute,
+  AuthenticatedManagementSecurityRolesRoute:
+    AuthenticatedManagementSecurityRolesRoute,
+  AuthenticatedManagementSystemAiModelsRoute:
+    AuthenticatedManagementSystemAiModelsRoute,
+  AuthenticatedManagementSystemConfigRoute:
+    AuthenticatedManagementSystemConfigRoute,
+  AuthenticatedManagementSystemIntegrationsRoute:
+    AuthenticatedManagementSystemIntegrationsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

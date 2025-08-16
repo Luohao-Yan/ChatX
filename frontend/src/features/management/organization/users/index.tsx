@@ -87,6 +87,7 @@ export default function UsersManagement() {
 
   const breadcrumbItems = [
     { label: t('nav.managementCenter') },
+    { label: t('nav.organizationStructure') },
     { label: t('nav.usersManagement') }
   ]
 

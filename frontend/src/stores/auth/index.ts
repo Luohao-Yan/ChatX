@@ -132,18 +132,10 @@ const getInitialState = () => {
   const accessToken = storage.getAccessToken() || ''
   const refreshToken = storage.getRefreshToken() || ''
 
-  console.log('🔄 [AUTH_STORE] 初始化状态', {
-    hasAccessToken: !!accessToken,
-    hasRefreshToken: !!refreshToken,
-    accessToken: accessToken ? accessToken.substring(0, 20) + '...' : 'none',
-    tokenLength: accessToken.length
-  })
 
   // Token管理由统一request模块自动处理，无需手动配置
   if (accessToken) {
-    console.log('✅ [AUTH_STORE] Token已存在，统一request模块会自动注入到请求中')
   } else {
-    console.log('❌ [AUTH_STORE] 无Token')
   }
 
   // 从缓存加载用户信息
@@ -160,7 +152,6 @@ const getInitialState = () => {
       
       if (cacheAge <= CACHE_DURATION && cacheData.user) {
         cachedUserInfo = cacheData.user
-        console.log('💾 [AUTH_STORE] 从缓存加载用户信息:', cachedUserInfo?.username)
       }
     }
   } catch (error) {
@@ -197,7 +188,6 @@ export const useAuthStore = create<AuthState>()(devtools(
     // === 核心认证方法 ===
     login: async (credentials: LoginCredentials) => {
       const state = get()
-      console.log('🔑 [AUTH_STORE] 开始login方法', { email: credentials.email })
 
       try {
         // 检查是否被锁定
@@ -212,7 +202,6 @@ export const useAuthStore = create<AuthState>()(devtools(
           }
         }
 
-        console.log('📝 [AUTH_STORE] 设置加载状态')
         set({ isLoading: true, error: null })
         get().setStatus(AuthStatus.LOADING)
 
@@ -222,18 +211,15 @@ export const useAuthStore = create<AuthState>()(devtools(
           password: credentials.password
         }
 
-        console.log('🌐 [AUTH_STORE] 发送登录请求到:', authConfig.apiConfig.loginEndpoint)
         // 使用HTTP客户端发送登录请求
         const response = await http.post(authConfig.apiConfig.loginEndpoint, loginPayload)
 
-        console.log('📨 [AUTH_STORE] 登录响应状态:', response.status)
         const { access_token, refresh_token } = response.data as {
           access_token: string
           refresh_token?: string
           token_type: string
         }
 
-        console.log('🎫 [AUTH_STORE] 获得访问令牌，长度:', access_token?.length)
         // 存储令牌
         get().setTokens(access_token, refresh_token, credentials.rememberMe)
 
@@ -245,22 +231,18 @@ export const useAuthStore = create<AuthState>()(devtools(
           rememberMe: credentials.rememberMe || false,
         }
 
-        console.log('📊 [AUTH_STORE] 设置会话和认证状态')
         set({
           session,
           loginAttempts: { count: 0, lastAttempt: 0 }
         })
         get().setStatus(AuthStatus.AUTHENTICATED)
 
-        console.log('👤 [AUTH_STORE] 开始获取用户信息')
         // 获取用户信息
         await get().getCurrentUser()
 
-        console.log('✅ [AUTH_STORE] 用户信息获取完成，再次确认认证状态')
         // 确保状态已更新为已认证
         get().setStatus(AuthStatus.AUTHENTICATED)
 
-        console.log('⏰ [AUTH_STORE] 开始会话监控和Token监控')
         // 开始会话监控
         sessionManager.startSessionMonitoring()
         // 开始Token监控
@@ -373,10 +355,7 @@ export const useAuthStore = create<AuthState>()(devtools(
 
     getCurrentUser: async () => {
       try {
-        console.log('👤 [AUTH_STORE] 调用getCurrentUser API:', authConfig.apiConfig.userInfoEndpoint)
         const response = await http.get(authConfig.apiConfig.userInfoEndpoint)
-        console.log('📋 [AUTH_STORE] 用户信息响应状态:', response.status)
-        console.log('👥 [AUTH_STORE] 用户数据:', response.data)
         
         const userData = response.data as AuthUser
         set({ userInfo: userData })
@@ -385,7 +364,6 @@ export const useAuthStore = create<AuthState>()(devtools(
         get().saveUserToCache(userData)
         
         get().setStatus(AuthStatus.AUTHENTICATED)
-        console.log('✅ [AUTH_STORE] getCurrentUser完成，状态设为AUTHENTICATED')
       } catch (error) {
         console.error('❌ [AUTH_STORE] getCurrentUser失败:', error)
         authLogger.error('获取用户信息失败', error instanceof Error ? error : new Error(String(error)))
@@ -404,7 +382,6 @@ export const useAuthStore = create<AuthState>()(devtools(
           version: '1.0'
         }
         localStorage.setItem('userinfo', JSON.stringify(cacheData))
-        console.log('💾 [AUTH_STORE] 用户信息已缓存')
       } catch (error) {
         console.warn('⚠️ [AUTH_STORE] 用户信息缓存失败:', error)
       }
@@ -423,12 +400,10 @@ export const useAuthStore = create<AuthState>()(devtools(
         const CACHE_DURATION = 30 * 60 * 1000
         
         if (cacheAge > CACHE_DURATION) {
-          console.log('⏰ [AUTH_STORE] 用户信息缓存已过期')
           localStorage.removeItem('userinfo')
           return null
         }
 
-        console.log('💾 [AUTH_STORE] 加载缓存的用户信息')
         return cacheData.user
       } catch (error) {
         console.warn('⚠️ [AUTH_STORE] 加载用户信息缓存失败:', error)
@@ -440,7 +415,6 @@ export const useAuthStore = create<AuthState>()(devtools(
     clearUserCache: () => {
       try {
         localStorage.removeItem('userinfo')
-        console.log('🗑️ [AUTH_STORE] 用户信息缓存已清除')
       } catch (error) {
         console.warn('⚠️ [AUTH_STORE] 清除用户信息缓存失败:', error)
       }
@@ -451,12 +425,10 @@ export const useAuthStore = create<AuthState>()(devtools(
 
       // 防止重复调用 - 如果正在检查或已经认证，直接返回
       if (state.isLoading || state.status === AuthStatus.LOADING) {
-        console.log('⏳ [AUTH_STORE] 认证检查已在进行中，跳过重复调用')
         return
       }
 
       if (state.status === AuthStatus.AUTHENTICATED && state.userInfo) {
-        console.log('✅ [AUTH_STORE] 用户已认证，跳过重复检查')
         return
       }
 
@@ -467,21 +439,16 @@ export const useAuthStore = create<AuthState>()(devtools(
 
       // 🎯 主动Token管理：如果有refresh token就尝试刷新
       if (!validator.isValidToken(state.accessToken)) {
-        console.log('❌ [AUTH_STORE] Token已过期')
         
         if (state.refreshToken && !state.isRefreshing) {
-          console.log('🔄 [AUTH_STORE] 存在refresh token，尝试自动刷新token')
           try {
             await get().refreshAccessToken()
-            console.log('✅ [AUTH_STORE] Token主动刷新成功')
             // 刷新后继续检查认证状态
           } catch (refreshError) {
-            console.log('❌ [AUTH_STORE] Token主动刷新失败，重置认证状态')
             get().reset()
             return
           }
         } else {
-          console.log('❌ [AUTH_STORE] 无refresh token或正在刷新中，重置认证状态')
           get().reset()
           return
         }
@@ -491,12 +458,9 @@ export const useAuthStore = create<AuthState>()(devtools(
       if (validator.isTokenExpiringSoon(state.accessToken) && 
           state.refreshToken && 
           !state.isRefreshing) {
-        console.log('⏰ [AUTH_STORE] Token即将过期，主动预刷新')
         try {
           await get().refreshAccessToken()
-          console.log('✅ [AUTH_STORE] Token预刷新成功')
         } catch (refreshError) {
-          console.log('⚠️ [AUTH_STORE] Token预刷新失败，继续使用当前token:', refreshError)
           // 预刷新失败不重置状态，继续使用当前token
         }
       }
@@ -504,7 +468,6 @@ export const useAuthStore = create<AuthState>()(devtools(
       // 优化：先尝试从本地存储恢复用户信息
       const cachedUser = get().loadUserFromCache()
       if (cachedUser && validator.isValidToken(state.accessToken)) {
-        console.log('💾 [AUTH_STORE] 从缓存恢复用户信息，跳过API请求')
         set({ 
           userInfo: cachedUser,
           isLoading: false 
@@ -518,27 +481,21 @@ export const useAuthStore = create<AuthState>()(devtools(
       get().setStatus(AuthStatus.LOADING)
 
       try {
-        console.log('🔍 [AUTH_STORE] 开始认证状态检查（需要API请求）')
         await get().getCurrentUser()
       } catch (error) {
-        console.log('❌ [AUTH_STORE] getCurrentUser失败:', error)
         
         // 检查是否是401错误且有refresh token
         const isUnauthorized = error && typeof error === 'object' && 'status' in error && error.status === 401
         
         if (isUnauthorized && state.refreshToken && !state.isRefreshing) {
           try {
-            console.log('🔄 [AUTH_STORE] 检测到401错误，被动刷新token')
             await get().refreshAccessToken()
             // 刷新成功后重新获取用户信息
             await get().getCurrentUser()
-            console.log('✅ [AUTH_STORE] Token被动刷新后重新获取用户信息成功')
           } catch (refreshError) {
-            console.log('❌ [AUTH_STORE] Token被动刷新失败，重置认证状态:', refreshError)
             get().reset()
           }
         } else {
-          console.log('❌ [AUTH_STORE] 无法恢复认证状态，重置')
           get().reset()
         }
       } finally {
@@ -575,14 +532,12 @@ export const useAuthStore = create<AuthState>()(devtools(
         get().stopTokenMonitoring()
       }
       
-      console.log('🔍 [AUTH_STORE] 启动Token监控')
       
       // 每30秒检查一次token状态
       const intervalId = window.setInterval(() => {
         const currentState = get()
         
         if (!currentState.accessToken || currentState.status === AuthStatus.UNAUTHENTICATED) {
-          console.log('⏹️ [AUTH_STORE] 无token，停止监控')
           get().stopTokenMonitoring()
           return
         }
@@ -592,7 +547,6 @@ export const useAuthStore = create<AuthState>()(devtools(
             currentState.refreshToken && 
             !currentState.isRefreshing) {
             
-          console.log('⏰ [AUTH_STORE] Token监控检测到即将过期，主动刷新')
           get().refreshAccessToken().catch((error) => {
             console.error('❌ [AUTH_STORE] Token监控刷新失败:', error)
           })
@@ -606,7 +560,6 @@ export const useAuthStore = create<AuthState>()(devtools(
       const state = get()
       
       if (state.tokenCheckInterval) {
-        console.log('⏹️ [AUTH_STORE] 停止Token监控')
         window.clearInterval(state.tokenCheckInterval)
         set({ tokenCheckInterval: null })
       }
@@ -637,17 +590,6 @@ export const useAuthStore = create<AuthState>()(devtools(
 
     // === 状态管理 ===
     setStatus: (status: AuthStatus) => {
-      const currentStatus = get().status
-      if (currentStatus !== status) {
-        console.log('🔍 [AUTH_STORE] 认证状态变化', {
-          from: currentStatus,
-          to: status,
-          isAuthenticated: status === AuthStatus.AUTHENTICATED,
-          hasUserInfo: !!get().userInfo,
-          userRoles: get().userInfo?.roles,
-          userPermissions: get().userInfo?.permissions
-        })
-      }
       set({ status })
     },
 
@@ -658,13 +600,6 @@ export const useAuthStore = create<AuthState>()(devtools(
     setLoading: (isLoading: boolean) => set({ isLoading }),
 
     setTokens: (accessToken: string, refreshToken?: string, rememberMe = false) => {
-      console.log('💾 [AUTH_STORE] 保存Token', {
-        accessTokenLength: accessToken.length,
-        hasRefreshToken: !!refreshToken,
-        rememberMe: rememberMe,
-        tokenPreview: accessToken.substring(0, 20) + '...'
-      })
-      
       storage.setAccessToken(accessToken, rememberMe)
       if (refreshToken) {
         storage.setRefreshToken(refreshToken, rememberMe)
@@ -678,7 +613,6 @@ export const useAuthStore = create<AuthState>()(devtools(
         tokenExpiresAt: validator.getTokenExpiration(accessToken)?.getTime() || null
       })
       
-      console.log('✅ [AUTH_STORE] Token保存完成')
     },
 
     reset: () => {
@@ -779,7 +713,6 @@ export const useAuthStore = create<AuthState>()(devtools(
 if (typeof window !== 'undefined') {
   window.addEventListener('auth:token_invalid', (event) => {
     const detail = (event as CustomEvent).detail
-    console.log('🚨 [AUTH_STORE] 收到HTTP层401通知，时间戳:', detail.timestamp)
     
     // 不重复处理，让现有的API调用错误处理逻辑处理
     // 这里只是记录日志，实际刷新由checkAuthStatus中的catch块处理

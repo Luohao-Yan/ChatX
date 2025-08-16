@@ -35,12 +35,6 @@ export class AuthStorage {
   static setAccessToken(token: string, rememberMe = false): void {
     try {
       const isProduction = window.location.protocol === 'https:'
-      console.log('🍪 [AUTH_STORAGE] 设置AccessToken', {
-        rememberMe,
-        isProduction,
-        tokenLength: token.length,
-        protocol: window.location.protocol
-      })
 
       if (rememberMe) {
         // 记住我：使用Cookie持久化存储
@@ -58,7 +52,6 @@ export class AuthStorage {
         })
       }
 
-      console.log('✅ [AUTH_STORAGE] AccessToken设置完成')
     } catch (error) {
       console.error('❌ [AUTH_STORAGE] AccessToken设置失败:', error)
       authLogger.error('Failed to store access token', error instanceof Error ? error : new Error(String(error)))
@@ -71,11 +64,6 @@ export class AuthStorage {
   static getAccessToken(): string | null {
     try {
       const token = Cookies.get(this.ACCESS_TOKEN_KEY) || null
-      console.log('🍪 [AUTH_STORAGE] 获取AccessToken', {
-        hasToken: !!token,
-        tokenLength: token?.length || 0,
-        tokenPreview: token ? token.substring(0, 20) + '...' : 'none'
-      })
       return token
     } catch (error) {
       console.log('❌ [AUTH_STORAGE] 获取AccessToken失败:', error)
@@ -90,12 +78,6 @@ export class AuthStorage {
   static setRefreshToken(token: string, rememberMe = false): void {
     try {
       const isProduction = window.location.protocol === 'https:'
-      console.log('🍪 [AUTH_STORAGE] 设置RefreshToken', {
-        rememberMe,
-        isProduction,
-        tokenLength: token.length,
-        protocol: window.location.protocol
-      })
 
       if (rememberMe) {
         const days = authConfig.sessionConfig.rememberMeDuration
@@ -113,7 +95,6 @@ export class AuthStorage {
         })
       }
 
-      console.log('✅ [AUTH_STORAGE] RefreshToken设置完成')
     } catch (error) {
       console.error('❌ [AUTH_STORAGE] RefreshToken设置失败:', error)
       authLogger.error('Failed to store refresh token', error instanceof Error ? error : new Error(String(error)))
@@ -126,11 +107,6 @@ export class AuthStorage {
   static getRefreshToken(): string | null {
     try {
       const token = Cookies.get(this.REFRESH_TOKEN_KEY) || null
-      console.log('🍪 [AUTH_STORAGE] 获取RefreshToken', {
-        hasToken: !!token,
-        tokenLength: token?.length || 0,
-        tokenPreview: token ? token.substring(0, 20) + '...' : 'none'
-      })
       return token
     } catch (error) {
       console.log('❌ [AUTH_STORAGE] 获取RefreshToken失败:', error)
@@ -171,7 +147,6 @@ export class TokenValidator {
    */
   static isValidToken(token: string | null): boolean {
     if (!token) {
-      console.log('🔍 [TOKEN_VALIDATOR] Token为空')
       return false
     }
 
@@ -179,31 +154,19 @@ export class TokenValidator {
       const payload = jwtDecode<JWTPayload>(token)
       const currentTime = Date.now() / 1000
 
-      console.log('🔍 [TOKEN_VALIDATOR] Token解析成功', {
-        exp: payload.exp,
-        currentTime,
-        isExpired: payload.exp <= currentTime,
-        timeLeft: payload.exp - currentTime,
-        sub: payload.sub,
-        email: payload.email
-      })
 
       // 检查是否过期
       if (payload.exp <= currentTime) {
-        console.log('❌ [TOKEN_VALIDATOR] Token已过期')
         return false
       }
 
       // 检查基本字段
       if (!payload.sub || !payload.email) {
-        console.log('❌ [TOKEN_VALIDATOR] Token缺少必要字段', { sub: payload.sub, email: payload.email })
         return false
       }
 
-      console.log('✅ [TOKEN_VALIDATOR] Token验证通过')
       return true
     } catch (error) {
-      console.log('❌ [TOKEN_VALIDATOR] Token解析失败:', error)
       authLogger.error('Token validation failed', error instanceof Error ? error : new Error(String(error)))
       return false
     }

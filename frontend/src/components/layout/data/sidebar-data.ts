@@ -243,36 +243,73 @@ export const getSidebarData = (t: TFunction, user?: { name: string; email: strin
         title: t('nav.managementCenter'),
         items: [
           {
-            title: t('nav.usersManagement'),
-            url: '/management/users',
-            icon: IconUsers,
+            title: t('nav.managementOverview'),
+            url: '/management',
+            icon: IconChartPie,
           },
           {
-            title: t('nav.organizationsManagement'),
-            url: '/management/organizations',
+            title: t('nav.organizationStructure'),
             icon: IconBuilding,
+            items: [
+              {
+                title: t('nav.usersManagement'),
+                url: '/management/organization/users',
+                icon: IconUsers,
+              },
+              {
+                title: t('nav.organizationHierarchy'),
+                url: '/management/organization/hierarchy',
+                icon: IconBuildingBank,
+              },
+              {
+                title: t('nav.organizationChart'),
+                url: '/management/organization/chart',
+                icon: IconChartScatter3d,
+              },
+            ],
           },
           {
-            title: t('nav.departmentsManagement'),
-            url: '/management/departments',
-            icon: IconBuildingBank,
-          },
-          {
-            title: t('nav.rolesManagement'),
-            url: '/management/roles',
-            icon: IconUserOff,
-          },
-          {
-            title: t('nav.permissionsManagement'),
-            url: '/management/permissions',
+            title: t('nav.securityPermissions'),
             icon: IconLockAccess,
+            items: [
+              {
+                title: t('nav.rolesPermissions'),
+                url: '/management/security/roles',
+                icon: IconLock,
+              },
+              {
+                title: t('nav.accessControl'),
+                url: '/management/security/access',
+                icon: IconLockAccess,
+              },
+              {
+                title: t('nav.securityAudit'),
+                url: '/management/security/audit',
+                icon: IconScale,
+              },
+            ],
           },
           {
-            title: t('nav.aiModelsManagement'),
-            url: '/management/ai-models',
-            icon: IconBrain,
+            title: t('nav.systemManagement'),
+            icon: IconDatabase,
+            items: [
+              {
+                title: t('nav.aiModelsManagement'),
+                url: '/management/system/ai-models',
+                icon: IconBrain,
+              },
+              {
+                title: t('nav.systemConfiguration'),
+                url: '/management/system/config',
+                icon: IconDatabase,
+              },
+              {
+                title: t('nav.integrationManagement'),
+                url: '/management/system/integrations',
+                icon: IconPackages,
+              },
+            ],
           },
-
         ],
       },
       {

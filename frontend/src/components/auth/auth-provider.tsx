@@ -55,7 +55,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log('🚨 [AUTH_PROVIDER] UNAUTHENTICATED状态处理', { currentPath })
         
         if (!currentPath.startsWith('/sign-in') && !currentPath.startsWith('/sign-up')) {
-          console.log('🔄 [AUTH_PROVIDER] 重定向到登录页', { currentPath })
           authLogger.info('Redirecting to login due to unauthenticated status')
           
           // 避免将错误页面作为返回地址

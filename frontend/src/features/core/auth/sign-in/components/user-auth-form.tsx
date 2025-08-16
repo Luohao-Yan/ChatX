@@ -68,7 +68,6 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     try {
-      console.log('🚀 [LOGIN] 开始登录流程', { email: data.email, rememberMe: data.rememberMe })
       
       // 准备登录数据
       const loginData = {
@@ -78,21 +77,14 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         deviceInfo: deviceManager.getDeviceInfo(),
       }
       
-      console.log('📡 [LOGIN] 调用login函数', loginData)
       await login(loginData)
-      console.log('✅ [LOGIN] login函数执行成功')
       
       toast.success(t('auth.loginSuccess'))
       
       // 登录成功后跳转
       const redirectUrl = search.returnUrl || '/'
-      console.log('🔄 [LOGIN] 准备跳转到:', redirectUrl)
-      console.log('🔍 [LOGIN] search对象详情:', search)
-      console.log('🔍 [LOGIN] returnUrl值:', search.returnUrl)
-      console.log('🌐 [LOGIN] 当前URL:', window.location.href)
       
       router.navigate({ to: redirectUrl })
-      console.log('🎯 [LOGIN] 跳转命令已发送')
       
     } catch (_loginError: unknown) {
       setLoginAttempts(prev => prev + 1)

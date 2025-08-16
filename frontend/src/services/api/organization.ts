@@ -1,0 +1,222 @@
+/**
+ * 组织管理API服务
+ */
+
+import { http } from '../http'
+
+// 组织相关类型定义
+export interface Organization {
+  id: string
+  tenant_id: string
+  name: string
+  display_name?: string
+  description?: string
+  logo_url?: string
+  owner_id: string
+  parent_id?: string
+  path: string
+  level: number
+  is_active: boolean
+  member_count: number
+  settings?: Record<string, any>
+  created_at: string
+  updated_at?: string
+}
+
+export interface OrganizationCreate {
+  name: string
+  display_name?: string
+  description?: string
+  logo_url?: string
+  parent_id?: string
+  settings?: Record<string, any>
+}
+
+export interface OrganizationUpdate {
+  name?: string
+  display_name?: string
+  description?: string
+  logo_url?: string
+  parent_id?: string
+  settings?: Record<string, any>
+  is_active?: boolean
+}
+
+export interface Team {
+  id: string
+  tenant_id: string
+  organization_id: string
+  name: string
+  description?: string
+  creator_id: string
+  parent_id?: string
+  path: string
+  level: number
+  is_active: boolean
+  member_count: number
+  settings?: Record<string, any>
+  created_at: string
+  updated_at?: string
+}
+
+export interface TeamCreate {
+  name: string
+  description?: string
+  organization_id: string
+  parent_id?: string
+  settings?: Record<string, any>
+}
+
+export interface OrganizationTreeNode {
+  id: string
+  name: string
+  display_name?: string
+  description?: string
+  level: number
+  member_count: number
+  is_active: boolean
+  children: OrganizationTreeNode[]
+}
+
+export interface OrganizationStats {
+  total_organizations: number
+  total_teams: number
+  total_members: number
+  active_organizations: number
+  organization_levels: number
+}
+
+export interface ListParams {
+  skip?: number
+  limit?: number
+  parent_id?: string
+  search?: string
+}
+
+export interface TeamListParams {
+  organization_id?: string
+  skip?: number
+  limit?: number
+}
+
+export interface UserOrganizationCreate {
+  user_id: string
+  organization_id: string
+  role?: string
+  permissions?: Record<string, any>
+  is_admin?: boolean
+}
+
+/**
+ * 组织管理API类
+ */
+export class OrganizationAPI {
+  private baseURL = '/v1/org'
+
+  // ==================== 组织管理 ====================
+
+  /**
+   * 创建组织
+   */
+  async createOrganization(data: OrganizationCreate): Promise<Organization> {
+    const response = await http.post(`${this.baseURL}/organizations`, data)
+    return response.data
+  }
+
+  /**
+   * 获取组织列表
+   */
+  async getOrganizations(params: ListParams = {}): Promise<Organization[]> {
+    const response = await http.get(`${this.baseURL}/organizations`, { params })
+    return response.data
+  }
+
+  /**
+   * 获取组织详情
+   */
+  async getOrganization(orgId: string): Promise<Organization> {
+    const response = await http.get(`${this.baseURL}/organizations/${orgId}`)
+    return response.data
+  }
+
+  /**
+   * 更新组织
+   */
+  async updateOrganization(orgId: string, data: OrganizationUpdate): Promise<Organization> {
+    const response = await http.put(`${this.baseURL}/organizations/${orgId}`, data)
+    return response.data
+  }
+
+  /**
+   * 删除组织
+   */
+  async deleteOrganization(orgId: string): Promise<{ message: string }> {
+    const response = await http.delete(`${this.baseURL}/organizations/${orgId}`)
+    return response.data
+  }
+
+  /**
+   * 获取组织树结构
+   */
+  async getOrganizationTree(rootId?: string): Promise<OrganizationTreeNode[]> {
+    const params = rootId ? { root_id: rootId } : {}
+    const response = await http.get(`${this.baseURL}/organizations/tree`, { params })
+    return response.data
+  }
+
+  /**
+   * 获取组织统计信息
+   */
+  async getOrganizationStats(): Promise<OrganizationStats> {
+    const response = await http.get(`${this.baseURL}/organizations/stats`)
+    return response.data
+  }
+
+  // ==================== 团队管理 ====================
+
+  /**
+   * 创建团队
+   */
+  async createTeam(data: TeamCreate): Promise<Team> {
+    const response = await http.post(`${this.baseURL}/teams`, data)
+    return response.data
+  }
+
+  /**
+   * 获取团队列表
+   */
+  async getTeams(params: TeamListParams = {}): Promise<Team[]> {
+    const response = await http.get(`${this.baseURL}/teams`, { params })
+    return response.data
+  }
+
+  // ==================== 成员管理 ====================
+
+  /**
+   * 添加用户到组织
+   */
+  async addUserToOrganization(orgId: string, data: Omit<UserOrganizationCreate, 'organization_id'>): Promise<{ message: string }> {
+    const response = await http.post(`${this.baseURL}/organizations/${orgId}/members`, {
+      ...data,
+      organization_id: orgId
+    })
+    return response.data
+  }
+}
+
+// 导出单例实例
+export const organizationAPI = new OrganizationAPI()
+
+// 为了向后兼容，也导出一些常用方法
+export const {
+  createOrganization,
+  getOrganizations,
+  getOrganization,
+  updateOrganization,
+  deleteOrganization,
+  getOrganizationTree,
+  getOrganizationStats,
+  createTeam,
+  getTeams,
+  addUserToOrganization
+} = organizationAPI

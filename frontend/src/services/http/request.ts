@@ -626,14 +626,12 @@ http.addRequestInterceptor({
         const { validator } = await import('../auth/auth-utils')
         
         if (validator.isTokenExpiringSoon(currentToken)) {
-          console.log('🔄 [HTTP_INTERCEPTOR] Token即将过期，尝试获取authStore进行预刷新')
           
           // 动态导入authStore避免循环依赖
           const { useAuthStore } = await import('../../stores/auth')
           const authStore = useAuthStore.getState()
           
           if (authStore.refreshToken && !authStore.isRefreshing) {
-            console.log('🔄 [HTTP_INTERCEPTOR] 执行Token预刷新')
             await authStore.refreshAccessToken()
             // 使用刷新后的新token
             const newToken = tokenManager.getToken()

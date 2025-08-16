@@ -59,7 +59,17 @@
     "rolesManagement": "Roles Management",
     "permissionsManagement": "Permissions Management",
     "aiModelsManagement": "AI Models Management",
-    "mcp": "MCP"
+    "mcp": "MCP",
+    "managementOverview": "Management Overview",
+    "organizationStructure": "Organization Structure",
+    "organizationHierarchy": "Organization Hierarchy",
+    "organizationChart": "Organization Chart",
+    "securityPermissions": "Security & Permissions",
+    "rolesPermissions": "Roles & Permissions",
+    "accessControl": "Access Control",
+    "securityAudit": "Security Audit",
+    "systemConfiguration": "System Configuration",
+    "integrationManagement": "Integration Management"
   },
   "userMenu": {
     "upgradeToPro": "Upgrade to Pro",

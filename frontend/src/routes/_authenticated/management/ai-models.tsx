@@ -1,6 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
-import AiModelsManagement from '@/features/management/ai-models'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated/management/ai-models')({
-  component: AiModelsManagement,
+  beforeLoad: () => {
+    throw redirect({
+      to: '/_authenticated/management/system/ai-models',
+      replace: true,
+    })
+  },
 })

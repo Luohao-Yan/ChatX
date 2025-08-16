@@ -12,7 +12,8 @@ from app.api.endpoints.v1 import (
     role_api, 
     cache_api, 
     recycle_bin_api,
-    user_import_api
+    user_import_api,
+    org_api
 )
 
 
@@ -29,6 +30,7 @@ def create_v1_router() -> APIRouter:
     v1_router.include_router(cache_api.router, prefix="/cache", tags=["缓存管理"])
     v1_router.include_router(recycle_bin_api.router, prefix="/recycle", tags=["回收站"])
     v1_router.include_router(user_import_api.router, prefix="/users/import", tags=["用户导入"])
+    v1_router.include_router(org_api.router, prefix="/org", tags=["组织管理"])
     
     return v1_router
 
