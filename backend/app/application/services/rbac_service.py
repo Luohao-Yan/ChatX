@@ -11,7 +11,8 @@ from app.schemas.rbac_schemas import (
     RoleCreate, RoleUpdate, PermissionCreate, PermissionUpdate,
     UserRoleAssign, RolePermissionAssign, UserPermissionAssign
 )
-from app.models.user_models import Role, Permission, UserPermission, User
+from app.models.user_models import User
+from app.models.rbac_models import Role, Permission, UserPermission
 
 
 class RoleApplicationService:

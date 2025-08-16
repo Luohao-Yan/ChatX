@@ -23,7 +23,8 @@ sys.path.insert(0, str(project_root))
 
 from app.domain.initialization.rbac_init import initialize_rbac_system
 from app.infrastructure.persistence.database import SessionLocal
-from app.models.user_models import User, Role, Permission
+from app.models.user_models import User
+from app.models.rbac_models import Role, Permission
 import logging
 
 # 配置日志

@@ -12,6 +12,7 @@ from app.schemas.user_schemas import (
     EmailVerification,
     UserSessionInfo,
 )
+from app.schemas.batch_schemas import BatchUserRequest, BatchOperationResponse
 from app.models.user_models import User
 from app.utils.deps import get_current_active_user, get_user_service
 
@@ -94,9 +95,20 @@ async def get_users(
     return await user_service.get_users_list(current_user, skip, limit, include_deleted)
 
 
+@router.get("/recycle-bin", response_model=List[UserSchema])
+async def get_deleted_users(
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """获取回收站中的已删除用户"""
+    return await user_service.get_deleted_users(current_user, skip, limit)
+
+
 @router.get("/{user_id}", response_model=UserSchema)
 async def get_user(
-    user_id: int,
+    user_id: str,
     current_user: User = Depends(get_current_active_user),
     user_service: UserService = Depends(get_user_service),
 ):
@@ -109,7 +121,7 @@ async def get_user(
 
 @router.put("/{user_id}", response_model=UserSchema)
 async def update_user(
-    user_id: int,
+    user_id: str,
     user_update: UserUpdate,
     current_user: User = Depends(get_current_active_user),
     user_service: UserService = Depends(get_user_service),
@@ -123,13 +135,98 @@ async def update_user(
 
 @router.delete("/{user_id}")
 async def delete_user(
-    user_id: int,
+    user_id: str,
     current_user: User = Depends(get_current_active_user),
     user_service: UserService = Depends(get_user_service),
 ):
-    """删除用户"""
+    """软删除用户"""
     await user_service.delete_user(user_id, current_user)
     return {"message": "用户已移至回收站", "user_id": user_id}
+
+
+@router.patch("/batch/disable", response_model=BatchOperationResponse)
+async def batch_disable_users(
+    request: BatchUserRequest,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """批量停用用户"""
+    result = await user_service.batch_disable_users(request.user_ids, current_user)
+    return result
+
+
+@router.patch("/batch/delete", response_model=BatchOperationResponse)
+async def batch_delete_users(
+    request: BatchUserRequest,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """批量软删除用户"""
+    result = await user_service.batch_delete_users(request.user_ids, current_user)
+    return result
+
+
+@router.post("/cache/clear")
+async def clear_user_cache(
+    current_user: User = Depends(get_current_active_user),
+):
+    """清除用户缓存（仅管理员可用）"""
+    from app.application.middleware.user_cache_service import get_user_cache_service
+    
+    # 只有超级管理员可以清除缓存
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="权限不足")
+    
+    cache_service = await get_user_cache_service()
+    
+    # 清除当前用户的缓存作为测试
+    await cache_service.invalidate_user_cache(current_user.id)
+    
+    return {"message": "用户缓存已清除"}
+
+
+@router.post("/recycle-bin/{user_id}/restore")
+async def restore_user(
+    user_id: str,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """从回收站恢复用户"""
+    await user_service.restore_user(user_id, current_user)
+    return {"message": "用户已恢复", "user_id": user_id}
+
+
+@router.delete("/recycle-bin/{user_id}/permanent")
+async def permanently_delete_user(
+    user_id: str,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """彻底删除用户（不可恢复）"""
+    await user_service.permanently_delete_user(user_id, current_user)
+    return {"message": "用户已彻底删除", "user_id": user_id}
+
+
+@router.patch("/recycle-bin/batch/restore", response_model=BatchOperationResponse)
+async def batch_restore_users(
+    request: BatchUserRequest,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """批量恢复用户"""
+    result = await user_service.batch_restore_users(request.user_ids, current_user)
+    return result
+
+
+@router.delete("/recycle-bin/batch/permanent", response_model=BatchOperationResponse)
+async def batch_permanently_delete_users(
+    request: BatchUserRequest,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """批量彻底删除用户"""
+    result = await user_service.batch_permanently_delete_users(request.user_ids, current_user)
+    return result
 
 
 @router.get("/sessions", response_model=List[UserSessionInfo])
@@ -143,7 +240,7 @@ async def get_user_sessions(
 
 @router.delete("/sessions/{session_id}")
 async def revoke_session(
-    session_id: int,
+    session_id: str,
     current_user: User = Depends(get_current_active_user),
     user_service: UserService = Depends(get_user_service),
 ):

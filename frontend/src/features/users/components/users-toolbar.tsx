@@ -154,13 +154,6 @@ export function DataTableToolbar({ table }: DataTableToolbarProps) {
         >
           新建用户
         </Button>
-        <Button
-          variant='outline'
-          size='sm'
-          onClick={() => window.location.href = '/users/recycle-bin'}
-        >
-          回收站
-        </Button>
         <DataTableViewOptions table={table} />
       </div>
     </div>

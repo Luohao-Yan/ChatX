@@ -6,8 +6,11 @@ from datetime import datetime, timezone
 from app.domain.repositories.rbac_repository import (
     IRoleRepository, IPermissionRepository, IUserPermissionRepository
 )
-from app.models.user_models import (
-    Role, Permission, UserPermission, User, user_roles, role_permissions
+from app.models.user_models import User
+from app.models.rbac_models import Role, Permission, UserPermission
+from app.models.relationship_models import (
+    user_role_association as user_roles, 
+    role_permission_association as role_permissions
 )
 
 

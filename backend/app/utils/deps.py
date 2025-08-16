@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.models.user_models import User
 from app.schemas.user_schemas import TokenPayload
 from app.application.services.user_service import UserService
+from app.application.services.recycle_bin_service import RecycleBinService
 from app.application.services.file_service import FileApplicationService
 from app.application.services.rbac_service import (
     RoleApplicationService,
@@ -83,6 +84,11 @@ def get_current_active_superuser(
     return current_user
 
 
+def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
+    """获取用户仓储实例 - 依赖注入工厂"""
+    return UserRepository(db)
+
+
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
     """获取用户服务实例 - 依赖注入工厂"""
     user_repo = UserRepository(db)
@@ -140,3 +146,9 @@ def get_user_permission_service(
     user_permission_repo = UserPermissionRepository(db)
     permission_repo = PermissionRepository(db)
     return UserPermissionApplicationService(user_permission_repo, permission_repo)
+
+
+def get_recycle_bin_service(db: Session = Depends(get_db)) -> RecycleBinService:
+    """获取回收站服务实例 - 依赖注入工厂"""
+    user_repo = UserRepository(db)
+    return RecycleBinService(user_repo)

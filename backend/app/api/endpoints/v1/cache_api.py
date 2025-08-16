@@ -36,7 +36,7 @@ async def get_cache_stats(
 @router.delete("/clear")
 async def clear_cache(
     cache_type: str = Query(None, description="缓存类型：api, user, session, all"),
-    user_id: Optional[int] = Query(None, description="特定用户ID"),
+    user_id: Optional[str] = Query(None, description="特定用户ID"),
     current_user: User = Depends(get_current_active_user)
 ) -> Dict[str, Any]:
     """清理缓存（需要管理员权限）"""
@@ -89,7 +89,7 @@ async def clear_cache(
 
 @router.get("/user/{user_id}")
 async def get_user_cache_info(
-    user_id: int,
+    user_id: str,
     current_user: User = Depends(get_current_active_user)
 ) -> Dict[str, Any]:
     """获取用户缓存信息"""
@@ -127,7 +127,7 @@ async def get_user_cache_info(
 
 @router.delete("/user/{user_id}")
 async def clear_user_cache(
-    user_id: int,
+    user_id: str,
     current_user: User = Depends(get_current_active_user)
 ) -> Dict[str, Any]:
     """清理特定用户的缓存"""
@@ -220,7 +220,7 @@ async def clear_rate_limit(
 
 @router.post("/warmup")
 async def warmup_cache(
-    user_ids: Optional[list[int]] = None,
+    user_ids: Optional[list[str]] = None,
     current_user: User = Depends(get_current_active_user)
 ) -> Dict[str, Any]:
     """预热缓存（需要管理员权限）"""

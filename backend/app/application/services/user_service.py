@@ -7,6 +7,7 @@ from app.domain.repositories.user_repository import (
 )
 from app.domain.services.user_domain_service import UserDomainService
 from app.schemas.user_schemas import UserCreate, UserUpdate, LoginRequest
+from app.schemas.batch_schemas import BatchOperationResponse
 from app.models.user_models import User, UserSession, UserVerification
 from app.infrastructure.securities import security
 from app.application.middleware.verification_service import get_verification_service
@@ -52,11 +53,11 @@ class UserService:
             raise HTTPException(status_code=400, detail=error_msg)
         
         # 2. 检查邮箱是否已存在
-        if await self.user_repo.exists_by_email(user_data.email, tenant_id=1):
+        if await self.user_repo.exists_by_email(user_data.email):
             raise HTTPException(status_code=400, detail="该邮箱已被注册")
         
         # 3. 检查用户名是否已存在
-        if await self.user_repo.exists_by_username(user_data.username, tenant_id=1):
+        if await self.user_repo.exists_by_username(user_data.username):
             raise HTTPException(status_code=400, detail="该用户名已被使用")
         
         # 4. 密码加密
@@ -68,7 +69,7 @@ class UserService:
             "username": user_data.username,
             "full_name": user_data.full_name,
             "hashed_password": hashed_password,
-            "tenant_id": 1,  # 默认租户
+            "tenant_id": "1",  # 默认租户
             "is_active": True,
             "is_verified": False,
         }
@@ -103,12 +104,12 @@ class UserService:
         # 记录登录请求
         await rate_limiter.record_request(identifier, "login")
         
-        # 1. 获取用户 - 支持邮箱或用户名登录
+        # 1. 获取用户 - 支持邮箱或用户名登录（不限制租户）
         user = None
         if login_data.email:
-            user = await self.user_repo.get_by_email(login_data.email, tenant_id=1)
+            user = await self.user_repo.get_by_email(login_data.email)
         elif login_data.username:
-            user = await self.user_repo.get_by_username(login_data.username, tenant_id=1)
+            user = await self.user_repo.get_by_username(login_data.username)
         
         if not user:
             # 记录失败登录
@@ -134,16 +135,22 @@ class UserService:
         user_data = {
             "email": user.email,
             "username": user.username,
-            "roles": [role.name for role in user.roles] if user.roles else []
+            "roles": user.role_list  # 使用property方法获取角色列表
         }
         access_token = security.create_access_token(subject=user.id, user_data=user_data)
         refresh_token = security.create_refresh_token(subject=user.id)
         
         # 5. 创建会话
+        # 生成简短的设备ID（取User-Agent的前80个字符作为设备标识）
+        device_id = None
+        if login_data.device_info:
+            device_id = login_data.device_info[:80] if len(login_data.device_info) > 80 else login_data.device_info
+        
         session_data = {
-            "user_id": user.id,
-            "refresh_token": refresh_token,
-            "device_info": login_data.device_info,
+            "user_id": str(user.id),  # 确保是字符串
+            "session_token": refresh_token,  # refresh_token 作为 session_token
+            "device_id": device_id,  # 截断后的设备标识
+            "user_agent": login_data.device_info,  # 完整的user_agent存储到Text字段
             "ip_address": client_ip,
             "expires_at": datetime.now(timezone.utc) + timedelta(days=7),
             "is_active": True,
@@ -203,7 +210,7 @@ class UserService:
         user_data = {
             "email": user.email,
             "username": user.username,
-            "roles": [role.name for role in user.roles] if user.roles else []
+            "roles": user.role_list  # 使用property方法获取角色列表
         }
         access_token = security.create_access_token(subject=user.id, user_data=user_data)
         
@@ -232,7 +239,7 @@ class UserService:
             await session_cache.deactivate_session(session.id)
         return True
     
-    async def logout_all_devices(self, user_id: int) -> bool:
+    async def logout_all_devices(self, user_id: str) -> bool:
         """用户登出所有设备"""
         # 同时删除数据库和缓存中的所有会话
         db_result = await self.session_repo.deactivate_all_user_sessions(user_id)
@@ -266,7 +273,7 @@ class UserService:
         
         return True
     
-    async def get_user_by_id(self, user_id: int, current_user: User) -> Optional[User]:
+    async def get_user_by_id(self, user_id: str, current_user: User) -> Optional[User]:
         """获取用户信息"""
         # 权限检查
         if not self.domain_service.can_user_access_user_data(current_user, user_id):
@@ -300,12 +307,30 @@ class UserService:
     
     async def get_users_list(self, current_user: User, skip: int = 0, 
                            limit: int = 100, include_deleted: bool = False) -> List[User]:
-        """获取用户列表"""
+        """获取用户列表
+        
+        根据用户角色决定可见范围：
+        - 超级管理员：可以看到所有租户的用户
+        - 普通管理员：只能看到自己租户的用户
+        """
         return await self.user_repo.get_list(
-            current_user.tenant_id, skip, limit, include_deleted
+            tenant_id=current_user.current_tenant_id,
+            skip=skip, 
+            limit=limit, 
+            include_deleted=include_deleted,
+            is_superuser=current_user.is_superuser
         )
     
-    async def update_user(self, user_id: int, update_data: UserUpdate, 
+    async def get_deleted_users(self, current_user: User, skip: int = 0, limit: int = 100) -> List[User]:
+        """获取回收站中的已删除用户"""
+        return await self.user_repo.get_deleted_list(
+            tenant_id=current_user.current_tenant_id,
+            skip=skip,
+            limit=limit,
+            is_superuser=current_user.is_superuser
+        )
+    
+    async def update_user(self, user_id: str, update_data: UserUpdate, 
                          current_user: User) -> Optional[User]:
         """更新用户信息"""
         # 权限检查
@@ -313,6 +338,18 @@ class UserService:
             raise HTTPException(status_code=403, detail="无权限修改此用户信息")
         
         update_dict = update_data.model_dump(exclude_unset=True)
+        
+        # 如果要停用用户，需要额外的权限检查
+        if "is_active" in update_dict and not update_dict["is_active"]:
+            target_user = await self.user_repo.get_by_id(user_id)
+            if not target_user:
+                raise HTTPException(status_code=404, detail="用户不存在")
+            
+            can_disable, error_msg = self.domain_service.can_user_be_disabled(
+                target_user, current_user.id
+            )
+            if not can_disable:
+                raise HTTPException(status_code=400, detail=error_msg)
         
         # 如果更新密码，需要加密
         if "password" in update_dict:
@@ -334,7 +371,7 @@ class UserService:
         
         return updated_user
     
-    async def delete_user(self, user_id: int, current_user: User) -> bool:
+    async def delete_user(self, user_id: str, current_user: User) -> bool:
         """删除用户"""
         # 1. 获取目标用户
         target_user = await self.user_repo.get_by_id(user_id)
@@ -356,7 +393,158 @@ class UserService:
         
         return True
     
-    async def get_user_sessions(self, user_id: int) -> List[Dict[str, Any]]:
+    async def batch_disable_users(self, user_ids: List[str], current_user: User) -> BatchOperationResponse:
+        """批量停用用户"""
+        success_ids = []
+        failed_ids = []
+        
+        for user_id in user_ids:
+            try:
+                # 检查权限
+                target_user = await self.user_repo.get_by_id(user_id)
+                if not target_user:
+                    failed_ids.append(user_id)
+                    continue
+                
+                # 使用领域服务检查权限
+                can_disable, _ = self.domain_service.can_user_be_disabled(
+                    target_user, current_user.id
+                )
+                if not can_disable:
+                    failed_ids.append(user_id)
+                    continue
+                
+                # 更新用户状态
+                await self.user_repo.update(user_id, {"is_active": False})
+                
+                # 停用用户后注销其所有会话
+                await self.logout_all_devices(user_id)
+                
+                success_ids.append(user_id)
+                
+            except Exception:
+                failed_ids.append(user_id)
+        
+        return BatchOperationResponse(
+            message=f"批量停用完成，成功 {len(success_ids)} 个，失败 {len(failed_ids)} 个",
+            affected_count=len(success_ids),
+            success_ids=success_ids,
+            failed_ids=failed_ids
+        )
+    
+    async def batch_delete_users(self, user_ids: List[str], current_user: User) -> BatchOperationResponse:
+        """批量软删除用户"""
+        success_ids = []
+        failed_ids = []
+        
+        for user_id in user_ids:
+            try:
+                # 检查用户是否可以被删除
+                target_user = await self.user_repo.get_by_id(user_id)
+                if not target_user:
+                    failed_ids.append(user_id)
+                    continue
+                
+                can_delete, _ = self.domain_service.can_user_be_deleted(target_user, current_user.id)
+                if not can_delete:
+                    failed_ids.append(user_id)
+                    continue
+                
+                # 执行软删除
+                delete_data = self.domain_service.prepare_user_for_deletion(target_user, current_user.id)
+                await self.user_repo.update(user_id, delete_data)
+                success_ids.append(user_id)
+                
+            except Exception:
+                failed_ids.append(user_id)
+        
+        return BatchOperationResponse(
+            message=f"批量删除完成，成功 {len(success_ids)} 个，失败 {len(failed_ids)} 个",
+            affected_count=len(success_ids),
+            success_ids=success_ids,
+            failed_ids=failed_ids
+        )
+    
+    async def restore_user(self, user_id: str, current_user: User) -> bool:
+        """从回收站恢复用户"""
+        # 获取已删除的用户
+        target_user = await self.user_repo.get_by_id_including_deleted(user_id)
+        if not target_user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        # 检查用户是否已被删除
+        if not target_user.deleted_at:
+            raise HTTPException(status_code=400, detail="用户未被删除，无需恢复")
+        
+        # 恢复用户（清除删除标记）
+        restore_data = {
+            "deleted_at": None,
+            "deleted_by": None,
+            "is_active": True  # 恢复时默认激活用户
+        }
+        await self.user_repo.update(user_id, restore_data)
+        
+        return True
+    
+    async def permanently_delete_user(self, user_id: str, current_user: User) -> bool:
+        """彻底删除用户（不可恢复）"""
+        # 获取已删除的用户
+        target_user = await self.user_repo.get_by_id_including_deleted(user_id)
+        if not target_user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        # 检查用户是否已被软删除
+        if not target_user.deleted_at:
+            raise HTTPException(status_code=400, detail="只能彻底删除回收站中的用户")
+        
+        # 执行硬删除
+        await self.user_repo.hard_delete(user_id)
+        
+        # 清除用户相关缓存
+        cache_service = await get_api_cache_service()
+        await cache_service.invalidate_user_cache(user_id)
+        
+        return True
+    
+    async def batch_restore_users(self, user_ids: List[str], current_user: User) -> BatchOperationResponse:
+        """批量恢复用户"""
+        success_ids = []
+        failed_ids = []
+        
+        for user_id in user_ids:
+            try:
+                await self.restore_user(user_id, current_user)
+                success_ids.append(user_id)
+            except Exception:
+                failed_ids.append(user_id)
+        
+        return BatchOperationResponse(
+            message=f"批量恢复完成，成功 {len(success_ids)} 个，失败 {len(failed_ids)} 个",
+            affected_count=len(success_ids),
+            success_ids=success_ids,
+            failed_ids=failed_ids
+        )
+    
+    async def batch_permanently_delete_users(self, user_ids: List[str], current_user: User) -> BatchOperationResponse:
+        """批量彻底删除用户"""
+        success_ids = []
+        failed_ids = []
+        
+        for user_id in user_ids:
+            try:
+                await self.permanently_delete_user(user_id, current_user)
+                success_ids.append(user_id)
+            except Exception:
+                failed_ids.append(user_id)
+        
+        return BatchOperationResponse(
+            message=f"批量彻底删除完成，成功 {len(success_ids)} 个，失败 {len(failed_ids)} 个",
+            affected_count=len(success_ids),
+            success_ids=success_ids,
+            failed_ids=failed_ids
+        )
+    
+    async def get_user_sessions(self, user_id: str) -> List[Dict[str, Any]]:
         """获取用户会话列表"""
         # 优先从Redis缓存获取
         session_cache = await get_session_cache_service()
@@ -376,7 +564,7 @@ class UserService:
         
         return session_data_list
     
-    async def revoke_user_session(self, session_id: int, current_user: User) -> bool:
+    async def revoke_user_session(self, session_id: str, current_user: User) -> bool:
         """撤销用户会话"""
         # 这里可以添加权限检查，确保只能撤销自己的会话
         return await self.session_repo.deactivate_session(session_id)
@@ -456,7 +644,7 @@ class UserService:
     
     async def get_verification_status(
         self, 
-        user_id: int, 
+        user_id: str, 
         verification_type: str
     ) -> Optional[Dict[str, Any]]:
         """获取验证码状态"""
@@ -501,7 +689,7 @@ class UserService:
                 detail=f"验证码发送过于频繁，请等待 {cooldown_remaining} 秒后重试"
             )
 
-    async def _create_email_verification(self, user_id: int, email: str) -> None:
+    async def _create_email_verification(self, user_id: str, email: str) -> None:
         """创建邮箱验证码"""
         # 使用Redis验证码服务
         verification_service = await get_verification_service()
@@ -524,7 +712,7 @@ class UserService:
                 detail="验证码发送过于频繁，请稍后再试"
             )
     
-    async def update_user_activity(self, user_id: int, activity_time: datetime = None) -> bool:
+    async def update_user_activity(self, user_id: str, activity_time: datetime = None) -> bool:
         """更新用户最后活动时间
         
         Args:

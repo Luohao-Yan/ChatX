@@ -9,6 +9,7 @@ import { Main } from '@/components/layout/main'
 import { HeaderActions } from '@/components/layout/header-actions'
 import { Breadcrumb } from '@/components/layout/breadcrumb'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   IconPlus, 
@@ -23,7 +24,8 @@ import {
   IconRefresh,
   IconEye,
   IconChevronLeft,
-  IconChevronRight
+  IconChevronRight,
+  IconRestore
 } from '@tabler/icons-react'
 import {
   Table,
@@ -55,9 +57,12 @@ import { UserForm } from './user-form'
 import { useUsersApi } from '@/features/users/services/users-api'
 import { User } from '@/features/users/data/schema'
 import { toast } from 'sonner'
+import { Link } from '@tanstack/react-router'
+import { useAuth } from '@/stores/auth'
 
 export default function UsersManagement() {
   const { t } = useTranslation()
+  const { userInfo: currentUser } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -65,6 +70,8 @@ export default function UsersManagement() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
   const [viewingUser, setViewingUser] = useState<User | null>(null)
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([])
+  const [isProcessing, setIsProcessing] = useState(false)
   
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1)
@@ -111,6 +118,11 @@ export default function UsersManagement() {
   )
 
   const handleToggleActive = async (user: User) => {
+    // 检查是否可以停用该用户
+    if (!checkCanDisableUser(user)) {
+      return
+    }
+    
     try {
       await userApi.updateUser(user.id, { is_active: !user.is_active })
       setUsers(prev => prev.map(u => 
@@ -127,6 +139,20 @@ export default function UsersManagement() {
 
   const handleDeleteUser = async (user: User) => {
     try {
+      // 如果用户是激活状态，先停用
+      if (user.is_active) {
+        // 检查是否可以停用
+        if (!canDisableUser(user)) {
+          checkCanDisableUser(user) // 显示错误信息
+          return
+        }
+        
+        // 先停用用户
+        await userApi.updateUser(user.id, { is_active: false })
+        toast.success(`用户${user.username}已停用`)
+      }
+      
+      // 然后删除用户
       await userApi.deleteUser(user.id)
       setUsers(prev => prev.filter(u => u.id !== user.id))
       setDeletingUser(null)
@@ -178,7 +204,19 @@ export default function UsersManagement() {
   }
 
   const getOnlineIndicator = (user: User) => {
-    if (user.is_online) {
+    // 检查用户是否在线
+    // 优先使用后端计算的 is_online 字段
+    let isOnline = Boolean(user.is_online)
+    
+    // 如果后端没有提供 is_online 字段，则基于 last_login 手动计算
+    if (user.is_online === undefined && user.last_login) {
+      const now = new Date()
+      const lastLogin = new Date(user.last_login)
+      const timeDiffSeconds = (now.getTime() - lastLogin.getTime()) / 1000
+      isOnline = timeDiffSeconds < 3600 // 1小时内认为在线（临时调整用于测试）
+    }
+    
+    if (isOnline) {
       return (
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -193,6 +231,185 @@ export default function UsersManagement() {
       </div>
     )
   }
+
+  // 选择相关的处理函数
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedUsers(filteredUsers.map(user => user.id))
+    } else {
+      setSelectedUsers([])
+    }
+  }
+
+  const handleSelectUser = (userId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedUsers(prev => [...prev, userId])
+    } else {
+      setSelectedUsers(prev => prev.filter(id => id !== userId))
+    }
+  }
+
+  const handleBatchDelete = async () => {
+    if (selectedUsers.length === 0) return
+    
+    const usersToDelete = users.filter(u => selectedUsers.includes(u.id))
+    
+    // 检查基本权限（不包括激活状态检查）
+    const cannotDeleteUsers = usersToDelete.filter(u => {
+      return u.id === currentUser?.id || u.is_superuser || u.deleted_at
+    })
+    
+    if (cannotDeleteUsers.length > 0) {
+      const reasons = cannotDeleteUsers.map(u => {
+        if (u.id === currentUser?.id) return `${u.username}（自己）`
+        if (u.is_superuser) return `${u.username}（超级管理员）`
+        if (u.deleted_at) return `${u.username}（已删除）`
+        return u.username
+      })
+      toast.error(`不能删除以下用户：${reasons.join(', ')}`)
+      return
+    }
+    
+    setIsProcessing(true)
+    try {
+      // 先停用所有激活的用户
+      const activeUsersToDisable = usersToDelete.filter(u => u.is_active)
+      if (activeUsersToDisable.length > 0) {
+        await userApi.batchDisableUsers(activeUsersToDisable.map(u => u.id))
+        toast.success(`已停用 ${activeUsersToDisable.length} 个用户`)
+      }
+      
+      // 然后删除用户
+      const result = await userApi.batchDeleteUsers(selectedUsers)
+      toast.success(result.message)
+      setSelectedUsers([])
+      await fetchUsers()
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || '批量删除失败')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const handleBatchDisable = async () => {
+    if (selectedUsers.length === 0) return
+    
+    // 检查是否有不能停用的用户
+    const usersToDisable = users.filter(u => selectedUsers.includes(u.id))
+    const cannotDisableUsers = usersToDisable.filter(u => !canDisableUser(u))
+    
+    if (cannotDisableUsers.length > 0) {
+      const reasons = cannotDisableUsers.map(u => {
+        if (u.id === currentUser?.id) return `${u.username}（自己）`
+        if (u.is_superuser) return `${u.username}（超级管理员）`
+        if (!u.is_active) return `${u.username}（已停用）`
+        if (u.deleted_at) return `${u.username}（已删除）`
+        return u.username
+      })
+      toast.error(`不能停用以下用户：${reasons.join(', ')}`)
+      return
+    }
+    
+    setIsProcessing(true)
+    try {
+      const result = await userApi.batchDisableUsers(selectedUsers)
+      toast.success(result.message)
+      setSelectedUsers([])
+      await fetchUsers()
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || '批量停用失败')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  // 权限检查函数
+  const canDisableUser = (user: User): boolean => {
+    if (!currentUser) return false
+    
+    // 不能停用自己
+    if (user.id === currentUser.id) {
+      return false
+    }
+    
+    // 不能停用超级管理员
+    if (user.is_superuser) {
+      return false
+    }
+    
+    // 已停用的用户不需要再次停用
+    if (!user.is_active) {
+      return false
+    }
+    
+    // 已删除的用户不能停用
+    if (user.deleted_at) {
+      return false
+    }
+    
+    return true
+  }
+
+  const canDeleteUser = (user: User): boolean => {
+    if (!currentUser) return false
+    
+    // 不能删除自己
+    if (user.id === currentUser.id) {
+      return false
+    }
+    
+    // 不能删除超级管理员
+    if (user.is_superuser) {
+      return false
+    }
+    
+    // 已删除的用户不能再次删除
+    if (user.deleted_at) {
+      return false
+    }
+    
+    // 必须先停用用户才能删除
+    if (user.is_active) {
+      return false
+    }
+    
+    return true
+  }
+
+  // 权限检查并显示错误信息的函数
+  const checkCanDisableUser = (user: User): boolean => {
+    if (!currentUser) return false
+    
+    // 不能停用自己
+    if (user.id === currentUser.id) {
+      toast.error('不能停用自己的账户')
+      return false
+    }
+    
+    // 不能停用超级管理员
+    if (user.is_superuser) {
+      toast.error('不能停用超级管理员账户')
+      return false
+    }
+    
+    // 已停用的用户不需要再次停用
+    if (!user.is_active) {
+      toast.error('用户已处于停用状态')
+      return false
+    }
+    
+    // 已删除的用户不能停用
+    if (user.deleted_at) {
+      toast.error('已删除的用户无法停用')
+      return false
+    }
+    
+    return true
+  }
+
+
+  const isAllSelected = filteredUsers.length > 0 && selectedUsers.length === filteredUsers.length
+  const isIndeterminate = selectedUsers.length > 0 && selectedUsers.length < filteredUsers.length
 
   return (
     <>
@@ -271,6 +488,31 @@ export default function UsersManagement() {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
+                {/* 批量操作按钮 */}
+                {selectedUsers.length > 0 && (
+                  <div className="flex items-center gap-2 mr-4">
+                    <span className="text-sm text-muted-foreground">
+                      已选择 {selectedUsers.length} 个用户
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBatchDisable}
+                      disabled={isProcessing}
+                    >
+                      批量停用
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleBatchDelete}
+                      disabled={isProcessing}
+                    >
+                      批量删除
+                    </Button>
+                  </div>
+                )}
+                
                 <div className="relative">
                   <IconSearch size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -284,6 +526,32 @@ export default function UsersManagement() {
                   <IconRefresh size={16} className="mr-2" />
                   刷新
                 </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={async () => {
+                    try {
+                      await fetch('/api/v1/users/cache/clear', { 
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                        }
+                      })
+                      toast.success('缓存已清除')
+                      await fetchUsers() // 重新获取数据
+                    } catch (_error) {
+                      toast.error('清除缓存失败')
+                    }
+                  }}
+                >
+                  清除缓存
+                </Button>
+                <Link to="/management/users/recycle-bin">
+                  <Button variant="outline" size="sm">
+                    <IconRestore size={16} className="mr-2" />
+                    回收站
+                  </Button>
+                </Link>
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                   <DialogTrigger asChild>
                     <Button>
@@ -312,6 +580,21 @@ export default function UsersManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox
+                        checked={isAllSelected}
+                        onCheckedChange={handleSelectAll}
+                        ref={(ref) => {
+                          if (ref) {
+                            const checkbox = ref.querySelector('input[type="checkbox"]') as HTMLInputElement
+                            if (checkbox) {
+                              checkbox.indeterminate = isIndeterminate
+                            }
+                          }
+                        }}
+                      />
+                    </TableHead>
+                    <TableHead className="w-[60px]">序号</TableHead>
                     <TableHead>用户信息</TableHead>
                     <TableHead>邮箱</TableHead>
                     <TableHead>在线状态</TableHead>
@@ -324,19 +607,30 @@ export default function UsersManagement() {
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-32 text-center">
+                      <TableCell colSpan={9} className="h-32 text-center">
                         加载中...
                       </TableCell>
                     </TableRow>
                   ) : filteredUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-32 text-center">
+                      <TableCell colSpan={9} className="h-32 text-center">
                         没有找到用户
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredUsers.map((user) => (
+                    filteredUsers.map((user, index) => (
                       <TableRow key={user.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedUsers.includes(user.id)}
+                            onCheckedChange={(checked) => 
+                              handleSelectUser(user.id, !!checked)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="text-center text-sm text-muted-foreground">
+                          {(currentPage - 1) * pageSize + index + 1}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -384,6 +678,8 @@ export default function UsersManagement() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleToggleActive(user)}
+                              disabled={!canDisableUser(user)}
+                              className={!canDisableUser(user) ? 'opacity-50 cursor-not-allowed' : ''}
                             >
                               {user.is_active ? (
                                 <IconToggleRight size={16} className="text-green-600" />
@@ -402,8 +698,10 @@ export default function UsersManagement() {
                               variant="ghost"
                               size="sm"
                               onClick={() => setDeletingUser(user)}
+                              disabled={!canDeleteUser(user)}
+                              className={`${!canDeleteUser(user) ? 'opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-700'}`}
                             >
-                              <IconTrash size={16} className="text-red-600" />
+                              <IconTrash size={16} />
                             </Button>
                           </div>
                         </TableCell>
@@ -558,9 +856,16 @@ export default function UsersManagement() {
         <AlertDialog open={!!deletingUser} onOpenChange={(open) => !open && setDeletingUser(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>确认删除用户</AlertDialogTitle>
+              <AlertDialogTitle>确认软删除用户</AlertDialogTitle>
               <AlertDialogDescription>
-                您确定要删除用户 "{deletingUser?.username}" 吗？此操作不可撤销。
+                您确定要删除用户 "{deletingUser?.username}" 吗？删除的用户将移至回收站，可以在回收站中恢复。
+                {deletingUser?.is_active && (
+                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-yellow-800 text-sm">
+                      ⚠️ 注意：该用户当前处于激活状态，删除前将自动停用该用户。
+                    </p>
+                  </div>
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

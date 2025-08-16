@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List, Dict, Any
-from app.models.user_models import Role, Permission, UserPermission
+from app.models.rbac_models import Role, Permission, UserPermission
 
 
 class IRoleRepository(ABC):

@@ -16,7 +16,7 @@ class RoleBase(BaseModel):
     description: Optional[str] = None
     role_type: str = "custom"
     level: int = 0
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
     max_users: Optional[int] = None
 
 class RoleCreate(RoleBase):
@@ -58,7 +58,7 @@ class PermissionBase(BaseModel):
     action: str
     category: Optional[str] = None
     group_name: Optional[str] = None
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
     require_owner: bool = False
     conditions: Optional[Dict[str, Any]] = None
 
@@ -166,7 +166,7 @@ class UserPermissionSummary(BaseModel):
 class RoleHierarchy(BaseModel):
     role_id: str
     role_name: str
-    parent_role_id: Optional[int] = None
+    parent_role_id: Optional[str] = None
     parent_role_name: Optional[str] = None
     children: List['RoleHierarchy'] = []
     
@@ -178,7 +178,7 @@ class PermissionTree(BaseModel):
     permission_name: str
     display_name: str
     category: Optional[str] = None
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
     children: List['PermissionTree'] = []
     
     model_config = ConfigDict(from_attributes=True)
@@ -187,7 +187,7 @@ class PermissionTree(BaseModel):
 # 权限检查请求模型
 
 class PermissionCheckRequest(BaseModel):
-    user_id: Optional[int] = None
+    user_id: Optional[str] = None
     permission_name: str
     resource_id: Optional[str] = None
 
@@ -236,17 +236,17 @@ class RoleStats(BaseModel):
 # 权限变更日志模型
 
 class PermissionAuditLog(BaseModel):
-    id: int
+    id: str
     action: str
     subject_type: str
-    subject_id: int
+    subject_id: str
     permission_name: Optional[str] = None
     resource_type: Optional[str] = None
     resource_id: Optional[str] = None
     old_value: Optional[Dict[str, Any]] = None
     new_value: Optional[Dict[str, Any]] = None
     reason: Optional[str] = None
-    operator_id: int
+    operator_id: str
     operator_name: Optional[str] = None
     ip_address: Optional[str] = None
     created_at: datetime

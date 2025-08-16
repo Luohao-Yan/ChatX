@@ -12,7 +12,7 @@ import {
 import { authLogger } from '@/utils/logger'
 
 interface AuthUser {
-  id: number
+  id: string
   email: string
   username: string
   full_name?: string
@@ -94,7 +94,7 @@ interface AuthState {
   
   // Session management
   getUserSessions: () => Promise<AuthSession[]>
-  revokeSession: (sessionId: number) => Promise<void>
+  revokeSession: (sessionId: string) => Promise<void>
 
   // Session管理
   extendSession: () => void
@@ -761,7 +761,7 @@ export const useAuthStore = create<AuthState>()(devtools(
       }
     },
 
-    revokeSession: async (sessionId: number) => {
+    revokeSession: async (sessionId: string) => {
       try {
         await http.delete(`${authConfig.apiConfig.sessionsEndpoint}/${sessionId}`)
       } catch (error) {

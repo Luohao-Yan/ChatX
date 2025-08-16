@@ -59,8 +59,8 @@ export const DEFAULT_AUTH_CONFIG: AuthConfig = {
     accessTokenKey: 'chatx_access_token',
     refreshTokenKey: 'chatx_refresh_token',
     tokenPrefix: 'Bearer',
-    expirationCheckInterval: 30000, // 30秒检查一次
-    refreshThreshold: 5, // 提前5分钟刷新
+    expirationCheckInterval: 15000, // 15秒检查一次（更频繁）
+    refreshThreshold: 10, // 提前10分钟刷新（对于30分钟token更安全）
   },
   
   routeConfig: {
@@ -120,7 +120,7 @@ const getEnvironmentConfig = (): Partial<AuthConfig> => {
     return {
       tokenConfig: {
         ...DEFAULT_AUTH_CONFIG.tokenConfig,
-        expirationCheckInterval: 60000, // 开发环境1分钟检查一次
+        expirationCheckInterval: 15000, // 开发环境15秒检查一次（更频繁）
       },
       securityConfig: {
         ...DEFAULT_AUTH_CONFIG.securityConfig,

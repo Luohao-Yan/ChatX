@@ -66,7 +66,7 @@ async def get_permissions_by_category(
 @router.put("/{permission_id}", response_model=PermissionSchema)
 @require_permission(Permissions.PERMISSION_UPDATE)
 async def update_permission(
-    permission_id: int,
+    permission_id: str,
     permission_update: PermissionUpdate,
     current_user: User = Depends(get_current_active_user),
     permission_service: PermissionApplicationService = Depends(get_permission_service),
@@ -83,7 +83,7 @@ async def update_permission(
 @router.delete("/{permission_id}")
 @require_permission(Permissions.PERMISSION_DELETE)
 async def delete_permission(
-    permission_id: int,
+    permission_id: str,
     current_user: User = Depends(get_current_active_user),
     permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
@@ -95,7 +95,7 @@ async def delete_permission(
 @router.get("/roles/{role_id}")
 @require_permission(Permissions.PERMISSION_READ)
 async def get_role_permissions(
-    role_id: int,
+    role_id: str,
     current_user: User = Depends(get_current_active_user),
     permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
@@ -107,7 +107,7 @@ async def get_role_permissions(
 @router.get("/users/{user_id}")
 @require_permission(Permissions.PERMISSION_READ)
 async def get_user_permissions(
-    user_id: int,
+    user_id: str,
     current_user: User = Depends(get_current_active_user),
     permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):

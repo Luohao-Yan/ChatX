@@ -29,12 +29,12 @@ class RecycleBinItem(BaseModel):
     """回收站项目基础模型"""
     model_config = ConfigDict(from_attributes=True)
     
-    id: int
+    id: str
     resource_type: ResourceType
-    resource_id: int
+    resource_id: str
     name: str
     deleted_at: Optional[datetime] = None
-    deleted_by: Optional[int] = None
+    deleted_by: Optional[str] = None
     deleted_by_name: Optional[str] = None
     original_data: Optional[Dict[str, Any]] = None
 
@@ -107,7 +107,7 @@ class RecycleBinResponse(BaseModel):
 class RecycleBinFilter(BaseModel):
     """回收站筛选条件"""
     resource_type: Optional[ResourceType] = None
-    deleted_by: Optional[int] = None
+    deleted_by: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     search: Optional[str] = Field(None, description="搜索关键词，支持名称、邮箱等")
@@ -199,7 +199,7 @@ class UserResponse(BaseModel):
     """用户响应模型"""
     model_config = ConfigDict(from_attributes=True)
     
-    id: int
+    id: str
     email: str
     username: str
     full_name: Optional[str] = None
@@ -210,8 +210,8 @@ class UserResponse(BaseModel):
     phone: Optional[str] = None
     position: Optional[str] = None
     employee_id: Optional[str] = None
-    organization_id: Optional[int] = None
-    department_id: Optional[int] = None
+    organization_id: Optional[str] = None
+    department_id: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
@@ -222,7 +222,7 @@ class OrganizationResponse(BaseModel):
     """组织响应模型"""
     model_config = ConfigDict(from_attributes=True)
     
-    id: int
+    id: str
     name: str
     code: str
     description: Optional[str] = None
@@ -231,7 +231,7 @@ class OrganizationResponse(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     website: Optional[str] = None
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
     path: str
     level: int
     sort_order: int
@@ -245,16 +245,16 @@ class DepartmentResponse(BaseModel):
     """部门响应模型"""
     model_config = ConfigDict(from_attributes=True)
     
-    id: int
+    id: str
     name: str
     code: str
     description: Optional[str] = None
-    org_id: int
-    parent_id: Optional[int] = None
+    org_id: str
+    parent_id: Optional[str] = None
     path: str
     level: int
     sort_order: int
-    manager_id: Optional[int] = None
+    manager_id: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
     address: Optional[str] = None
@@ -268,7 +268,7 @@ class RoleResponse(BaseModel):
     """角色响应模型"""
     model_config = ConfigDict(from_attributes=True)
     
-    id: int
+    id: str
     name: str
     display_name: str
     description: Optional[str] = None
@@ -277,7 +277,7 @@ class RoleResponse(BaseModel):
     is_active: bool
     is_system: bool
     is_default: bool
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
     max_users: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -288,7 +288,7 @@ class PermissionResponse(BaseModel):
     """权限响应模型"""
     model_config = ConfigDict(from_attributes=True)
     
-    id: int
+    id: str
     name: str
     display_name: str
     description: Optional[str] = None
@@ -296,7 +296,7 @@ class PermissionResponse(BaseModel):
     action: str
     category: Optional[str] = None
     group_name: Optional[str] = None
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
     is_system: bool
     is_active: bool
     require_owner: bool

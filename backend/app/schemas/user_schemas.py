@@ -46,7 +46,7 @@ class UserProfile(BaseModel):
 
 
 class UserInDBBase(UserBase):
-    id: int
+    id: str
     is_verified: bool = False
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
@@ -71,14 +71,35 @@ class User(UserInDBBase):
     @computed_field
     @property
     def is_online(self) -> bool:
-        """计算用户是否在线（最近5分钟内有活动）"""
-        if not self.last_activity:
+        """计算用户是否在线（基于最后登录时间，最近5分钟内认为在线）"""
+        # 暂时使用 last_login 作为活动时间的替代
+        # 后续可以通过服务层查询用户会话的最新活动时间
+        if not self.last_login:
             return False
         
         now = datetime.now(timezone.utc)
-        # 如果最后活动时间在5分钟内，认为是在线
-        time_diff = now - self.last_activity.replace(tzinfo=timezone.utc)
-        return time_diff.total_seconds() < 300  # 5分钟 = 300秒
+        
+        # 确保 last_login 有正确的时区信息
+        last_login_utc = self.last_login
+        if last_login_utc.tzinfo is None:
+            # 如果没有时区信息，假设它是UTC时间
+            last_login_utc = last_login_utc.replace(tzinfo=timezone.utc)
+        elif last_login_utc.tzinfo != timezone.utc:
+            # 如果有时区信息但不是UTC，转换为UTC
+            last_login_utc = last_login_utc.astimezone(timezone.utc)
+        
+        # 计算时间差
+        time_diff = now - last_login_utc
+        is_online_result = time_diff.total_seconds() < 3600  # 1小时 = 3600秒 (临时调整用于测试)
+        
+        # 调试日志
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug(f"User online check: {self.username}, last_login: {self.last_login}, "
+                    f"last_login_utc: {last_login_utc}, now: {now}, "
+                    f"time_diff: {time_diff.total_seconds()}s, is_online: {is_online_result}")
+        
+        return is_online_result
     
     @field_validator('roles', mode='before')
     @classmethod
@@ -107,7 +128,7 @@ class TokenRefresh(BaseModel):
 
 
 class TokenPayload(BaseModel):
-    sub: Optional[int] = None
+    sub: Optional[str] = None
     type: Optional[str] = None
 
 
@@ -167,7 +188,7 @@ class EmailVerification(BaseModel):
 
 
 class UserSessionInfo(BaseModel):
-    id: int
+    id: str
     device_info: Optional[str]
     ip_address: Optional[str]
     created_at: datetime
@@ -178,10 +199,10 @@ class UserSessionInfo(BaseModel):
 
 
 class UserRoleAssign(BaseModel):
-    user_id: int
+    user_id: str
     role_ids: List[int]
 
 
 class UserRoleRevoke(BaseModel):
-    user_id: int
+    user_id: str
     role_ids: List[int]

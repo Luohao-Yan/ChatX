@@ -53,7 +53,7 @@ async def upload_single_file(
     description: Optional[str] = Form(None),
     tags: Optional[str] = Form(None),
     visibility: str = Form("private"),
-    parent_folder_id: Optional[int] = Form(None),
+    parent_folder_id: Optional[str] = Form(None),
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
     request: Request = None,
@@ -88,7 +88,7 @@ async def upload_single_file(
 async def upload_multiple_files(
     files: List[UploadFile] = FastAPIFile(...),
     visibility: str = Form("private"),
-    parent_folder_id: Optional[int] = Form(None),
+    parent_folder_id: Optional[str] = Form(None),
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
     request: Request = None,
@@ -138,7 +138,7 @@ async def search_files(
     keyword: Optional[str] = None,
     file_type: Optional[str] = None,
     mime_type: Optional[str] = None,
-    folder_id: Optional[int] = None,
+    folder_id: Optional[str] = None,
     visibility: Optional[str] = None,
     sort_by: str = "created_at",
     sort_order: str = "desc",
@@ -173,7 +173,7 @@ async def search_files(
 
 @router.get("/{file_id}", response_model=FileDetail)
 async def get_file_detail(
-    file_id: int,
+    file_id: str,
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):
@@ -193,7 +193,7 @@ async def get_file_detail(
 
 @router.put("/{file_id}", response_model=FileInfo)
 async def update_file(
-    file_id: int,
+    file_id: str,
     file_update: FileUpdate,
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
@@ -205,7 +205,7 @@ async def update_file(
 
 @router.delete("/{file_id}")
 async def delete_file(
-    file_id: int,
+    file_id: str,
     permanent: bool = False,
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
@@ -220,7 +220,7 @@ async def delete_file(
 
 @router.get("/{file_id}/download")
 async def download_file(
-    file_id: int,
+    file_id: str,
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):
@@ -266,7 +266,7 @@ async def get_folder_tree(
 
 @router.get("/folders/{folder_id}/files", response_model=FileListResponse)
 async def get_folder_files(
-    folder_id: int,
+    folder_id: str,
     page: int = 1,
     per_page: int = 20,
     current_user: User = Depends(get_current_active_user),
@@ -291,7 +291,7 @@ async def get_folder_files(
 
 @router.post("/{file_id}/share", response_model=FileShareSchema)
 async def share_file(
-    file_id: int,
+    file_id: str,
     share_create: FileShareCreate,
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
@@ -303,7 +303,7 @@ async def share_file(
 
 @router.get("/{file_id}/shares", response_model=List[FileShareSchema])
 async def get_file_shares(
-    file_id: int,
+    file_id: str,
     current_user: User = Depends(get_current_active_user),
     file_service: FileApplicationService = Depends(get_file_service),
 ):

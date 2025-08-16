@@ -12,44 +12,65 @@ class IUserRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_id(self, user_id: int) -> Optional[User]:
+    async def get_by_id(self, user_id: str) -> Optional[User]:
         """根据ID获取用户"""
         pass
     
     @abstractmethod
-    async def get_by_email(self, email: str, tenant_id: int = None) -> Optional[User]:
+    async def get_by_email(self, email: str, tenant_id: str = None) -> Optional[User]:
         """根据邮箱获取用户"""
         pass
     
     @abstractmethod
-    async def get_by_username(self, username: str, tenant_id: int = None) -> Optional[User]:
+    async def get_by_username(self, username: str, tenant_id: str = None) -> Optional[User]:
         """根据用户名获取用户"""
         pass
     
     @abstractmethod
-    async def update(self, user_id: int, update_data: dict) -> Optional[User]:
+    async def update(self, user_id: str, update_data: dict) -> Optional[User]:
         """更新用户信息"""
         pass
     
     @abstractmethod
-    async def soft_delete(self, user_id: int, deleted_by: int) -> bool:
+    async def soft_delete(self, user_id: str, deleted_by: str) -> bool:
         """软删除用户"""
         pass
     
     @abstractmethod
-    async def get_list(self, tenant_id: int, skip: int = 0, limit: int = 100, 
-                      include_deleted: bool = False) -> List[User]:
+    async def get_list(self, tenant_id: str = None, skip: int = 0, limit: int = 100, 
+                      include_deleted: bool = False, is_superuser: bool = False) -> List[User]:
         """获取用户列表"""
         pass
     
     @abstractmethod
-    async def exists_by_email(self, email: str, tenant_id: int, exclude_id: int = None) -> bool:
+    async def get_deleted_list(self, tenant_id: str = None, skip: int = 0, limit: int = 100,
+                              is_superuser: bool = False) -> List[User]:
+        """获取已删除用户列表（回收站）"""
+        pass
+    
+    @abstractmethod
+    async def exists_by_email(self, email: str, tenant_id: str = None, exclude_id: str = None) -> bool:
         """检查邮箱是否已存在"""
         pass
     
     @abstractmethod
-    async def exists_by_username(self, username: str, tenant_id: int, exclude_id: int = None) -> bool:
+    async def exists_by_username(self, username: str, tenant_id: str = None, exclude_id: str = None) -> bool:
         """检查用户名是否已存在"""
+        pass
+    
+    @abstractmethod
+    async def hard_delete(self, user_id: str) -> bool:
+        """硬删除用户"""
+        pass
+    
+    @abstractmethod
+    async def get_by_id_including_deleted(self, user_id: str) -> Optional[User]:
+        """根据ID获取用户，包括已删除的用户"""
+        pass
+    
+    @abstractmethod
+    async def get_all_users_including_deleted(self, tenant_id: str = None) -> List[User]:
+        """获取所有用户，包括已删除的用户"""
         pass
 
 
@@ -67,22 +88,22 @@ class IUserSessionRepository(ABC):
         pass
     
     @abstractmethod
-    async def update_session(self, session_id: int, update_data: dict) -> Optional[UserSession]:
+    async def update_session(self, session_id: str, update_data: dict) -> Optional[UserSession]:
         """更新会话信息"""
         pass
     
     @abstractmethod
-    async def deactivate_session(self, session_id: int) -> bool:
+    async def deactivate_session(self, session_id: str) -> bool:
         """停用会话"""
         pass
     
     @abstractmethod
-    async def deactivate_all_user_sessions(self, user_id: int) -> bool:
+    async def deactivate_all_user_sessions(self, user_id: str) -> bool:
         """停用用户所有会话"""
         pass
     
     @abstractmethod
-    async def get_user_active_sessions(self, user_id: int) -> List[UserSession]:
+    async def get_user_active_sessions(self, user_id: str) -> List[UserSession]:
         """获取用户活跃会话列表"""
         pass
 
@@ -96,13 +117,13 @@ class IUserVerificationRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_valid_verification(self, user_id: int, verification_type: str, 
+    async def get_valid_verification(self, user_id: str, verification_type: str, 
                                    verification_code: str) -> Optional[UserVerification]:
         """获取有效的验证记录"""
         pass
     
     @abstractmethod
-    async def mark_as_used(self, verification_id: int) -> bool:
+    async def mark_as_used(self, verification_id: str) -> bool:
         """标记验证码为已使用"""
         pass
     

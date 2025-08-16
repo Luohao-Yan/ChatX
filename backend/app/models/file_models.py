@@ -110,8 +110,9 @@ class File(Base):
     visibility = Column(String(20), default=VisibilityLevel.PRIVATE, nullable=False, index=True, comment="文件可见性级别（private/internal/shared/public）")
     
     # 文件所有权和组织关系
-    owner_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="文件所有者用户ID")
-    parent_folder_id = Column(UUID(as_uuid=True), nullable=True, index=True, comment="父文件夹ID（null表示根目录）")
+    tenant_id = Column(String(50), nullable=False, index=True, comment="租户ID")
+    owner_id = Column(String(50), nullable=False, index=True, comment="文件所有者用户ID")
+    parent_folder_id = Column(String(50), nullable=True, index=True, comment="父文件夹ID（null表示根目录）")
     
     # 文件使用统计信息
     download_count = Column(Integer, default=0, nullable=False, comment="文件下载次数统计")
@@ -123,14 +124,16 @@ class File(Base):
     deleted_at = Column(DateTime(timezone=True), nullable=True, comment="文件删除时间（软删除）")
     last_accessed = Column(DateTime(timezone=True), nullable=True, comment="文件最后访问时间")
     
+    # 不使用直接relationship，通过服务层获取关联数据
+    
     # 数据库索引配置（优化查询性能）
     __table_args__ = (
+        Index('idx_file_tenant_owner', 'tenant_id', 'owner_id'),   # 租户用户文件查询
         Index('idx_file_owner_status', 'owner_id', 'status'),      # 按所有者和状态查询
         Index('idx_file_type_status', 'file_type', 'status'),      # 按文件类型和状态查询
         Index('idx_file_created', 'created_at'),                   # 按创建时间排序
         Index('idx_file_hash', 'file_hash'),                       # 文件去重查询
-        Index('idx_file_category', 'category'),                    # 按分类查询
-        Index('idx_file_owner_category', 'owner_id', 'category'),  # 用户分类文件查询
+        Index('idx_file_tenant_category', 'tenant_id', 'category'), # 租户分类查询
         {"comment": "文件主表，存储所有文件的基本信息和元数据"}
     )
 
@@ -149,19 +152,20 @@ class Folder(Base):
     __tablename__ = "sys_folders"
 
     # 文件夹唯一标识ID
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="文件夹唯一标识ID")
+    id = Column(String(50), primary_key=True, index=True, comment="文件夹唯一标识ID")
     
     # 文件夹基本信息
     name = Column(String(255), nullable=False, index=True, comment="文件夹名称")
     description = Column(Text, nullable=True, comment="文件夹描述信息")
     
     # 文件夹层级结构关系
-    parent_id = Column(UUID(as_uuid=True), nullable=True, index=True, comment="父文件夹ID（null表示根目录）")
+    parent_id = Column(String(50), nullable=True, index=True, comment="父文件夹ID（null表示根目录）")
     path = Column(String(1000), nullable=False, index=True, comment="文件夹完整路径（/root/folder1/folder2）")
     level = Column(Integer, default=0, nullable=False, comment="文件夹层级深度（0为根目录）")
     
     # 文件夹所有权和可见性控制
-    owner_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="文件夹所有者用户ID")
+    tenant_id = Column(String(50), nullable=False, index=True, comment="租户ID")
+    owner_id = Column(String(50), nullable=False, index=True, comment="文件夹所有者用户ID")
     visibility = Column(String(20), default=VisibilityLevel.PRIVATE, nullable=False, comment="文件夹可见性级别")
     is_system = Column(Boolean, default=False, nullable=False, comment="是否为系统预定义文件夹（不可删除）")
     
@@ -169,8 +173,11 @@ class Folder(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="文件夹创建时间")
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="文件夹最后更新时间")
     
+    # 不使用直接relationship，通过服务层获取关联数据
+    
     # 数据库索引配置
     __table_args__ = (
+        Index('idx_folder_tenant_owner', 'tenant_id', 'owner_id'),  # 租户用户文件夹查询
         Index('idx_folder_owner_parent', 'owner_id', 'parent_id'),  # 用户文件夹层级查询
         Index('idx_folder_path', 'path'),                          # 路径快速查询
         {"comment": "文件夹表，管理文件的层级组织结构"}
@@ -194,7 +201,8 @@ class FileVersion(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="文件版本记录ID")
     
     # 版本关联信息
-    file_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="关联的文件ID")
+    tenant_id = Column(String(50), nullable=False, index=True, comment="租户ID")
+    file_id = Column(String(50), nullable=False, index=True, comment="关联的文件ID")
     version_number = Column(Integer, nullable=False, comment="版本号（从1开始递增）")
     
     # 版本文件信息
@@ -205,10 +213,19 @@ class FileVersion(Base):
     
     # 版本变更信息
     change_description = Column(Text, nullable=True, comment="版本变更描述")
-    created_by = Column(UUID(as_uuid=True), nullable=False, comment="版本创建者用户ID")
+    created_by = Column(String(50), nullable=False, comment="版本创建者用户ID")
     
     # 版本创建时间
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="版本创建时间")
+    
+    # 不使用直接relationship，通过服务层获取关联数据
+    
+    # 数据库索引配置
+    __table_args__ = (
+        Index('idx_version_file_number', 'file_id', 'version_number'),
+        Index('idx_version_tenant', 'tenant_id'),
+        {"comment": "文件版本管理表，记录文件的历史版本信息"}
+    )
 
 class FileShare(Base):
     """文件分享模型
@@ -228,140 +245,209 @@ class FileShare(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="文件分享记录ID")
     
     # 关联信息
-    file_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    shared_by = Column(UUID(as_uuid=True), nullable=False)
-    shared_with = Column(UUID(as_uuid=True), nullable=True)  # 为空表示公开分享
+    file_id = Column(String(50), nullable=False, index=True, comment="关联的文件ID")
+    shared_by = Column(String(50), nullable=False, comment="分享者用户ID")
+    shared_with = Column(String(50), nullable=True, comment="分享接收者用户ID（为空表示公开分享）")
     
     # 分享配置
-    access_type = Column(String(20), default="read", nullable=False)  # read, write, admin
-    share_token = Column(String(64), nullable=True, unique=True)  # 分享链接令牌
-    password_protected = Column(Boolean, default=False, nullable=False)
-    password_hash = Column(String(255), nullable=True)
+    access_type = Column(String(20), default="read", nullable=False, comment="访问权限类型（read/write/admin）")  
+    share_token = Column(String(64), nullable=True, unique=True, comment="分享链接访问令牌")  
+    password_protected = Column(Boolean, default=False, nullable=False, comment="是否设置密码保护")
+    password_hash = Column(String(255), nullable=True, comment="分享密码哈希值")
     
     # 有效期
-    expires_at = Column(DateTime(timezone=True), nullable=True)
-    is_active = Column(Boolean, default=True, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=True, comment="分享链接过期时间")
+    is_active = Column(Boolean, default=True, nullable=False, comment="分享是否有效")
     
     # 统计
-    access_count = Column(Integer, default=0, nullable=False)
-    last_accessed = Column(DateTime(timezone=True), nullable=True)
+    access_count = Column(Integer, default=0, nullable=False, comment="分享链接访问次数")
+    last_accessed = Column(DateTime(timezone=True), nullable=True, comment="最后访问时间")
     
     # 时间戳
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="分享创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="分享更新时间")
+    
+    # 数据库索引配置
+    __table_args__ = (
+        {"comment": "文件分享表，管理文件分享功能和权限控制"}
+    )
 
 class FileComment(Base):
+    """文件评论模型
+    
+    管理文件的评论和回复功能，支持多级回复和评论编辑。
+    提供丰富的文件协作和讨论功能，增强团队协作效率。
+    
+    主要特性:
+    - 多级回复：支持对评论的回复和嵌套回复
+    - 内容编辑：支持评论内容的修改和编辑
+    - 权限控制：支持评论的查看和管理权限
+    - 时间记录：记录评论的创建和修改时间
+    """
     __tablename__ = "sys_file_comments"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String(50), primary_key=True, index=True, comment="评论唯一标识ID")
     
     # 关联信息
-    file_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    user_id = Column(UUID(as_uuid=True), nullable=False)
-    parent_id = Column(Integer, nullable=True)  # 回复功能
+    file_id = Column(String(50), nullable=False, index=True, comment="关联的文件ID")
+    user_id = Column(String(50), nullable=False, comment="评论者用户ID")
+    parent_id = Column(String(50), nullable=True, comment="父评论 ID（用于回复功能）")
     
     # 评论内容
-    content = Column(Text, nullable=False)
-    is_edited = Column(Boolean, default=False, nullable=False)
+    content = Column(Text, nullable=False, comment="评论文本内容")
+    is_edited = Column(Boolean, default=False, nullable=False, comment="是否被编辑过")
     
     # 时间戳
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="评论创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="评论最后修改时间")
+    
+    # 数据库索引配置
+    __table_args__ = (
+        {"comment": "文件评论表，管理文件的评论和回复功能"}
+    )
 
 class FileCategory(Base):
+    """文件分类模型
+    
+    管理文件的分类体系，支持分层级的分类结构和个性化配置。
+    提供丰富的分类管理功能，帮助用户更好地组织和管理文件。
+    
+    主要特性:
+    - 分层级管理：支持多级分类的层级结构
+    - 视觉定制：支持自定义颜色和图标
+    - 系统分类：支持系统预设和用户自定义分类
+    - 权限控制：支持分类的创建和管理权限
+    """
     __tablename__ = "sys_file_categories"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String(50), primary_key=True, index=True, comment="分类唯一标识ID")
     
     # 基本信息
-    name = Column(String(100), nullable=False, index=True)
-    description = Column(Text, nullable=True)
-    color = Column(String(7), nullable=True)  # HEX颜色值
-    icon = Column(String(50), nullable=True)  # 图标名称
+    name = Column(String(100), nullable=False, index=True, comment="分类名称")
+    description = Column(Text, nullable=True, comment="分类描述信息")
+    color = Column(String(7), nullable=True, comment="分类颜色（HEX格式）")
+    icon = Column(String(50), nullable=True, comment="分类图标名称")
     
     # 层级关系
-    parent_id = Column(Integer, nullable=True, index=True)
-    path = Column(String(500), nullable=False, index=True)
-    level = Column(Integer, default=0, nullable=False)
+    parent_id = Column(String(50), nullable=True, index=True, comment="父分类ID（为空表示顶级分类）")
+    path = Column(String(500), nullable=False, index=True, comment="分类完整路径")
+    level = Column(Integer, default=0, nullable=False, comment="分类层级深度（0为顶级）")
     
     # 权限和状态
-    owner_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    is_system = Column(Boolean, default=False, nullable=False)  # 系统预设分类
-    is_active = Column(Boolean, default=True, nullable=False)
+    owner_id = Column(String(50), nullable=False, index=True, comment="分类创建者用户ID")
+    is_system = Column(Boolean, default=False, nullable=False, comment="是否为系统预设分类")
+    is_active = Column(Boolean, default=True, nullable=False, comment="分类是否激活")
     
     # 时间戳
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="分类创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="分类最后更新时间")
     
-    # 索引
+    # 数据库索引配置
     __table_args__ = (
         Index('idx_category_owner_name', 'owner_id', 'name'),
         Index('idx_category_path', 'path'),
+        {"comment": "文件分类表，管理文件的分类体系"}
     )
 
 class FileTag(Base):
+    """文件标签模型
+    
+    管理文件的标签系统，支持自定义标签和系统预设标签。
+    提供灵活的文件标记和分类功能，增强文件的可搜索性。
+    
+    主要特性:
+    - 多样化标签：支持自定义标签和系统预设标签
+    - 视觉定制：支持自定义标签颜色和样式
+    - 使用统计：记录标签的使用频率和热度
+    - 搜索支持：提供基于标签的文件搜索
+    """
     __tablename__ = "sys_file_tags"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String(50), primary_key=True, index=True, comment="标签唯一标识ID")
     
     # 标签信息
-    name = Column(String(100), nullable=False, index=True)
-    description = Column(Text, nullable=True)
-    color = Column(String(7), nullable=True)  # HEX颜色值
+    name = Column(String(100), nullable=False, index=True, comment="标签名称")
+    description = Column(Text, nullable=True, comment="标签描述信息")
+    color = Column(String(7), nullable=True, comment="标签颜色（HEX格式）")
     
     # 权限和状态
-    owner_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    is_system = Column(Boolean, default=False, nullable=False)  # 系统预设标签
-    usage_count = Column(Integer, default=0, nullable=False)  # 使用次数
+    owner_id = Column(String(50), nullable=False, index=True, comment="标签创建者用户ID")
+    is_system = Column(Boolean, default=False, nullable=False, comment="是否为系统预设标签")
+    usage_count = Column(Integer, default=0, nullable=False, comment="标签使用次数统计")
     
     # 时间戳
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="标签创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="标签最后更新时间")
     
-    # 索引
+    # 数据库索引配置
     __table_args__ = (
         Index('idx_tag_owner_name', 'owner_id', 'name'),
         Index('idx_tag_usage', 'usage_count'),
+        {"comment": "文件标签表，管理文件的标签系统"}
     )
 
 class FileTagRelation(Base):
+    """文件标签关联模型
+    
+    管理文件和标签之间的多对多关联关系。
+    单个文件可以关联多个标签，单个标签也可以关联多个文件。
+    
+    主要特性:
+    - 多对多关联：支持文件和标签的多对多关联
+    - 关联管理：记录关联的创建者和时间
+    - 唯一性约束：防止重复关联同一文件和标签
+    - 关联统计：支持标签使用频率统计
+    """
     __tablename__ = "sys_file_tag_relations"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String(50), primary_key=True, index=True, comment="关联关系唯一标识ID")
     
     # 关联信息
-    file_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    tag_id = Column(Integer, nullable=False, index=True)
+    file_id = Column(String(50), nullable=False, index=True, comment="关联的文件ID")
+    tag_id = Column(String(50), nullable=False, index=True, comment="关联的标签ID")
     
-    # 关联信息
-    created_by = Column(UUID(as_uuid=True), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    # 关联元信息
+    created_by = Column(String(50), nullable=False, comment="关联创建者用户ID")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="关联创建时间")
     
-    # 唯一约束
+    # 数据库索引配置
     __table_args__ = (
         Index('idx_file_tag_unique', 'file_id', 'tag_id', unique=True),
+        {"comment": "文件标签关联表，管理文件和标签的多对多关联"}
     )
 
 class FileActivity(Base):
+    """文件活动日志模型
+    
+    记录文件的所有操作和访问活动，用于安全审计和行为分析。
+    提供完整的文件操作过程记录，支持安全监控和问题追溯。
+    
+    主要特性:
+    - 全面记录：记录所有文件操作和访问活动
+    - 安全审计：提供安全审计和异常检测功能
+    - 用户行为：分析用户的文件使用习惯和模式
+    - 问题追溯：支持文件问题的根因分析和追溯
+    """
     __tablename__ = "sys_file_activities"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String(50), primary_key=True, index=True, comment="活动记录唯一标识ID")
     
     # 关联信息
-    file_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    user_id = Column(UUID(as_uuid=True), nullable=False)
+    file_id = Column(String(50), nullable=False, index=True, comment="关联的文件ID")
+    user_id = Column(String(50), nullable=False, comment="操作者用户ID")
     
     # 活动信息
-    action = Column(String(50), nullable=False, index=True)  # upload, download, view, edit, delete, share
-    details = Column(Text, nullable=True)  # JSON格式的详细信息
-    ip_address = Column(String(45), nullable=True)
-    user_agent = Column(Text, nullable=True)
+    action = Column(String(50), nullable=False, index=True, comment="操作类型（upload/download/view/edit/delete/share）")
+    details = Column(Text, nullable=True, comment="活动详细信息（JSON格式）")
+    ip_address = Column(String(45), nullable=True, comment="操作者IP地址")
+    user_agent = Column(Text, nullable=True, comment="用户代理信息")
     
     # 时间戳
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True, comment="活动发生时间")
     
-    # 索引
+    # 数据库索引配置
     __table_args__ = (
         Index('idx_activity_file_action', 'file_id', 'action'),
         Index('idx_activity_user_time', 'user_id', 'created_at'),
+        {"comment": "文件活动日志表，记录文件的所有操作和访问活动"}
     )

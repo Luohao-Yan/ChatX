@@ -614,17 +614,59 @@ export const http = new HttpClient({
 // 创建全局token管理器实例
 export const tokenManager = TokenManager.getInstance()
 
-// 企业级自动配置：token自动注入
+// 企业级自动配置：token自动注入 + 预刷新检查
 http.addRequestInterceptor({
   onRequest: async (config) => {
-    // 自动添加认证token
-    const token = tokenManager.getToken()
-    if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`,
+    // 在每个API请求前检查token状态并预刷新
+    try {
+      const currentToken = tokenManager.getToken()
+      
+      if (currentToken) {
+        // 检查token是否即将过期（动态导入避免循环依赖）
+        const { validator } = await import('../auth/auth-utils')
+        
+        if (validator.isTokenExpiringSoon(currentToken)) {
+          console.log('🔄 [HTTP_INTERCEPTOR] Token即将过期，尝试获取authStore进行预刷新')
+          
+          // 动态导入authStore避免循环依赖
+          const { useAuthStore } = await import('../../stores/auth')
+          const authStore = useAuthStore.getState()
+          
+          if (authStore.refreshToken && !authStore.isRefreshing) {
+            console.log('🔄 [HTTP_INTERCEPTOR] 执行Token预刷新')
+            await authStore.refreshAccessToken()
+            // 使用刷新后的新token
+            const newToken = tokenManager.getToken()
+            if (newToken) {
+              config.headers = {
+                ...config.headers,
+                Authorization: `Bearer ${newToken}`,
+              }
+              return config
+            }
+          }
+        }
+      }
+      
+      // 自动添加认证token
+      if (currentToken) {
+        config.headers = {
+          ...config.headers,
+          Authorization: `Bearer ${currentToken}`,
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ [HTTP_INTERCEPTOR] Token预刷新失败:', error)
+      // 如果预刷新失败，还是使用当前token
+      const token = tokenManager.getToken()
+      if (token) {
+        config.headers = {
+          ...config.headers,
+          Authorization: `Bearer ${token}`,
+        }
       }
     }
+    
     return config
   },
 })

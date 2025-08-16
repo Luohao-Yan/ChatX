@@ -54,7 +54,8 @@ async def get_recycle_bin_items(
         )
         # 过滤出已删除的用户
         for user in deleted_users:
-            if user.is_deleted:
+            # Check if user is soft deleted
+            if user.deleted_at is not None:
                 items.append(
                     {
                         "id": user.id,
@@ -70,7 +71,8 @@ async def get_recycle_bin_items(
             current_user, include_deleted=True
         )
         for role in deleted_roles:
-            if role.is_deleted:
+            # Check if role is soft deleted
+            if role.deleted_at is not None:
                 items.append(
                     {
                         "id": role.id,
@@ -101,23 +103,27 @@ async def restore_items(
     for item in restore_request.items:
         try:
             if item.resource_type == "user":
-                # 恢复用户（将is_deleted设为False）
+                # 恢复用户（清空删除标记）
                 await user_service.user_repo.update(
                     item.resource_id,
                     {
-                        "is_deleted": False,
                         "deleted_at": None,
                         "deleted_by": None,
+                        "status": "active",
                         "is_active": True,
                     },
                 )
                 success_count += 1
 
             elif item.resource_type == "role":
-                # 恢复角色
+                # 恢复角色（清空删除标记）
                 await role_service.role_repo.update(
                     item.resource_id,
-                    {"is_deleted": False, "deleted_at": None, "deleted_by": None},
+                    {
+                        "deleted_at": None,
+                        "deleted_by": None,
+                        "is_active": True,
+                    },
                 )
                 success_count += 1
 
@@ -193,12 +199,12 @@ async def get_recycle_bin_stats(
     deleted_users = await user_service.get_users_list(
         current_user, include_deleted=True
     )
-    user_count = sum(1 for u in deleted_users if u.is_deleted)
+    user_count = sum(1 for u in deleted_users if u.deleted_at is not None)
 
     deleted_roles = await role_service.get_tenant_roles(
         current_user, include_deleted=True
     )
-    role_count = sum(1 for r in deleted_roles if r.is_deleted)
+    role_count = sum(1 for r in deleted_roles if r.deleted_at is not None)
 
     return RecycleBinStats(
         total_items=user_count + role_count,

@@ -1,5 +1,6 @@
 from typing import Optional, Tuple, List, Dict, Any
-from app.models.user_models import Role, Permission, User
+from app.models.user_models import User
+from app.models.rbac_models import Role, Permission
 from datetime import datetime, timezone
 
 

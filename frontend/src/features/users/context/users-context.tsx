@@ -4,7 +4,7 @@ import { User, UserCreate, UserUpdate } from '../data/schema'
 import { usersApi } from '../services/users-api'
 import { toast } from 'sonner'
 
-type UsersDialogType = 'invite' | 'add' | 'edit' | 'delete'
+type UsersDialogType = 'invite' | 'add' | 'create' | 'edit' | 'delete'
 
 interface UsersContextType {
   // Dialog state

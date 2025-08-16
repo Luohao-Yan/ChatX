@@ -54,7 +54,7 @@ def init_rbac_and_admin():
                     logger.info(f"  邮箱: {admin_info['email']}")
                     logger.info(f"  用户名: {admin_info['username']}")
                     logger.info(f"  密码: {settings.SUPER_ADMIN_PASSWORD}")
-                    logger.info(f"  角色: {', '.join(admin_info['roles'])}")
+                    logger.info(f"  状态: {'激活' if admin_info['is_active'] else '未激活'}")
                     logger.info("="*50)
                     logger.info("⚠️  请登录后立即修改默认密码！")
                     logger.info("🚀 现在可以启动应用了：python -m app.main")
@@ -92,7 +92,7 @@ def check_system_status():
             logger.info("✅ 系统已初始化")
             logger.info(f"超级管理员邮箱: {admin_info['email']}")
             logger.info(f"超级管理员用户名: {admin_info['username']}")
-            logger.info(f"拥有角色: {', '.join(admin_info['roles'])}")
+            logger.info(f"超级管理员状态: {'激活' if admin_info['is_active'] else '未激活'}")
             
             # 检查邮件配置
             if settings.SMTP_ENABLED:

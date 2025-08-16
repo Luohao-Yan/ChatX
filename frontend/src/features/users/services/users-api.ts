@@ -26,7 +26,7 @@ class UsersApi {
   }
 
   // 获取单个用户
-  async getUser(id: number): Promise<User> {
+  async getUser(id: string): Promise<User> {
     const response = await http.get<User>(`${this.baseUrl}/${id}`)
     return response.data
   }
@@ -38,20 +38,80 @@ class UsersApi {
   }
 
   // 更新用户
-  async updateUser(id: number, userData: UserUpdate): Promise<User> {
+  async updateUser(id: string, userData: UserUpdate): Promise<User> {
     const response = await http.put<User>(`${this.baseUrl}/${id}`, userData)
     return response.data
   }
 
-  // 删除用户
-  async deleteUser(id: number): Promise<{ message: string; user_id: number }> {
-    const response = await http.delete<{ message: string; user_id: number }>(`${this.baseUrl}/${id}`)
+  // 软删除用户
+  async deleteUser(id: string): Promise<{ message: string; user_id: string }> {
+    const response = await http.delete<{ message: string; user_id: string }>(`${this.baseUrl}/${id}`)
+    return response.data
+  }
+
+  // 批量停用用户
+  async batchDisableUsers(userIds: string[]): Promise<{ message: string; affected_count: number }> {
+    const response = await http.patch<{ message: string; affected_count: number }>(`${this.baseUrl}/batch/disable`, {
+      user_ids: userIds
+    })
+    return response.data
+  }
+
+  // 批量软删除用户
+  async batchDeleteUsers(userIds: string[]): Promise<{ message: string; affected_count: number }> {
+    const response = await http.patch<{ message: string; affected_count: number }>(`${this.baseUrl}/batch/delete`, {
+      user_ids: userIds
+    })
     return response.data
   }
 
   // 获取当前用户信息
   async getCurrentUser(): Promise<User> {
     const response = await http.get<User>(`${this.baseUrl}/me`)
+    return response.data
+  }
+
+  // === 回收站相关方法 ===
+  
+  // 获取回收站中的已删除用户
+  async getDeletedUsers(params?: {
+    skip?: number
+    limit?: number
+  }): Promise<User[]> {
+    const response = await http.get<User[]>(`${this.baseUrl}/recycle-bin`, { params })
+    return response.data
+  }
+
+  // 恢复单个用户
+  async restoreUser(id: string): Promise<{ message: string; user_id: string }> {
+    const response = await http.post<{ message: string; user_id: string }>(`${this.baseUrl}/recycle-bin/${id}/restore`)
+    return response.data
+  }
+
+  // 彻底删除单个用户
+  async permanentlyDeleteUser(id: string): Promise<{ message: string; user_id: string }> {
+    const response = await http.delete<{ message: string; user_id: string }>(`${this.baseUrl}/recycle-bin/${id}/permanent`)
+    return response.data
+  }
+
+  // 批量恢复用户
+  async batchRestoreUsers(userIds: string[]): Promise<{ message: string; affected_count: number }> {
+    const response = await http.patch<{ message: string; affected_count: number }>(`${this.baseUrl}/recycle-bin/batch/restore`, {
+      user_ids: userIds
+    })
+    return response.data
+  }
+
+  // 批量彻底删除用户
+  async batchPermanentlyDeleteUsers(userIds: string[]): Promise<{ message: string; affected_count: number }> {
+    const response = await http.request<{ message: string; affected_count: number }>({
+      url: `${this.baseUrl}/recycle-bin/batch/permanent`,
+      method: 'DELETE',
+      body: JSON.stringify({ user_ids: userIds }),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
     return response.data
   }
 }

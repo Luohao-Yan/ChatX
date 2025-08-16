@@ -51,7 +51,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
             }}
             className='text-red-500!'
           >
-            Delete
+            软删除
             <DropdownMenuShortcut>
               <IconTrash size={16} />
             </DropdownMenuShortcut>

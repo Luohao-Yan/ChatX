@@ -34,7 +34,7 @@ class FileCategoryBase(BaseModel):
     description: Optional[str] = None
     color: Optional[str] = None
     icon: Optional[str] = None
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
 
 class FileCategoryCreate(FileCategoryBase):
     @field_validator('name')
@@ -51,12 +51,12 @@ class FileCategoryUpdate(BaseModel):
     description: Optional[str] = None
     color: Optional[str] = None
     icon: Optional[str] = None
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
     is_active: Optional[bool] = None
 
 class FileCategory(FileCategoryBase):
-    id: int
-    owner_id: int
+    id: str
+    owner_id: str
     path: str
     level: int
     is_system: bool
@@ -92,8 +92,8 @@ class FileTagUpdate(BaseModel):
     color: Optional[str] = None
 
 class FileTag(FileTagBase):
-    id: int
-    owner_id: int
+    id: str
+    owner_id: str
     is_system: bool
     usage_count: int
     created_at: datetime
@@ -105,7 +105,7 @@ class FileTag(FileTagBase):
 class FolderBase(BaseModel):
     name: str
     description: Optional[str] = None
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
     visibility: VisibilityLevel = VisibilityLevel.PRIVATE
 
 class FolderCreate(FolderBase):
@@ -121,12 +121,12 @@ class FolderCreate(FolderBase):
 class FolderUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
     visibility: Optional[VisibilityLevel] = None
 
 class Folder(FolderBase):
-    id: int
-    owner_id: int
+    id: str
+    owner_id: str
     path: str
     level: int
     is_system: bool
@@ -147,7 +147,7 @@ class FileBase(BaseModel):
     category: Optional[str] = None
     keywords: Optional[str] = None
     visibility: VisibilityLevel = VisibilityLevel.PRIVATE
-    parent_folder_id: Optional[int] = None
+    parent_folder_id: Optional[str] = None
 
 class FileCreate(FileBase):
     original_name: str
@@ -166,10 +166,10 @@ class FileUpdate(BaseModel):
     category: Optional[str] = None
     keywords: Optional[str] = None
     visibility: Optional[VisibilityLevel] = None
-    parent_folder_id: Optional[int] = None
+    parent_folder_id: Optional[str] = None
 
 class File(FileBase):
-    id: int
+    id: str
     original_name: str
     file_name: str
     file_path: str
@@ -180,7 +180,7 @@ class File(FileBase):
     file_hash: str
     version: int
     status: FileStatus
-    owner_id: int
+    owner_id: str
     download_count: int
     view_count: int
     created_at: datetime
@@ -191,7 +191,7 @@ class File(FileBase):
 
 class FileInfo(BaseModel):
     """文件基本信息（列表显示用）"""
-    id: int
+    id: str
     title: Optional[str]
     original_name: str
     file_size: int
@@ -199,7 +199,7 @@ class FileInfo(BaseModel):
     mime_type: str
     status: FileStatus
     visibility: VisibilityLevel
-    owner_id: int
+    owner_id: str
     created_at: datetime
     download_count: int
     view_count: int
@@ -222,8 +222,8 @@ class FileVersionCreate(FileVersionBase):
     pass
 
 class FileVersion(FileVersionBase):
-    id: int
-    file_id: int
+    id: str
+    file_id: str
     version_number: int
     file_name: str
     file_size: int
@@ -241,7 +241,7 @@ class FileShareBase(BaseModel):
     expires_at: Optional[datetime] = None
 
 class FileShareCreate(FileShareBase):
-    shared_with: Optional[int] = None  # 为空表示公开分享
+    shared_with: Optional[str] = None  # 为空表示公开分享
     password: Optional[str] = None
 
 class FileShareUpdate(BaseModel):
@@ -252,10 +252,10 @@ class FileShareUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 class FileShare(FileShareBase):
-    id: int
-    file_id: int
+    id: str
+    file_id: str
     shared_by: int
-    shared_with: Optional[int]
+    shared_with: Optional[str]
     share_token: Optional[str]
     is_active: bool
     access_count: int
@@ -272,7 +272,7 @@ class FileShare(FileShareBase):
 # 文件评论
 class FileCommentBase(BaseModel):
     content: str
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
 
 class FileCommentCreate(FileCommentBase):
     @field_validator('content')
@@ -297,9 +297,9 @@ class FileCommentUpdate(BaseModel):
         return v.strip()
 
 class FileComment(FileCommentBase):
-    id: int
-    file_id: int
-    user_id: int
+    id: str
+    file_id: str
+    user_id: str
     is_edited: bool
     created_at: datetime
     updated_at: Optional[datetime]
@@ -313,9 +313,9 @@ class FileComment(FileCommentBase):
 
 # 文件活动记录
 class FileActivity(BaseModel):
-    id: int
-    file_id: int
-    user_id: int
+    id: str
+    file_id: str
+    user_id: str
     action: str
     details: Optional[str]
     ip_address: Optional[str]
@@ -333,8 +333,8 @@ class FileSearchParams(BaseModel):
     keyword: Optional[str] = None
     file_type: Optional[str] = None
     mime_type: Optional[str] = None
-    owner_id: Optional[int] = None
-    folder_id: Optional[int] = None
+    owner_id: Optional[str] = None
+    folder_id: Optional[str] = None
     status: Optional[FileStatus] = None
     visibility: Optional[VisibilityLevel] = None
     category: Optional[str] = None
@@ -369,7 +369,7 @@ class FileListResponse(BaseModel):
 
 # 文件上传相关
 class FileUploadResponse(BaseModel):
-    file_id: int
+    file_id: str
     message: str
     file_info: FileInfo
 
@@ -390,7 +390,7 @@ class FileStatistics(BaseModel):
     popular_files: List[FileInfo]
 
 class UserFileStatistics(BaseModel):
-    user_id: int
+    user_id: str
     total_files: int
     total_size: int
     quota_used: float  # 百分比

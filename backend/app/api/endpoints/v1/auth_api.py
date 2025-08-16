@@ -6,7 +6,8 @@ from app.schemas.user_schemas import (
     PasswordReset, PasswordResetConfirm, UserSessionInfo
 )
 from app.models.user_models import User
-from app.utils.deps import get_current_active_user, get_user_service
+from app.utils.deps import get_current_active_user, get_user_service, get_user_repository
+from app.application.middleware.user_cache_service import get_user_cache_service
 
 router = APIRouter()
 
@@ -108,7 +109,7 @@ async def get_user_sessions(
 
 @router.delete("/sessions/{session_id}")
 async def revoke_session(
-    session_id: int,
+    session_id: str,
     current_user: User = Depends(get_current_active_user),
     user_service: UserService = Depends(get_user_service),
 ):
@@ -118,22 +119,33 @@ async def revoke_session(
 
 
 @router.get("/me", response_model=UserSchema)
-async def read_users_me(current_user: User = Depends(get_current_active_user)):
+async def read_users_me(
+    current_user: User = Depends(get_current_active_user),
+    user_repo = Depends(get_user_repository),
+    user_cache = Depends(get_user_cache_service)
+):
     """获取当前用户信息"""
-    # 构建用户响应数据，正确序列化角色和权限
-    user_data = {
-        "id": current_user.id,
-        "email": current_user.email,
-        "username": current_user.username,
-        "full_name": current_user.full_name,
-        "is_active": current_user.is_active,
-        "is_verified": current_user.is_verified,
-        "phone": current_user.phone,
-        "avatar_url": current_user.avatar_url,
-        "created_at": current_user.created_at,
-        "updated_at": current_user.updated_at,
-        "last_login": current_user.last_login,
-        "roles": [role.name for role in current_user.roles] if current_user.roles else [],
-        "permissions": []  # 可以后续添加权限信息
-    }
+    # 优先从缓存获取完整用户信息，支持降级到数据库
+    try:
+        user_data = await user_cache.get_or_fetch_user_profile(current_user.id, user_repo)
+        if user_data:
+            return user_data
+    except Exception as e:
+        # 缓存失败时记录日志但不抛出异常，降级到数据库查询
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"用户缓存获取失败，降级到数据库查询: {e}")
+    
+    # 缓存失败或数据为空时，直接从数据库获取
+    user_data = await user_repo.get_user_with_profile(current_user.id)
+    if not user_data:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="用户信息未找到")
+    
+    # 尝试更新缓存（可选，失败不影响响应）
+    try:
+        await user_cache.cache_user_profile(user_data)
+    except Exception:
+        pass  # 缓存更新失败不影响响应
+    
     return user_data

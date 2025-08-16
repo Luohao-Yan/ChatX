@@ -16,11 +16,11 @@ class SessionCacheService:
         self.active_sessions_key_prefix = "active_sessions"
         self.user_sessions_key_prefix = "user_sessions"
 
-    def _get_session_key(self, session_id: int) -> str:
+    def _get_session_key(self, session_id: str) -> str:
         """获取单个会话的Redis键"""
         return f"session:{session_id}"
 
-    def _get_user_sessions_key(self, user_id: int) -> str:
+    def _get_user_sessions_key(self, user_id: str) -> str:
         """获取用户所有会话的Redis键"""
         return f"{self.user_sessions_key_prefix}:{user_id}"
 
@@ -93,7 +93,7 @@ class SessionCacheService:
             logger.error(f"缓存会话失败: {e}")
             return False
 
-    async def get_session(self, session_id: int) -> Optional[Dict[str, Any]]:
+    async def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
         """从Redis获取会话"""
         try:
             redis_client = await get_redis()
@@ -130,7 +130,7 @@ class SessionCacheService:
             logger.error(f"通过刷新令牌获取会话失败: {e}")
             return None
 
-    async def update_session_last_used(self, session_id: int) -> bool:
+    async def update_session_last_used(self, session_id: str) -> bool:
         """更新会话最后使用时间"""
         try:
             redis_client = await get_redis()
@@ -164,7 +164,7 @@ class SessionCacheService:
             logger.error(f"更新会话最后使用时间失败: {e}")
             return False
 
-    async def deactivate_session(self, session_id: int) -> bool:
+    async def deactivate_session(self, session_id: str) -> bool:
         """停用会话"""
         try:
             redis_client = await get_redis()
@@ -198,7 +198,7 @@ class SessionCacheService:
             logger.error(f"停用会话失败: {e}")
             return False
 
-    async def deactivate_all_user_sessions(self, user_id: int) -> bool:
+    async def deactivate_all_user_sessions(self, user_id: str) -> bool:
         """停用用户所有会话"""
         try:
             redis_client = await get_redis()
@@ -223,10 +223,10 @@ class SessionCacheService:
             for session_key in session_keys:
                 session_id_str = session_key.split(":")[-1]
                 try:
-                    session_id = int(session_id_str)
+                    session_id = session_id_str
                     if await self.deactivate_session(session_id):
                         deleted_count += 1
-                except ValueError:
+                except Exception:
                     continue
 
             logger.info(f"用户 {user_id} 的 {deleted_count} 个会话已从Redis中删除")
@@ -236,7 +236,7 @@ class SessionCacheService:
             logger.error(f"停用用户所有会话失败: {e}")
             return False
 
-    async def get_user_active_sessions(self, user_id: int) -> List[Dict[str, Any]]:
+    async def get_user_active_sessions(self, user_id: str) -> List[Dict[str, Any]]:
         """获取用户活跃会话列表"""
         try:
             redis_client = await get_redis()
@@ -259,11 +259,11 @@ class SessionCacheService:
             for session_key in session_keys:
                 session_id_str = session_key.split(":")[-1]
                 try:
-                    session_id = int(session_id_str)
+                    session_id = session_id_str
                     session_data = await self.get_session(session_id)
                     if session_data and session_data.get("is_active"):
                         sessions.append(session_data)
-                except ValueError:
+                except Exception:
                     continue
 
             return sessions

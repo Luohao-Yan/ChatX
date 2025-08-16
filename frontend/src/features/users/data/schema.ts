@@ -17,12 +17,13 @@ const urlSchema = z.object({
 
 // 用户数据结构 - 与后端 User schema 保持一致
 const userSchema = z.object({
-  id: z.number(),
+  id: z.string(),
   email: z.string().email(),
   username: z.string(),
   full_name: z.string().optional(),
   is_active: z.boolean(),
   is_verified: z.boolean(),
+  is_superuser: z.boolean().optional(),
   phone: z.string().optional(),
   avatar_url: z.string().optional(),
   bio: z.string().optional(),
@@ -33,6 +34,8 @@ const userSchema = z.object({
   updated_at: z.string().datetime().optional(),
   last_login: z.string().datetime().optional(),
   last_activity: z.string().datetime().optional(),
+  deleted_at: z.string().datetime().optional(),
+  deleted_by: z.string().optional(),
   is_online: z.boolean().optional(),
   roles: z.array(z.string()).optional(),
   permissions: z.array(z.string()).optional(),

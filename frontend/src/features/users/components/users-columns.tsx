@@ -56,7 +56,7 @@ export const columns: ColumnDef<User>[] = [
     ),
     meta: {
       className: cn(
-        'sticky md:table-cell left-0 z-10 rounded-tl',
+        'sticky md:table-cell left-0 z-10 rounded-tl w-[50px]',
         'bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted'
       ),
     },
@@ -68,6 +68,27 @@ export const columns: ColumnDef<User>[] = [
         className='translate-y-[2px]'
       />
     ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    id: 'index',
+    header: '序号',
+    cell: ({ row, table }) => {
+      const pagination = table.getState().pagination
+      const index = pagination.pageIndex * pagination.pageSize + row.index + 1
+      return (
+        <div className="w-[60px] text-center text-sm text-muted-foreground">
+          {index}
+        </div>
+      )
+    },
+    meta: {
+      className: cn(
+        'sticky left-[50px] z-10 w-[60px]',
+        'bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted'
+      ),
+    },
     enableSorting: false,
     enableHiding: false,
   },

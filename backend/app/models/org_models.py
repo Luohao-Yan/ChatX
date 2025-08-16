@@ -1,130 +1,193 @@
-"""组织架构相关的数据库模型
+"""
+组织架构、团队和成员关系相关的数据库模型。
 
 包含:
-- UserStatus: 用户状态枚举（在组织模型中使用）
-- Organization: 组织机构模型
-- Department: 部门模型
+- Organization: 组织模型，定义了公司的基本信息和层级关系。
+- Team: 团队模型，在组织内部创建项目或职能团队。
+- UserOrganization: 用户与组织的多对多关系模型。
+- UserTeam: 用户与团队的多对多关系模型。
+- Invitation: 邀请模型，用于邀请用户加入组织或团队。
+- OrgActivity: 组织活动日志模型，记录组织内的重要操作。
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, JSON
-from sqlalchemy.sql import func
-from sqlalchemy.dialects.postgresql import UUID
-from app.infrastructure.persistence.database import Base
 import uuid
+from enum import Enum
 
-__all__ = ['Organization', 'Department']
+from sqlalchemy import (
+    Column, String, Text, DateTime, Boolean, Integer, Index, JSON
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql import func
+
+from app.infrastructure.persistence.database import Base
+
+
+class InvitationStatus(str, Enum):
+    """邀请状态枚举"""
+    PENDING = "pending"    # 待处理
+    ACCEPTED = "accepted"  # 已接受
+    REJECTED = "rejected"  # 已拒绝
+    EXPIRED = "expired"    # 已过期
+    CANCELED = "canceled"  # 已取消
+
 
 class Organization(Base):
-    """组织机构模型
-    
-    管理企业组织架构，支持多级组织层次和第三方系统集成。
-    每个组织属于特定租户，可以包含子组织和部门。
-    
-    主要特性:
-    - 多租户隔离：每个组织属于特定租户
-    - 层级结构：支持无限层级的组织架构
-    - 第三方集成：支持与LDAP、AD等企业系统同步
-    - 软删除：支持组织的回收站功能
-    - 联系信息：完整的组织联系方式管理
-    """
+    """组织模型 - 简化关联依赖"""
     __tablename__ = "sys_organizations"
 
-    # 组织唯一标识ID
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="组织机构唯一标识ID")
-    
-    # 多租户支持（移除外键约束）
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="所属租户ID，用于多租户数据隔离")
-    
-    # 组织基本信息
-    name = Column(String(255), nullable=False, index=True, comment="组织名称")
-    code = Column(String(50), index=True, nullable=False, comment="组织编码，同租户内唯一")
-    description = Column(Text, nullable=True, comment="组织描述信息")
-    logo_url = Column(String(500), nullable=True, comment="组织Logo图片URL")
-    
-    # 组织联系信息
-    address = Column(String(500), nullable=True, comment="组织地址")
-    phone = Column(String(20), nullable=True, comment="联系电话")
-    email = Column(String(100), nullable=True, comment="联系邮箱")
-    website = Column(String(200), nullable=True, comment="官方网站")
-    
-    # 组织层级关系（移除外键约束）
-    parent_id = Column(UUID(as_uuid=True), nullable=True, index=True, comment="父组织ID（null表示顶级组织）")
-    path = Column(String(1000), nullable=False, index=True, comment="组织完整路径（/org1/org2/org3）")
-    level = Column(Integer, default=0, nullable=False, comment="组织层级深度（0为顶级）")
-    sort_order = Column(Integer, default=0, nullable=False, comment="同级组织排序顺序")
-    
-    # 第三方系统集成字段
-    third_party_provider = Column(String(50), nullable=True, comment="第三方系统提供商（LDAP/AD等）")
-    third_party_id = Column(String(255), nullable=True, index=True, comment="第三方系统中的组织ID")
-    third_party_data = Column(JSON, nullable=True, comment="第三方系统返回的扩展数据（JSON格式）")
-    sync_enabled = Column(Boolean, default=False, nullable=False, comment="是否启用与第三方系统同步")
-    last_sync_at = Column(DateTime(timezone=True), nullable=True, comment="最后同步时间")
-    
-    # 组织状态管理
+    id = Column(String(50), primary_key=True, index=True, comment="组织唯一标识")
+    tenant_id = Column(String(50), nullable=False, index=True, comment="所属租户ID")
+    name = Column(String(100), nullable=False, index=True, comment="组织名称")
+    display_name = Column(String(100), nullable=True, comment="组织显示名称")
+    description = Column(Text, nullable=True, comment="组织描述")
+    logo_url = Column(String(255), nullable=True, comment="组织Logo URL")
+    owner_id = Column(String(50), nullable=False, index=True, comment="组织所有者ID")
+    parent_id = Column(String(50), nullable=True, index=True, comment="父组织ID")
+    path = Column(String(500), nullable=False, index=True, comment="组织层级路径")
+    level = Column(Integer, default=0, nullable=False, comment="组织层级")
     is_active = Column(Boolean, default=True, nullable=False, comment="组织是否激活")
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="组织创建时间")
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="组织最后更新时间")
     
-    # 软删除支持字段
-    is_deleted = Column(Boolean, default=False, nullable=False, index=True, comment="是否已软删除")
-    deleted_at = Column(DateTime(timezone=True), nullable=True, comment="删除时间")
-    deleted_by = Column(UUID(as_uuid=True), nullable=True, index=True, comment="执行删除操作的用户ID")
+    # 组织配置
+    settings = Column(JSON, nullable=True, comment="组织配置")
+    member_count = Column(Integer, default=0, comment="成员数量")
     
-    # 注意：移除了关系映射，通过应用层服务管理关系
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="更新时间")
+    
+    # 数据库索引配置
+    __table_args__ = (
+        Index('idx_org_tenant_name', 'tenant_id', 'name', unique=True),
+        Index('idx_org_parent_path', 'parent_id', 'path'),
+        Index('idx_org_owner', 'owner_id'),
+        {"comment": "组织架构表，管理公司的层级组织结构"}
+    )
 
-class Department(Base):
-    """部门模型
-    
-    管理组织内部的部门结构，支持多级部门层次和第三方系统集成。
-    每个部门属于特定组织，可以设置部门负责人和联系方式。
-    
-    主要特性:
-    - 组织关联：每个部门属于特定组织
-    - 层级结构：支持多级部门层次
-    - 负责人管理：支持设置部门经理和负责人
-    - 第三方集成：支持与企业HR系统同步
-    - 软删除：支持部门的回收站功能
-    """
-    __tablename__ = "sys_departments"
 
-    # 部门唯一标识ID
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True, comment="部门唯一标识ID")
+class Team(Base):
+    """团队模型 - 简化关联依赖"""
+    __tablename__ = "sys_teams"
+
+    id = Column(String(50), primary_key=True, index=True, comment="团队唯一标识")
+    tenant_id = Column(String(50), nullable=False, index=True, comment="所属租户ID")
+    organization_id = Column(String(50), nullable=False, index=True, comment="所属组织ID")
+    name = Column(String(100), nullable=False, index=True, comment="团队名称")
+    description = Column(Text, nullable=True, comment="团队描述")
+    creator_id = Column(String(50), nullable=False, comment="创建者ID")
+    parent_id = Column(String(50), nullable=True, index=True, comment="父团队ID")
+    path = Column(String(500), nullable=False, index=True, comment="团队层级路径")
+    level = Column(Integer, default=0, nullable=False, comment="团队层级")
+    is_active = Column(Boolean, default=True, nullable=False, comment="团队是否激活")
     
-    # 部门基本信息
-    name = Column(String(255), nullable=False, index=True, comment="部门名称")
-    code = Column(String(50), nullable=False, index=True, comment="部门编码，组织内唯一")
-    description = Column(Text, nullable=True, comment="部门描述信息")
+    # 团队配置
+    settings = Column(JSON, nullable=True, comment="团队配置")
+    member_count = Column(Integer, default=0, comment="成员数量")
     
-    # 部门组织关系（移除外键约束）
-    org_id = Column(UUID(as_uuid=True), nullable=False, index=True, comment="所属组织ID")
-    parent_id = Column(UUID(as_uuid=True), nullable=True, index=True, comment="父部门ID（null表示顶级部门）")
-    path = Column(String(1000), nullable=False, index=True, comment="部门完整路径（/dept1/dept2/dept3）")
-    level = Column(Integer, default=0, nullable=False, comment="部门层级深度（0为顶级）")
-    sort_order = Column(Integer, default=0, nullable=False, comment="同级部门排序顺序")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="更新时间")
     
-    # 部门负责人（移除外键约束，改为UUID）
-    manager_id = Column(UUID(as_uuid=True), nullable=True, index=True, comment="部门经理/负责人用户ID")
+    # 数据库索引配置
+    __table_args__ = (
+        Index('idx_team_org_name', 'organization_id', 'name', unique=True),
+        Index('idx_team_tenant', 'tenant_id'),
+        Index('idx_team_parent_path', 'parent_id', 'path'),
+        {"comment": "团队管理表，管理组织内部的项目或职能团队"}
+    )
+
+
+class UserOrganization(Base):
+    """用户与组织关系模型 - 优化关联"""
+    __tablename__ = "sys_user_organization"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True, comment="租户ID")
+    user_id = Column(String(50), nullable=False, index=True, comment="用户ID")
+    organization_id = Column(String(50), nullable=False, index=True, comment="组织ID")
+    role = Column(String(50), nullable=False, default="member", comment="用户在组织中的角色")
+    permissions = Column(JSON, nullable=True, comment="用户在组织中的权限")
+    is_admin = Column(Boolean, default=False, nullable=False, comment="是否为组织管理员")
+    is_active = Column(Boolean, default=True, nullable=False, comment="关联是否激活")
+    joined_at = Column(DateTime(timezone=True), server_default=func.now(), comment="加入时间")
     
-    # 部门联系信息
-    phone = Column(String(20), nullable=True, comment="部门联系电话")
-    email = Column(String(100), nullable=True, comment="部门联系邮箱")
-    address = Column(String(500), nullable=True, comment="部门办公地址")
+    # 数据库索引配置
+    __table_args__ = (
+        Index('idx_user_org_unique', 'user_id', 'organization_id', unique=True),
+        Index('idx_user_org_tenant', 'tenant_id', 'organization_id'),
+        Index('idx_user_org_role', 'organization_id', 'role'),
+        {"comment": "用户组织关系表，管理用户与组织的多对多关联"}
+    )
+
+
+class UserTeam(Base):
+    """用户与团队关系模型 - 优化关联"""
+    __tablename__ = "sys_user_team"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True, comment="租户ID")
+    user_id = Column(String(50), nullable=False, index=True, comment="用户ID")
+    team_id = Column(String(50), nullable=False, index=True, comment="团队ID")
+    role = Column(String(50), nullable=False, default="member", comment="用户在团队中的角色")
+    permissions = Column(JSON, nullable=True, comment="用户在团队中的权限")
+    is_active = Column(Boolean, default=True, nullable=False, comment="关联是否激活")
+    joined_at = Column(DateTime(timezone=True), server_default=func.now(), comment="加入时间")
     
-    # 第三方系统集成字段
-    third_party_provider = Column(String(50), nullable=True, comment="第三方系统提供商（HR系统等）")
-    third_party_id = Column(String(255), nullable=True, index=True, comment="第三方系统中的部门ID")
-    third_party_data = Column(JSON, nullable=True, comment="第三方系统返回的扩展数据（JSON格式）")
-    sync_enabled = Column(Boolean, default=False, nullable=False, comment="是否启用与第三方系统同步")
-    last_sync_at = Column(DateTime(timezone=True), nullable=True, comment="最后同步时间")
+    # 数据库索引配置
+    __table_args__ = (
+        Index('idx_user_team_unique', 'user_id', 'team_id', unique=True),
+        Index('idx_user_team_tenant', 'tenant_id', 'team_id'),
+        Index('idx_user_team_role', 'team_id', 'role'),
+        {"comment": "用户团队关系表，管理用户与团队的多对多关联"}
+    )
+
+
+class Invitation(Base):
+    """邀请模型 - 简化关联"""
+    __tablename__ = "sys_invitations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, comment="邀请ID")
+    tenant_id = Column(String(50), nullable=False, index=True, comment="租户ID")
+    organization_id = Column(String(50), nullable=True, index=True, comment="组织ID")
+    team_id = Column(String(50), nullable=True, index=True, comment="团队ID")
+    inviter_id = Column(String(50), nullable=False, index=True, comment="邀请人ID")
+    invitee_id = Column(String(50), nullable=True, index=True, comment="被邀请人ID")
+    invitee_email = Column(String(255), nullable=False, index=True, comment="被邀请人邮箱")
+    invite_type = Column(String(20), default='organization', comment="邀请类型")
+    role = Column(String(50), default="member", nullable=False, comment="被邀请的角色")
+    permissions = Column(JSON, nullable=True, comment="邀请权限")
+    status = Column(String(20), default=InvitationStatus.PENDING, nullable=False, comment="邀请状态")
+    token = Column(String(100), nullable=False, unique=True, index=True, comment="邀请令牌")
+    expires_at = Column(DateTime(timezone=True), nullable=False, comment="过期时间")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="更新时间")
     
-    # 部门状态管理
-    is_active = Column(Boolean, default=True, nullable=False, comment="部门是否激活")
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="部门创建时间")
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="部门最后更新时间")
+    # 数据库索引配置
+    __table_args__ = (
+        Index('idx_invitation_email_status', 'invitee_email', 'status'),
+        Index('idx_invitation_tenant_org', 'tenant_id', 'organization_id'),
+        Index('idx_invitation_expires', 'expires_at', 'status'),
+        {"comment": "邀请管理表，用于邀请用户加入组织或团队"}
+    )
+
+
+class OrgActivity(Base):
+    """组织活动日志模型 - 简化为日志表"""
+    __tablename__ = "sys_org_activities"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True, comment="租户ID")
+    organization_id = Column(String(50), nullable=False, index=True, comment="组织ID")
+    user_id = Column(String(50), nullable=False, index=True, comment="操作用户ID")
+    action = Column(String(100), nullable=False, comment="操作类型")
+    resource_type = Column(String(50), nullable=True, comment="资源类型")
+    resource_id = Column(String(100), nullable=True, comment="资源ID")
+    details = Column(JSON, nullable=True, comment="操作详情JSON")
+    ip_address = Column(String(45), nullable=True, comment="操作IP")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
     
-    # 软删除支持字段
-    is_deleted = Column(Boolean, default=False, nullable=False, index=True, comment="是否已软删除")
-    deleted_at = Column(DateTime(timezone=True), nullable=True, comment="删除时间")
-    deleted_by = Column(UUID(as_uuid=True), nullable=True, index=True, comment="执行删除操作的用户ID")
-    
-    # 注意：移除了关系映射，通过应用层服务管理关系
+    # 数据库索引配置
+    __table_args__ = (
+        Index('idx_org_activity_time', 'organization_id', 'created_at'),
+        Index('idx_org_activity_tenant', 'tenant_id', 'created_at'),
+        Index('idx_org_activity_user', 'user_id', 'created_at'),
+        Index('idx_org_activity_action', 'action', 'created_at'),
+        {"comment": "组织活动日志表，记录组织内的重要操作和变更"}
+    )

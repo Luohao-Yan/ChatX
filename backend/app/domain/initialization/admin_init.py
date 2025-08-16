@@ -4,94 +4,80 @@
 """
 
 from sqlalchemy.orm import Session
-from app.models.user_models import User, Role, UserStatus
-from app.models.tenant_models import Tenant
-from app.models.org_models import Organization, Department
+from app.models.user_models import User, UserProfile, UserStatus
+from app.models.tenant_models import Tenant, TenantStatus
+from app.models.org_models import Organization
+from app.models.rbac_models import Role, Permission
+from app.models.relationship_models import user_role_association
 from app.core.config import settings
 from app.infrastructure.securities.security import get_password_hash
 from app.domain.initialization.permissions import DefaultRoles
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
 
 def create_default_tenant(db: Session) -> Tenant:
     """创建默认租户"""
-    default_tenant = db.query(Tenant).filter(Tenant.slug == "default").first()
+    # 使用name字段查找默认租户
+    default_tenant = db.query(Tenant).filter(Tenant.name == "默认租户").first()
 
     if not default_tenant:
         logger.info("创建默认租户...")
+        tenant_id = str(uuid.uuid4())[:8]  # 生成简短ID
         default_tenant = Tenant(
+            id=tenant_id,
             name="默认租户",
-            slug="default",
-            admin_email=settings.SUPER_ADMIN_EMAIL,
-            admin_name=settings.SUPER_ADMIN_FULL_NAME,
-            status="active",
+            display_name="默认租户",
+            schema_name="default_tenant",
+            description="系统默认租户",
+            owner_id="",  # 稍后更新为super_admin的ID
+            status=TenantStatus.ACTIVE,
+            is_active=True,
         )
         db.add(default_tenant)
-        db.commit()
-        db.refresh(default_tenant)
+        db.flush()  # 获取ID但不提交
         logger.info(f"默认租户创建成功: {default_tenant.name}")
 
     return default_tenant
 
 
-def create_default_organization(db: Session, tenant: Tenant) -> Organization:
+def create_default_organization(db: Session, tenant: Tenant, owner_id: str) -> Organization:
     """创建默认组织"""
     default_org = (
         db.query(Organization)
-        .filter(Organization.tenant_id == tenant.id, Organization.code == "default")
+        .filter(Organization.tenant_id == tenant.id, Organization.name == "默认组织")
         .first()
     )
 
     if not default_org:
         logger.info("创建默认组织...")
+        org_id = str(uuid.uuid4())[:8]  # 生成简短ID
         default_org = Organization(
+            id=org_id,
             tenant_id=tenant.id,
             name="默认组织",
-            code="default",
+            display_name="默认组织",
             description="系统默认组织",
-            level=1,
+            owner_id=owner_id,
+            level=0,
             path="/default/",
             is_active=True,
         )
         db.add(default_org)
-        db.commit()
-        db.refresh(default_org)
+        db.flush()  # 不立即提交，等待所有操作完成
         logger.info(f"默认组织创建成功: {default_org.name}")
 
     return default_org
 
 
-def create_default_department(db: Session, org: Organization) -> Department:
-    """创建默认部门"""
-    default_dept = (
-        db.query(Department)
-        .filter(Department.org_id == org.id, Department.code == "admin")
-        .first()
-    )
-
-    if not default_dept:
-        logger.info("创建默认管理部门...")
-        default_dept = Department(
-            org_id=org.id,
-            name="系统管理部",
-            code="admin",
-            description="系统管理员部门",
-            level=1,
-            path="/admin/",
-            is_active=True,
-        )
-        db.add(default_dept)
-        db.commit()
-        db.refresh(default_dept)
-        logger.info(f"默认部门创建成功: {default_dept.name}")
-
-    return default_dept
+# Department model doesn't exist in the updated structure
+# Removing department creation function
 
 
 def create_super_admin_user(
-    db: Session, tenant: Tenant, org: Organization, dept: Department
+    db: Session, tenant: Tenant
 ) -> User:
     """创建超级管理员用户"""
     # 检查是否已存在超级管理员
@@ -118,53 +104,97 @@ def create_super_admin_user(
 
     logger.info(f"创建超级管理员用户: {settings.SUPER_ADMIN_EMAIL}")
 
+    # 生成用户ID
+    user_id = str(uuid.uuid4())
+
     # 创建超级管理员用户
     super_admin = User(
-        tenant_id=tenant.id,
-        org_id=org.id,
-        department_id=dept.id,
+        id=user_id,
         email=settings.SUPER_ADMIN_EMAIL,
         username=username,
-        full_name=settings.SUPER_ADMIN_FULL_NAME,
         hashed_password=get_password_hash(settings.SUPER_ADMIN_PASSWORD),
+        status=UserStatus.ACTIVE,
+        is_superuser=True,
+        is_staff=True,
         is_active=True,
-        is_verified=True,  # 超级管理员自动验证
-        is_superuser=True,  # 设置为超级管理员
-        status=UserStatus.ACTIVE,  # 使用枚举值
+        is_verified=True,  # 超级管理员默认邮箱已验证
+        current_tenant_id=tenant.id,
+        tenant_ids=[tenant.id],
+        # 注意：roles和permissions将由RBAC系统初始化时设置，这里不预设
     )
 
     db.add(super_admin)
+    db.flush()  # 获取ID但不提交
+    
+    # 创建对应的用户信息记录
+    admin_profile = UserProfile(
+        id=str(uuid.uuid4()),
+        user_id=super_admin.id,
+        nickname="超级管理员",
+        full_name="System Administrator",
+        preferred_language="zh-CN",
+        timezone="Asia/Shanghai",
+    )
+    
+    db.add(admin_profile)
     db.commit()
     db.refresh(super_admin)
 
     logger.info(f"超级管理员用户创建成功: {super_admin.email} (ID: {super_admin.id})")
+    logger.info("超级管理员用户信息记录创建成功")
     return super_admin
 
 
 def assign_super_admin_role(db: Session, user: User, tenant: Tenant):
-    """为超级管理员分配角色"""
-    # 获取超级管理员角色
-    super_admin_role = (
-        db.query(Role)
-        .filter(Role.tenant_id == tenant.id, Role.name == DefaultRoles.SUPER_ADMIN)
-        .first()
-    )
-
-    if not super_admin_role:
-        logger.error("超级管理员角色不存在，请先初始化RBAC系统")
+    """为超级管理员分配完整的角色和权限"""
+    logger.info(f"开始为超级管理员 {user.email} 分配角色和权限...")
+    
+    try:
+        # 1. 获取超级管理员角色
+        super_admin_role = (
+            db.query(Role)
+            .filter(Role.tenant_id == tenant.id, Role.name == DefaultRoles.SUPER_ADMIN)
+            .first()
+        )
+        
+        if super_admin_role:
+            # 2. 检查关联表中是否已有角色分配
+            existing_assignment = db.execute(
+                user_role_association.select().where(
+                    user_role_association.c.user_id == str(user.id),
+                    user_role_association.c.role_id == super_admin_role.id
+                )
+            ).fetchone()
+            
+            if not existing_assignment:
+                # 通过关联表分配角色
+                db.execute(
+                    user_role_association.insert().values(
+                        id=uuid.uuid4(),
+                        tenant_id=tenant.id,
+                        user_id=str(user.id),
+                        role_id=super_admin_role.id,
+                        granted_by="system"
+                    )
+                )
+            
+            # 3. 更新用户模型的角色JSON字段
+            user.roles = ["super_admin"]
+            
+            # 4. 获取所有权限名称并更新用户模型
+            all_permissions = db.query(Permission).filter(Permission.is_active == True).all()
+            user.permissions = [perm.name for perm in all_permissions]
+            
+            db.commit()
+            logger.info(f"✅ 为超级管理员 {user.email} 分配了 {len(all_permissions)} 个权限")
+            return True
+        else:
+            logger.warning("⚠️ 超级管理员角色不存在，权限分配将稍后处理")
+            return True  # 不算失败，因为RBAC系统可能还没初始化
+            
+    except Exception as e:
+        logger.error(f"❌ 为超级管理员 {user.email} 分配权限失败: {e}")
         return False
-
-    # 检查是否已经分配了角色
-    if super_admin_role in user.roles:
-        logger.info(f"用户 {user.email} 已拥有超级管理员角色")
-        return True
-
-    # 分配超级管理员角色
-    user.roles.append(super_admin_role)
-    db.commit()
-
-    logger.info(f"为用户 {user.email} 分配超级管理员角色成功")
-    return True
 
 
 def initialize_super_admin(db: Session) -> bool:
@@ -175,16 +205,22 @@ def initialize_super_admin(db: Session) -> bool:
         # 1. 创建默认租户
         tenant = create_default_tenant(db)
 
-        # 2. 创建默认组织
-        org = create_default_organization(db, tenant)
+        # 2. 创建超级管理员用户
+        super_admin = create_super_admin_user(db, tenant)
+        
+        # 更新租户的owner_id
+        tenant.owner_id = str(super_admin.id)
 
-        # 3. 创建默认部门
-        dept = create_default_department(db, org)
+        # 3. 创建默认组织（使用super_admin的ID作为owner_id）
+        org = create_default_organization(db, tenant, str(super_admin.id))
+        
+        # 提交所有更改
+        db.commit()
+        db.refresh(super_admin)
+        db.refresh(tenant)
+        db.refresh(org)
 
-        # 4. 创建超级管理员用户
-        super_admin = create_super_admin_user(db, tenant, org, dept)
-
-        # 5. 分配超级管理员角色
+        # 4. 分配超级管理员角色
         role_assigned = assign_super_admin_role(db, super_admin, tenant)
 
         if role_assigned:
@@ -211,12 +247,8 @@ def check_super_admin_exists(db: Session) -> bool:
     )
 
     if super_admin:
-        # 检查是否有超级管理员角色
-        super_admin_role = (
-            db.query(Role).filter(Role.name == DefaultRoles.SUPER_ADMIN).first()
-        )
-
-        if super_admin_role and super_admin_role in super_admin.roles:
+        # Check if user is superuser
+        if super_admin.is_superuser:
             return True
 
     return False
@@ -236,9 +268,8 @@ def get_super_admin_info(db: Session) -> dict:
         "id": super_admin.id,
         "email": super_admin.email,
         "username": super_admin.username,
-        "full_name": super_admin.full_name,
         "is_active": super_admin.is_active,
-        "is_verified": super_admin.is_verified,
         "created_at": super_admin.created_at,
-        "roles": [role.name for role in super_admin.roles],
+        "is_superuser": super_admin.is_superuser,
+        "current_tenant_id": super_admin.current_tenant_id,
     }

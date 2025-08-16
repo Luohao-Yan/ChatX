@@ -27,7 +27,7 @@ class UserDomainService:
         return True, None
     
     @staticmethod
-    def can_user_be_deleted(user: User, operator_id: int) -> Tuple[bool, Optional[str]]:
+    def can_user_be_deleted(user: User, operator_id: str) -> Tuple[bool, Optional[str]]:
         """检查用户是否可以被删除"""
         # 不能删除自己
         if user.id == operator_id:
@@ -38,8 +38,33 @@ class UserDomainService:
             return False, "不能删除超级管理员账户"
         
         # 已删除的用户不能再次删除
-        if user.is_deleted:
+        if user.deleted_at is not None:
             return False, "用户已被删除"
+        
+        # 删除前必须先停用用户
+        if user.is_active:
+            return False, "必须先停用用户才能删除"
+        
+        return True, None
+    
+    @staticmethod
+    def can_user_be_disabled(user: User, operator_id: str) -> Tuple[bool, Optional[str]]:
+        """检查用户是否可以被停用"""
+        # 不能停用自己
+        if user.id == operator_id:
+            return False, "不能停用自己的账户"
+        
+        # 超级管理员不能被停用
+        if user.is_superuser:
+            return False, "不能停用超级管理员账户"
+        
+        # 已删除的用户不能停用
+        if user.deleted_at is not None:
+            return False, "已删除的用户无法停用"
+        
+        # 已经停用的用户不需要再次停用
+        if not user.is_active:
+            return False, "用户已处于停用状态"
         
         return True, None
     
@@ -69,13 +94,11 @@ class UserDomainService:
         return security.verify_password(password, user.hashed_password)
     
     @staticmethod
-    def prepare_user_for_deletion(user: User, deleted_by: int) -> dict:
-        """准备用户删除数据"""
+    def prepare_user_for_deletion(user: User, deleted_by: str) -> dict:
+        """准备用户删除数据 - 软删除"""
         return {
-            "is_deleted": True,
             "deleted_at": datetime.now(timezone.utc),
             "deleted_by": deleted_by,
-            "status": UserStatus.DELETED,
             "is_active": False
         }
     
@@ -85,7 +108,7 @@ class UserDomainService:
         return security.get_password_hash(password)
     
     @staticmethod
-    def can_user_access_user_data(current_user: User, target_user_id: int) -> bool:
+    def can_user_access_user_data(current_user: User, target_user_id: str) -> bool:
         """检查用户是否可以访问其他用户数据"""
         # 可以访问自己的数据
         if current_user.id == target_user_id:

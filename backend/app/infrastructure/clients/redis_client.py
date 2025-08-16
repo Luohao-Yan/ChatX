@@ -116,4 +116,6 @@ redis_client = RedisClient()
 
 async def get_redis() -> RedisClient:
     """获取Redis客户端"""
+    if not redis_client.redis_client:
+        await redis_client.connect()
     return redis_client

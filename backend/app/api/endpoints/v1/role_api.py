@@ -53,7 +53,7 @@ async def get_role_hierarchy(
 @router.get("/{role_id}", response_model=RoleSchema)
 @require_permission(Permissions.ROLE_READ)
 async def get_role(
-    role_id: int,
+    role_id: str,
     current_user: User = Depends(get_current_active_user),
     role_service: RoleApplicationService = Depends(get_role_service),
 ):
@@ -67,7 +67,7 @@ async def get_role(
 @router.put("/{role_id}", response_model=RoleSchema)
 @require_permission(Permissions.ROLE_UPDATE)
 async def update_role(
-    role_id: int,
+    role_id: str,
     role_update: RoleUpdate,
     current_user: User = Depends(get_current_active_user),
     role_service: RoleApplicationService = Depends(get_role_service),
@@ -82,7 +82,7 @@ async def update_role(
 @router.delete("/{role_id}")
 @require_permission(Permissions.ROLE_DELETE)
 async def delete_role(
-    role_id: int,
+    role_id: str,
     current_user: User = Depends(get_current_active_user),
     role_service: RoleApplicationService = Depends(get_role_service),
 ):
@@ -94,7 +94,7 @@ async def delete_role(
 @router.post("/{role_id}/users")
 @require_permission(Permissions.ROLE_ASSIGN)
 async def assign_user_role(
-    role_id: int,
+    role_id: str,
     assign_data: UserRoleAssign,
     current_user: User = Depends(get_current_active_user),
     role_service: RoleApplicationService = Depends(get_role_service),
@@ -110,8 +110,8 @@ async def assign_user_role(
 @router.delete("/{role_id}/users/{user_id}")
 @require_permission(Permissions.ROLE_ASSIGN)
 async def revoke_user_role(
-    role_id: int,
-    user_id: int,
+    role_id: str,
+    user_id: str,
     current_user: User = Depends(get_current_active_user),
     role_service: RoleApplicationService = Depends(get_role_service),
 ):
@@ -123,7 +123,7 @@ async def revoke_user_role(
 @router.get("/{role_id}/users")
 @require_permission(Permissions.ROLE_READ)
 async def get_role_users(
-    role_id: int,
+    role_id: str,
     current_user: User = Depends(get_current_active_user),
     role_service: RoleApplicationService = Depends(get_role_service),
 ):
