@@ -44,6 +44,12 @@ class OrganizationResponse(OrganizationBase):
     member_count: int
     created_at: datetime
     updated_at: Optional[datetime]
+    deleted_at: Optional[datetime] = None
+    deleted_by: Optional[str] = None
+    
+    # 计算字段
+    child_count: Optional[int] = Field(None, description="子组织数量")
+    owner_info: Optional[Dict[str, Any]] = Field(None, description="拥有者信息")
     
     class Config:
         from_attributes = True

@@ -66,6 +66,13 @@ def create_default_permissions(db: Session) -> dict:
         {"name": Permissions.RECYCLE_BIN_RESTORE, "display_name": "恢复回收站项目", "resource_type": "recycle_bin", "action": "restore", "category": "回收站管理"},
         {"name": Permissions.RECYCLE_BIN_DELETE, "display_name": "永久删除", "resource_type": "recycle_bin", "action": "delete", "category": "回收站管理"},
         {"name": Permissions.RECYCLE_BIN_MANAGE, "display_name": "管理回收站", "resource_type": "recycle_bin", "action": "manage", "category": "回收站管理"},
+        
+        # 租户管理权限
+        {"name": Permissions.TENANT_CREATE, "display_name": "创建租户", "resource_type": "tenant", "action": "create", "category": "租户管理"},
+        {"name": Permissions.TENANT_READ, "display_name": "查看租户", "resource_type": "tenant", "action": "read", "category": "租户管理"},
+        {"name": Permissions.TENANT_UPDATE, "display_name": "更新租户", "resource_type": "tenant", "action": "update", "category": "租户管理"},
+        {"name": Permissions.TENANT_DELETE, "display_name": "删除租户", "resource_type": "tenant", "action": "delete", "category": "租户管理"},
+        {"name": Permissions.TENANT_MANAGE, "display_name": "管理租户", "resource_type": "tenant", "action": "manage", "category": "租户管理"},
     ]
     
     created_permissions = {}

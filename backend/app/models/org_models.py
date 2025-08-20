@@ -53,12 +53,15 @@ class Organization(Base):
     
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), comment="更新时间")
+    deleted_at = Column(DateTime(timezone=True), nullable=True, comment="删除时间")
+    deleted_by = Column(String(50), nullable=True, comment="删除者ID")
     
     # 数据库索引配置
     __table_args__ = (
         Index('idx_org_tenant_name', 'tenant_id', 'name', unique=True),
         Index('idx_org_parent_path', 'parent_id', 'path'),
         Index('idx_org_owner', 'owner_id'),
+        Index('idx_org_deleted', 'deleted_at', 'tenant_id'),
         {"comment": "组织架构表，管理公司的层级组织结构"}
     )
 

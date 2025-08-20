@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/dialog'
 import { IconTrash, IconRestore, IconUserX } from '@tabler/icons-react'
 import { toast } from 'sonner'
-import { User } from '@/features/users/data/schema'
-import { useUsersApi } from '@/features/users/services/users-api'
+import { User } from '@/types/entities/user'
+import { usersAPI } from '@/services/api/users'
 
 interface RecycleBinDialogProps {
   open: boolean
@@ -27,7 +27,7 @@ export function RecycleBinDialog({ open, onOpenChange, onUserRestored }: Recycle
   const [loading, setLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
   
-  const userApi = useUsersApi()
+  // 使用 usersAPI 实例
 
   // 当弹窗打开时加载数据
   useEffect(() => {
@@ -39,7 +39,7 @@ export function RecycleBinDialog({ open, onOpenChange, onUserRestored }: Recycle
   const loadDeletedUsers = async () => {
     try {
       setLoading(true)
-      const deletedUsers = await userApi.getDeletedUsers()
+      const deletedUsers = await usersAPI.getDeletedUsers()
       setDeletedUsers(deletedUsers)
     } catch (error) {
       toast.error('加载回收站数据失败')
@@ -68,10 +68,10 @@ export function RecycleBinDialog({ open, onOpenChange, onUserRestored }: Recycle
     try {
       setProcessing(true)
       if (userIds.length === 1) {
-        const result = await userApi.restoreUser(userIds[0])
+        const result = await usersAPI.restoreUser(userIds[0])
         toast.success(result.message)
       } else {
-        const result = await userApi.batchRestoreUsers(userIds)
+        const result = await usersAPI.batchRestoreUsers(userIds)
         toast.success(result.message)
       }
       setSelectedUsers([])
@@ -85,17 +85,22 @@ export function RecycleBinDialog({ open, onOpenChange, onUserRestored }: Recycle
   }
 
   const handlePermanentDelete = async (userIds: string[]) => {
-    if (!confirm(`确定要彻底删除选中的 ${userIds.length} 个用户吗？此操作不可撤销！`)) {
+    const userCount = userIds.length
+    const confirmMessage = userCount === 1 
+      ? `确定要彻底删除此用户吗？\n\n⚠️ 此操作将：\n• 永久删除用户账户\n• 删除所有用户资料和设置\n• 删除用户的会话和活动记录\n• 删除用户的权限和角色关联\n• 删除用户创建的文件评论\n\n此操作不可撤销，请谨慎操作！`
+      : `确定要彻底删除选中的 ${userCount} 个用户吗？\n\n⚠️ 此操作将：\n• 永久删除所有选中的用户账户\n• 删除所有用户资料和设置\n• 删除用户的会话和活动记录\n• 删除用户的权限和角色关联\n• 删除用户创建的文件评论\n\n此操作不可撤销，请谨慎操作！`
+    
+    if (!confirm(confirmMessage)) {
       return
     }
 
     try {
       setProcessing(true)
       if (userIds.length === 1) {
-        const result = await userApi.permanentlyDeleteUser(userIds[0])
+        const result = await usersAPI.permanentlyDeleteUser(userIds[0])
         toast.success(result.message)
       } else {
-        const result = await userApi.batchPermanentlyDeleteUsers(userIds)
+        const result = await usersAPI.batchPermanentlyDeleteUsers(userIds)
         toast.success(result.message)
       }
       setSelectedUsers([])
@@ -112,7 +117,7 @@ export function RecycleBinDialog({ open, onOpenChange, onUserRestored }: Recycle
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-6xl flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <IconUserX className="h-5 w-5" />

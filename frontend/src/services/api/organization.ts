@@ -2,7 +2,7 @@
  * 组织管理API服务
  */
 
-import { http } from '../http'
+import { http } from '../http/index'
 
 // 组织相关类型定义
 export interface Organization {
@@ -18,9 +18,10 @@ export interface Organization {
   level: number
   is_active: boolean
   member_count: number
-  settings?: Record<string, any>
+  settings?: Record<string, unknown>
   created_at: string
   updated_at?: string
+  deleted_at?: string
 }
 
 export interface OrganizationCreate {
@@ -29,7 +30,7 @@ export interface OrganizationCreate {
   description?: string
   logo_url?: string
   parent_id?: string
-  settings?: Record<string, any>
+  settings?: Record<string, unknown>
 }
 
 export interface OrganizationUpdate {
@@ -38,7 +39,7 @@ export interface OrganizationUpdate {
   description?: string
   logo_url?: string
   parent_id?: string
-  settings?: Record<string, any>
+  settings?: Record<string, unknown>
   is_active?: boolean
 }
 
@@ -54,7 +55,7 @@ export interface Team {
   level: number
   is_active: boolean
   member_count: number
-  settings?: Record<string, any>
+  settings?: Record<string, unknown>
   created_at: string
   updated_at?: string
 }
@@ -64,7 +65,7 @@ export interface TeamCreate {
   description?: string
   organization_id: string
   parent_id?: string
-  settings?: Record<string, any>
+  settings?: Record<string, unknown>
 }
 
 export interface OrganizationTreeNode {
@@ -91,19 +92,21 @@ export interface ListParams {
   limit?: number
   parent_id?: string
   search?: string
+  [key: string]: string | number | undefined
 }
 
 export interface TeamListParams {
   organization_id?: string
   skip?: number
   limit?: number
+  [key: string]: string | number | undefined
 }
 
 export interface UserOrganizationCreate {
   user_id: string
   organization_id: string
   role?: string
-  permissions?: Record<string, any>
+  permissions?: Record<string, unknown>
   is_admin?: boolean
 }
 
@@ -119,7 +122,7 @@ export class OrganizationAPI {
    * 创建组织
    */
   async createOrganization(data: OrganizationCreate): Promise<Organization> {
-    const response = await http.post(`${this.baseURL}/organizations`, data)
+    const response = await http.post<Organization>(`${this.baseURL}/organizations`, data)
     return response.data
   }
 
@@ -127,7 +130,7 @@ export class OrganizationAPI {
    * 获取组织列表
    */
   async getOrganizations(params: ListParams = {}): Promise<Organization[]> {
-    const response = await http.get(`${this.baseURL}/organizations`, { params })
+    const response = await http.get<Organization[]>(`${this.baseURL}/organizations`, { params })
     return response.data
   }
 
@@ -135,7 +138,7 @@ export class OrganizationAPI {
    * 获取组织详情
    */
   async getOrganization(orgId: string): Promise<Organization> {
-    const response = await http.get(`${this.baseURL}/organizations/${orgId}`)
+    const response = await http.get<Organization>(`${this.baseURL}/organizations/${orgId}`)
     return response.data
   }
 
@@ -143,7 +146,7 @@ export class OrganizationAPI {
    * 更新组织
    */
   async updateOrganization(orgId: string, data: OrganizationUpdate): Promise<Organization> {
-    const response = await http.put(`${this.baseURL}/organizations/${orgId}`, data)
+    const response = await http.put<Organization>(`${this.baseURL}/organizations/${orgId}`, data)
     return response.data
   }
 
@@ -151,7 +154,7 @@ export class OrganizationAPI {
    * 删除组织
    */
   async deleteOrganization(orgId: string): Promise<{ message: string }> {
-    const response = await http.delete(`${this.baseURL}/organizations/${orgId}`)
+    const response = await http.delete<{ message: string }>(`${this.baseURL}/organizations/${orgId}`)
     return response.data
   }
 
@@ -160,7 +163,7 @@ export class OrganizationAPI {
    */
   async getOrganizationTree(rootId?: string): Promise<OrganizationTreeNode[]> {
     const params = rootId ? { root_id: rootId } : {}
-    const response = await http.get(`${this.baseURL}/organizations/tree`, { params })
+    const response = await http.get<OrganizationTreeNode[]>(`${this.baseURL}/organizations/tree`, { params })
     return response.data
   }
 
@@ -168,7 +171,43 @@ export class OrganizationAPI {
    * 获取组织统计信息
    */
   async getOrganizationStats(): Promise<OrganizationStats> {
-    const response = await http.get(`${this.baseURL}/organizations/stats`)
+    const response = await http.get<OrganizationStats>(`${this.baseURL}/organizations/stats`)
+    return response.data
+  }
+
+  // ==================== 回收站管理 ====================
+
+  /**
+   * 获取已删除的组织列表
+   */
+  async getDeletedOrganizations(params: ListParams = {}): Promise<Organization[]> {
+    const response = await http.get<Organization[]>(`${this.baseURL}/organizations/recycle-bin`, { params })
+    return response.data
+  }
+
+  /**
+   * 恢复组织
+   */
+  async restoreOrganization(orgId: string): Promise<{ message: string }> {
+    const response = await http.post<{ message: string }>(`${this.baseURL}/organizations/${orgId}/restore`)
+    return response.data
+  }
+
+  /**
+   * 永久删除组织
+   */
+  async permanentlyDeleteOrganization(orgId: string): Promise<{ message: string }> {
+    const response = await http.delete<{ message: string }>(`${this.baseURL}/organizations/${orgId}/permanent`)
+    return response.data
+  }
+
+  /**
+   * 移动组织
+   */
+  async moveOrganization(orgId: string, newParentId?: string): Promise<Organization> {
+    const response = await http.put<Organization>(`${this.baseURL}/organizations/${orgId}/move`, {
+      new_parent_id: newParentId
+    })
     return response.data
   }
 
@@ -178,7 +217,7 @@ export class OrganizationAPI {
    * 创建团队
    */
   async createTeam(data: TeamCreate): Promise<Team> {
-    const response = await http.post(`${this.baseURL}/teams`, data)
+    const response = await http.post<Team>(`${this.baseURL}/teams`, data)
     return response.data
   }
 
@@ -186,7 +225,7 @@ export class OrganizationAPI {
    * 获取团队列表
    */
   async getTeams(params: TeamListParams = {}): Promise<Team[]> {
-    const response = await http.get(`${this.baseURL}/teams`, { params })
+    const response = await http.get<Team[]>(`${this.baseURL}/teams`, { params })
     return response.data
   }
 
@@ -196,7 +235,7 @@ export class OrganizationAPI {
    * 添加用户到组织
    */
   async addUserToOrganization(orgId: string, data: Omit<UserOrganizationCreate, 'organization_id'>): Promise<{ message: string }> {
-    const response = await http.post(`${this.baseURL}/organizations/${orgId}/members`, {
+    const response = await http.post<{ message: string }>(`${this.baseURL}/organizations/${orgId}/members`, {
       ...data,
       organization_id: orgId
     })
@@ -216,6 +255,10 @@ export const {
   deleteOrganization,
   getOrganizationTree,
   getOrganizationStats,
+  getDeletedOrganizations,
+  restoreOrganization,
+  permanentlyDeleteOrganization,
+  moveOrganization,
   createTeam,
   getTeams,
   addUserToOrganization

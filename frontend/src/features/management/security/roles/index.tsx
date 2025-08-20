@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,14 +15,12 @@ import {
   IconTrash, 
   IconShield,
   IconLock,
-  IconUnlock,
+  IconLockOpen,
   IconSearch,
   IconRefresh,
   IconEye,
   IconUsers,
   IconCheck,
-  IconX,
-  IconSettings
 } from '@tabler/icons-react'
 import {
   Table,

@@ -32,19 +32,19 @@ class RoleRepository(IRoleRepository):
         """根据ID获取角色"""
         return self.db.query(Role).filter(Role.id == role_id).first()
     
-    async def get_by_name(self, name: str, tenant_id: int) -> Optional[Role]:
+    async def get_by_name(self, name: str, tenant_id: str) -> Optional[Role]:
         """根据名称获取角色"""
         return self.db.query(Role).filter(
             Role.name == name,
             Role.tenant_id == tenant_id
         ).first()
     
-    async def get_tenant_roles(self, tenant_id: int, include_deleted: bool = False) -> List[Role]:
+    async def get_tenant_roles(self, tenant_id: str, include_deleted: bool = False) -> List[Role]:
         """获取租户角色列表"""
         query = self.db.query(Role).filter(Role.tenant_id == tenant_id)
         
         if not include_deleted:
-            query = query.filter(Role.is_deleted == False)
+            query = query.filter(Role.deleted_at.is_(None))
         
         return query.order_by(Role.level, Role.name).all()
     
@@ -76,7 +76,7 @@ class RoleRepository(IRoleRepository):
         self.db.commit()
         return True
     
-    async def get_role_hierarchy(self, tenant_id: int) -> List[Dict]:
+    async def get_role_hierarchy(self, tenant_id: str) -> List[Dict]:
         """获取角色层级结构"""
         roles = await self.get_tenant_roles(tenant_id)
         
@@ -171,7 +171,7 @@ class RoleRepository(IRoleRepository):
             User.is_deleted == False
         ).all()
     
-    async def exists_by_name(self, name: str, tenant_id: int, exclude_id: int = None) -> bool:
+    async def exists_by_name(self, name: str, tenant_id: str, exclude_id: int = None) -> bool:
         """检查角色名是否已存在"""
         query = self.db.query(Role).filter(
             Role.name == name,

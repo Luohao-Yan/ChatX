@@ -69,7 +69,15 @@
     "accessControl": "Access Control",
     "securityAudit": "Security Audit",
     "systemConfiguration": "System Configuration",
-    "integrationManagement": "Integration Management"
+    "integrationManagement": "Integration Management",
+    "tenantManagement": "Tenant Management",
+    "enterpriseManagement": "Enterprise Management",
+    "systemUsers": "System Users",
+    "departmentManagement": "Department Management",
+    "departmentUsers": "Department Users",
+    "departmentSettings": "Department Settings",
+    "passwordPolicies": "Password Policies",
+    "auditLogs": "Audit Logs"
   },
   "userMenu": {
     "upgradeToPro": "Upgrade to Pro",

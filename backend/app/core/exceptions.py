@@ -155,6 +155,16 @@ class PermissionError(BaseAPIException):
             details=details
         )
 
+class NotFoundError(BaseAPIException):
+    """通用资源不存在错误"""
+    def __init__(self, message: str = "资源不存在", details: Optional[Dict] = None):
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.RESOURCE_NOT_FOUND,
+            status_code=status.HTTP_404_NOT_FOUND,
+            details=details
+        )
+
 class TenantError(BaseAPIException):
     """租户相关错误"""
     def __init__(

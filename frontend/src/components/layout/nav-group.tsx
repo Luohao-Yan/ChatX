@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
+import { usePermissions } from '@/hooks/usePermissions'
 import {
   Collapsible,
   CollapsibleContent,
@@ -28,14 +29,42 @@ import {
 } from '../ui/dropdown-menu'
 import { NavCollapsible, NavItem, NavLink, type NavGroup } from './types'
 
-export function NavGroup({ title, items }: NavGroup) {
+export function NavGroup({ title, items, roles }: NavGroup) {
   const { state, isMobile } = useSidebar()
   const href = useLocation({ select: (location) => location.href })
+  const { hasAnyRole } = usePermissions()
+
+  // 检查导航组级别的权限
+  if (roles && roles.length > 0 && !hasAnyRole(roles)) {
+    return null
+  }
+
+  // 过滤基于角色权限的导航项
+  const filterItemsByRole = (item: NavItem): boolean => {
+    if (!item.roles || item.roles.length === 0) return true
+    return hasAnyRole(item.roles)
+  }
+
+  const filteredItems = items
+    .filter(filterItemsByRole)
+    .map(item => {
+      if (item.items) {
+        // 过滤子项
+        const filteredSubItems = item.items.filter(filterItemsByRole)
+        return { ...item, items: filteredSubItems }
+      }
+      return item
+    })
+    .filter(item => !item.items || item.items.length > 0) // 移除没有子项的空分组
+
+  // 如果没有可见的导航项，不渲染这个组
+  if (filteredItems.length === 0) return null
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{title}</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => {
+        {filteredItems.map((item) => {
           const key = `${item.title}-${item.url}`
 
           if (!item.items)

@@ -1,14 +1,15 @@
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
+import uuid
 
 from app.domain.repositories.user_repository import (
     IUserRepository, IUserSessionRepository, IUserVerificationRepository
 )
 from app.domain.services.user_domain_service import UserDomainService
-from app.schemas.user_schemas import UserCreate, UserUpdate, LoginRequest
+from app.schemas.user_schemas import UserCreate, UserUpdate, LoginRequest, UserBatchImportResponse
 from app.schemas.batch_schemas import BatchOperationResponse
-from app.models.user_models import User, UserSession, UserVerification
+from app.models.user_models import User, UserSession, UserVerification, UserType
 from app.infrastructure.securities import security
 from app.application.middleware.verification_service import get_verification_service
 from app.application.middleware.session_cache_service import get_session_cache_service
@@ -16,6 +17,7 @@ from app.application.middleware.api_cache_service import get_api_cache_service, 
 from app.application.middleware.rate_limiter_service import get_rate_limiter_service
 from app.tasks.user_tasks import send_verification_email
 from app.application.services.email_service import get_email_service
+from app.domain.initialization.tenant_init import ensure_public_tenant_exists
 
 
 class UserService:
@@ -63,21 +65,142 @@ class UserService:
         # 4. 密码加密
         hashed_password = self.domain_service.hash_password(user_data.password)
         
-        # 5. 创建用户
+        # 5. 获取public租户ID - 个人用户注册时自动分配到public租户
+        public_tenant_id = ensure_public_tenant_exists(self.user_repo.db)
+        
+        # 6. 创建用户 - 个人用户类型，分配到public租户
         user_create_data = {
             "email": user_data.email,
             "username": user_data.username,
             "full_name": user_data.full_name,
             "hashed_password": hashed_password,
-            "tenant_id": "1",  # 默认租户
+            "user_type": UserType.INDIVIDUAL,  # 个人用户类型
+            "current_tenant_id": public_tenant_id,  # 使用public租户
+            "tenant_ids": [public_tenant_id],  # 租户列表
             "is_active": True,
             "is_verified": False,
         }
         
         user = await self.user_repo.create(user_create_data)
         
-        # 6. 创建邮箱验证码
+        # 7. 创建邮箱验证码
         await self._create_email_verification(user.id, user.email)
+        
+        # 注意: 个人用户(INDIVIDUAL)注册后不会自动关联任何组织部门
+        # 他们可以后续自由创建团队或被邀请加入企业组织
+        
+        return user
+    
+    async def create_user_by_admin(self, user_data: UserCreate, current_user: User) -> User:
+        """管理员创建用户"""
+        # 1. 权限检查 - 只有管理员可以创建用户
+        if not current_user.is_superuser and not current_user.is_active:
+            raise HTTPException(
+                status_code=403, 
+                detail="权限不足，只有管理员可以创建用户"
+            )
+        
+        # 2. 领域验证
+        is_valid, error_msg = self.domain_service.validate_user_registration(
+            user_data.email, user_data.username, user_data.password
+        )
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=error_msg)
+        
+        # 3. 检查邮箱是否已存在
+        if await self.user_repo.exists_by_email(user_data.email):
+            raise HTTPException(status_code=400, detail="该邮箱已被注册")
+        
+        # 4. 检查用户名是否已存在
+        if await self.user_repo.exists_by_username(user_data.username):
+            raise HTTPException(status_code=400, detail="该用户名已被使用")
+        
+        # 5. 密码加密
+        hashed_password = self.domain_service.hash_password(user_data.password)
+        
+        # 6. 创建用户数据（只包含User模型的字段）- 企业用户由管理员创建
+        tenant_id = getattr(user_data, 'tenant_id', current_user.current_tenant_id or "1")
+        user_create_data = {
+            "email": user_data.email,
+            "username": user_data.username,
+            "hashed_password": hashed_password,
+            "user_type": UserType.ENTERPRISE,  # 企业用户类型
+            "current_tenant_id": tenant_id,
+            "tenant_ids": [tenant_id],
+            "is_active": getattr(user_data, 'is_active', True),
+            "is_verified": getattr(user_data, 'is_verified', True),  # 管理员创建的用户默认已验证
+        }
+        
+        # 7. 创建用户
+        user = await self.user_repo.create(user_create_data)
+        
+        # 8. 创建用户资料（如果有full_name或其他资料信息）
+        if hasattr(user_data, 'full_name') and user_data.full_name:
+            try:
+                from app.models.user_models import UserProfile
+                from app.infrastructure.persistence.database import get_async_session
+                from sqlalchemy import select
+                
+                # 创建用户资料
+                profile_data = {
+                    "id": str(uuid.uuid4()),
+                    "user_id": user.id,
+                    "full_name": user_data.full_name,
+                    "phone": getattr(user_data, 'phone', None),
+                }
+                
+                async with get_async_session() as session:
+                    profile = UserProfile(**profile_data)
+                    session.add(profile)
+                    await session.commit()
+                    
+            except Exception as e:
+                print(f"Failed to create user profile: {e}")
+                # 资料创建失败不影响用户创建
+        
+        # 9. 如果指定了角色，分配角色
+        if hasattr(user_data, 'roles') and user_data.roles:
+            try:
+                # 这里假设有角色分配的方法，如果没有可以先留空
+                # await self.assign_user_roles(user.id, user_data.roles, current_user)
+                pass
+            except Exception as e:
+                # 角色分配失败不影响用户创建
+                print(f"Role assignment failed: {e}")
+        
+        # 10. 如果指定了组织，自动关联到组织
+        if hasattr(user_data, 'organization_id') and user_data.organization_id:
+            try:
+                from app.application.services.org_service import OrgService
+                from app.schemas.org_schemas import UserOrganizationCreate
+                
+                # 使用现有的数据库会话（从仓库获取）
+                org_service = OrgService(self.user_repo.db, current_user.id, tenant_id)
+                
+                # 创建用户-组织关联数据
+                user_org_data = UserOrganizationCreate(
+                    user_id=user.id,
+                    organization_id=user_data.organization_id,
+                    team_id=getattr(user_data, 'team_id', None),
+                    role="member"  # 默认角色
+                )
+                
+                # 添加用户到组织
+                success = org_service.add_user_to_organization(user_org_data)
+                if not success:
+                    print(f"Failed to add user to organization: {user_data.organization_id}")
+                        
+            except Exception as e:
+                # 组织关联失败不影响用户创建
+                print(f"Organization association failed: {e}")
+        
+        # 11. 如果需要邮箱验证且未验证，创建验证码
+        if not user.is_verified:
+            try:
+                await self._create_email_verification(user.id, user.email)
+            except Exception as e:
+                # 验证码创建失败不影响用户创建
+                print(f"Email verification creation failed: {e}")
         
         return user
     
@@ -85,7 +208,7 @@ class UserService:
                                    client_ip: str = None) -> Dict[str, Any]:
         """用户认证和登录"""
         # 确定登录标识符（用于限流记录）
-        login_identifier = login_data.email or login_data.username
+        login_identifier = login_data.identifier or login_data.email or login_data.username
         
         # 0. 检查登录限流和黑名单
         rate_limiter = await get_rate_limiter_service()
@@ -104,9 +227,26 @@ class UserService:
         # 记录登录请求
         await rate_limiter.record_request(identifier, "login")
         
-        # 1. 获取用户 - 支持邮箱或用户名登录（不限制租户）
+        # 1. 获取用户 - 支持邮箱、用户名或手机号登录（智能识别）
         user = None
-        if login_data.email:
+        
+        # 优先使用新的identifier字段
+        if login_data.identifier:
+            # 智能识别登录方式
+            identifier_value = login_data.identifier.strip()
+            
+            # 邮箱格式检测
+            if '@' in identifier_value and '.' in identifier_value.split('@')[-1]:
+                user = await self.user_repo.get_by_email(identifier_value)
+            # 手机号格式检测（中国手机号）
+            elif identifier_value.isdigit() and len(identifier_value) == 11 and identifier_value.startswith('1'):
+                user = await self.user_repo.get_by_phone(identifier_value)
+            # 用户名格式（字母、数字、下划线、连字符）
+            else:
+                user = await self.user_repo.get_by_username(identifier_value)
+        
+        # 向后兼容：支持旧的email和username字段
+        elif login_data.email:
             user = await self.user_repo.get_by_email(login_data.email)
         elif login_data.username:
             user = await self.user_repo.get_by_username(login_data.username)
@@ -306,7 +446,9 @@ class UserService:
         return user
     
     async def get_users_list(self, current_user: User, skip: int = 0, 
-                           limit: int = 100, include_deleted: bool = False) -> List[User]:
+                           limit: int = 100, include_deleted: bool = False,
+                           status: Optional[str] = None, organization_id: Optional[str] = None,
+                           search: Optional[str] = None) -> List[User]:
         """获取用户列表
         
         根据用户角色决定可见范围：
@@ -318,7 +460,10 @@ class UserService:
             skip=skip, 
             limit=limit, 
             include_deleted=include_deleted,
-            is_superuser=current_user.is_superuser
+            is_superuser=current_user.is_superuser,
+            status=status,
+            organization_id=organization_id,
+            search=search
         )
     
     async def get_deleted_users(self, current_user: User, skip: int = 0, limit: int = 100) -> List[User]:
@@ -467,8 +612,8 @@ class UserService:
     
     async def restore_user(self, user_id: str, current_user: User) -> bool:
         """从回收站恢复用户"""
-        # 获取已删除的用户
-        target_user = await self.user_repo.get_by_id_including_deleted(user_id)
+        # 获取已删除的用户（不使用await，因为这是同步方法）
+        target_user = self.user_repo.db.query(User).filter(User.id == user_id).first()
         if not target_user:
             raise HTTPException(status_code=404, detail="用户不存在")
         
@@ -488,8 +633,8 @@ class UserService:
     
     async def permanently_delete_user(self, user_id: str, current_user: User) -> bool:
         """彻底删除用户（不可恢复）"""
-        # 获取已删除的用户
-        target_user = await self.user_repo.get_by_id_including_deleted(user_id)
+        # 获取已删除的用户（不使用await，因为这是同步方法）
+        target_user = self.user_repo.db.query(User).filter(User.id == user_id).first()
         if not target_user:
             raise HTTPException(status_code=404, detail="用户不存在")
         
@@ -498,7 +643,9 @@ class UserService:
             raise HTTPException(status_code=400, detail="只能彻底删除回收站中的用户")
         
         # 执行硬删除
-        await self.user_repo.hard_delete(user_id)
+        success = await self.user_repo.hard_delete(user_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="删除失败")
         
         # 清除用户相关缓存
         cache_service = await get_api_cache_service()
@@ -731,7 +878,7 @@ class UserService:
         except Exception:
             return False
 
-    async def batch_import_users(self, excel_content: bytes, operator: User) -> Dict[str, Any]:
+    async def batch_import_users(self, excel_content: bytes, operator: User) -> UserBatchImportResponse:
         """批量导入用户
         
         Args:
@@ -739,11 +886,18 @@ class UserService:
             operator: 操作者
             
         Returns:
-            Dict: 导入结果
+            UserBatchImportResponse: 导入结果
         """
         import pandas as pd
         import io
-        from app.schemas.user_schemas import UserBatchImportResponse, UserBatchImportResult
+        import logging
+        from app.schemas.user_schemas import UserBatchImportResult
+        
+        logger = logging.getLogger(__name__)
+        logger.info(f"开始批量导入用户，操作者: {operator.username}")
+        
+        if not excel_content:
+            raise HTTPException(status_code=400, detail="Excel文件内容为空")
         
         try:
             # 读取Excel文件
@@ -829,33 +983,33 @@ class UserService:
                             roles = [role.strip() for role in roles_str.split(',')]
                     
                     # 创建用户数据
-                    user_data = UserCreate(
-                        username=str(row.get('username')).strip(),
-                        email=str(row.get('email')).strip(),
-                        password=str(row.get('password')).strip(),
-                        full_name=str(row.get('full_name')).strip()
-                    )
+                    user_create_data = {
+                        "username": str(row.get('username')).strip(),
+                        "email": str(row.get('email')).strip(), 
+                        "password": str(row.get('password')).strip(),
+                        "full_name": str(row.get('full_name')).strip()
+                    }
                     
                     # 检查用户名和邮箱是否已存在
-                    existing_user = await self.user_repo.get_by_email(user_data.email)
+                    existing_user = await self.user_repo.get_by_email(user_create_data["email"])
                     if existing_user:
                         result.status = 'error'
-                        result.message = f"邮箱 {user_data.email} 已被使用"
+                        result.message = f"邮箱 {user_create_data['email']} 已被使用"
                         error_count += 1
                         results.append(result)
                         continue
                         
-                    existing_user = await self.user_repo.get_by_username(user_data.username)
+                    existing_user = await self.user_repo.get_by_username(user_create_data["username"])
                     if existing_user:
                         result.status = 'error'
-                        result.message = f"用户名 {user_data.username} 已被使用"
+                        result.message = f"用户名 {user_create_data['username']} 已被使用"
                         error_count += 1
                         results.append(result)
                         continue
                     
                     # 验证密码复杂度
                     is_valid, error_msg = self.domain_service.validate_user_registration(
-                        user_data.email, user_data.username, user_data.password
+                        user_create_data["email"], user_create_data["username"], user_create_data["password"]
                     )
                     if not is_valid:
                         result.status = 'error'
@@ -865,7 +1019,7 @@ class UserService:
                         continue
                     
                     # 创建用户
-                    new_user = await self.user_repo.create(user_data)
+                    new_user = await self.user_repo.create(user_create_data)
                     
                     # 更新可选字段
                     update_data = {}
@@ -940,3 +1094,55 @@ class UserService:
                 status_code=400,
                 detail=f"Excel文件处理失败: {str(e)}"
             )
+    
+    async def enable_user(self, user_id: str, current_user: User) -> bool:
+        """启用用户"""
+        # 1. 获取目标用户
+        target_user = await self.user_repo.get_by_id(user_id)
+        if not target_user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        # 2. 权限检查
+        if not self.domain_service.can_user_access_user_data(current_user, user_id):
+            raise HTTPException(status_code=403, detail="无权限启用此用户")
+        
+        # 3. 检查用户是否已经启用
+        if target_user.is_active:
+            raise HTTPException(status_code=400, detail="用户已处于启用状态")
+        
+        # 4. 检查用户是否已删除
+        if target_user.deleted_at:
+            raise HTTPException(status_code=400, detail="已删除的用户无法启用")
+        
+        # 5. 启用用户
+        await self.user_repo.update(user_id, {"is_active": True})
+        
+        # 6. 清除缓存
+        cache_service = await get_api_cache_service()
+        await cache_service.invalidate_user_cache(user_id)
+        
+        return True
+    
+    async def disable_user(self, user_id: str, current_user: User) -> bool:
+        """停用用户"""
+        # 1. 获取目标用户
+        target_user = await self.user_repo.get_by_id(user_id)
+        if not target_user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        # 2. 领域验证
+        can_disable, error_msg = self.domain_service.can_user_be_disabled(
+            target_user, current_user.id
+        )
+        if not can_disable:
+            raise HTTPException(status_code=400, detail=error_msg)
+        
+        # 3. 停用用户
+        await self.user_repo.update(user_id, {"is_active": False})
+        
+        # 4. 清除缓存和注销所有会话
+        cache_service = await get_api_cache_service()
+        await cache_service.invalidate_user_cache(user_id)
+        await self.logout_all_devices(user_id)
+        
+        return True

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func, desc
 
 from app.models.org_models import Organization, Team, UserOrganization, UserTeam
-from app.models.user_models import User
+from app.models.user_models import User, UserProfile
 from app.schemas.org_schemas import (
     OrganizationCreate, OrganizationUpdate, OrganizationResponse,
     TeamCreate, TeamUpdate, TeamResponse,
@@ -98,7 +98,10 @@ class OrgService:
                          search: Optional[str] = None) -> List[OrganizationResponse]:
         """获取组织列表"""
         query = self.db.query(Organization).filter(
-            Organization.tenant_id == self.tenant_id
+            and_(
+                Organization.tenant_id == self.tenant_id,
+                Organization.deleted_at.is_(None)
+            )
         )
         
         if parent_id is not None:
@@ -114,7 +117,54 @@ class OrgService:
             )
         
         organizations = query.order_by(Organization.level, Organization.name).offset(skip).limit(limit).all()
-        return [OrganizationResponse.from_orm(org) for org in organizations]
+        
+        # 更新每个组织的统计信息并构建响应
+        results = []
+        for org in organizations:
+            # 计算实际成员数
+            actual_member_count = self.db.query(UserOrganization).filter(
+                and_(
+                    UserOrganization.organization_id == org.id,
+                    UserOrganization.is_active == True
+                )
+            ).count()
+            org.member_count = actual_member_count
+            
+            # 计算子组织数量
+            child_count = self.db.query(Organization).filter(
+                and_(
+                    Organization.parent_id == org.id,
+                    Organization.tenant_id == self.tenant_id,
+                    Organization.deleted_at.is_(None)
+                )
+            ).count()
+            
+            # 获取拥有者信息
+            owner_info = None
+            if org.owner_id:
+                owner = self.db.query(User).filter(User.id == org.owner_id).first()
+                if owner:
+                    # 获取用户的详细资料
+                    user_profile = self.db.query(UserProfile).filter(UserProfile.user_id == owner.id).first()
+                    owner_info = {
+                        "id": owner.id,
+                        "username": owner.username,
+                        "email": owner.email,
+                        "full_name": user_profile.full_name if user_profile else None
+                    }
+            
+            # 构建响应对象
+            org_dict = {
+                **{k: v for k, v in org.__dict__.items() if not k.startswith('_')},
+                'child_count': child_count,
+                'owner_info': owner_info
+            }
+            results.append(OrganizationResponse(**org_dict))
+        
+        # 批量保存更新
+        self.db.commit()
+        
+        return results
     
     def get_organization(self, org_id: str) -> Optional[OrganizationResponse]:
         """获取单个组织"""
@@ -156,11 +206,14 @@ class OrgService:
         return OrganizationResponse.from_orm(organization)
     
     def delete_organization(self, org_id: str) -> bool:
-        """删除组织"""
+        """软删除组织"""
+        from datetime import datetime, timezone
+        
         organization = self.db.query(Organization).filter(
             and_(
                 Organization.id == org_id,
-                Organization.tenant_id == self.tenant_id
+                Organization.tenant_id == self.tenant_id,
+                Organization.deleted_at.is_(None)
             )
         ).first()
         
@@ -171,26 +224,24 @@ class OrgService:
         if not self._check_org_admin_permission(org_id):
             raise PermissionError("没有权限删除此组织")
         
-        # 检查是否有子组织
-        children = self.db.query(Organization).filter(
+        # 软删除组织（设置deleted_at时间戳）
+        organization.deleted_at = datetime.now(timezone.utc)
+        organization.deleted_by = self.current_user_id
+        
+        # 同时软删除所有子组织
+        child_orgs = self.db.query(Organization).filter(
             and_(
                 Organization.parent_id == org_id,
-                Organization.tenant_id == self.tenant_id
+                Organization.tenant_id == self.tenant_id,
+                Organization.deleted_at.is_(None)
             )
-        ).count()
+        ).all()
         
-        if children > 0:
-            raise ValidationError("请先删除所有子组织")
+        for child in child_orgs:
+            child.deleted_at = datetime.now(timezone.utc)
+            child.deleted_by = self.current_user_id
         
-        # 删除相关关系
-        self.db.query(UserOrganization).filter(
-            UserOrganization.organization_id == org_id
-        ).delete()
-        
-        # 删除组织
-        self.db.delete(organization)
         self.db.commit()
-        
         return True
     
     def get_organization_tree(self, root_id: Optional[str] = None) -> List[OrganizationTreeNode]:
@@ -214,6 +265,102 @@ class OrgService:
             return [org_dict[root_id]]
         
         return root_nodes
+    
+    # ==================== 回收站管理 ====================
+    
+    def get_deleted_organizations(self, skip: int = 0, limit: int = 100) -> List[OrganizationResponse]:
+        """获取回收站中的已删除组织"""
+        organizations = self.db.query(Organization).filter(
+            and_(
+                Organization.tenant_id == self.tenant_id,
+                Organization.deleted_at.isnot(None)
+            )
+        ).order_by(desc(Organization.deleted_at)).offset(skip).limit(limit).all()
+        
+        return [OrganizationResponse.from_orm(org) for org in organizations]
+    
+    def restore_organization(self, org_id: str) -> bool:
+        """恢复已删除的组织"""
+        organization = self.db.query(Organization).filter(
+            and_(
+                Organization.id == org_id,
+                Organization.tenant_id == self.tenant_id,
+                Organization.deleted_at.isnot(None)
+            )
+        ).first()
+        
+        if not organization:
+            raise ValidationError("组织不存在或未被删除")
+        
+        # 检查权限 - 对于已删除的组织，检查用户是否为系统管理员或租户管理员
+        current_user = self.db.query(User).filter(User.id == self.current_user_id).first()
+        if not (current_user and (current_user.is_superuser or self._check_tenant_admin_permission())):
+            raise PermissionError("没有权限恢复此组织")
+        
+        # 恢复组织
+        organization.deleted_at = None
+        organization.deleted_by = None
+        
+        # 恢复所有子组织
+        child_orgs = self.db.query(Organization).filter(
+            and_(
+                Organization.parent_id == org_id,
+                Organization.tenant_id == self.tenant_id,
+                Organization.deleted_at.isnot(None)
+            )
+        ).all()
+        
+        for child in child_orgs:
+            child.deleted_at = None
+            child.deleted_by = None
+        
+        self.db.commit()
+        return True
+    
+    def permanently_delete_organization(self, org_id: str) -> bool:
+        """永久删除组织"""
+        organization = self.db.query(Organization).filter(
+            and_(
+                Organization.id == org_id,
+                Organization.tenant_id == self.tenant_id,
+                Organization.deleted_at.isnot(None)
+            )
+        ).first()
+        
+        if not organization:
+            raise ValidationError("组织不存在或未被删除")
+        
+        # 检查权限 - 对于已删除的组织，检查用户是否为系统管理员或租户管理员
+        current_user = self.db.query(User).filter(User.id == self.current_user_id).first()
+        if not (current_user and (current_user.is_superuser or self._check_tenant_admin_permission())):
+            raise PermissionError("没有权限永久删除此组织")
+        
+        # 永久删除所有子组织
+        child_orgs = self.db.query(Organization).filter(
+            and_(
+                Organization.parent_id == org_id,
+                Organization.tenant_id == self.tenant_id
+            )
+        ).all()
+        
+        for child in child_orgs:
+            # 删除子组织的成员关系
+            self.db.query(UserOrganization).filter(
+                UserOrganization.organization_id == child.id
+            ).delete()
+            # 删除子组织
+            self.db.delete(child)
+        
+        # 删除当前组织的成员关系
+        self.db.query(UserOrganization).filter(
+            UserOrganization.organization_id == org_id
+        ).delete()
+        
+        # 永久删除组织
+        self.db.delete(organization)
+        self.db.commit()
+        
+        return True
     
     # ==================== 团队管理 ====================
     
@@ -389,6 +536,20 @@ class OrgService:
             and_(
                 UserOrganization.user_id == self.current_user_id,
                 UserOrganization.organization_id == org_id,
+                UserOrganization.is_admin == True,
+                UserOrganization.is_active == True
+            )
+        ).first()
+        
+        return user_org is not None
+    
+    def _check_tenant_admin_permission(self) -> bool:
+        """检查是否有租户管理权限"""
+        # 简化实现，检查用户是否为当前租户的任意组织管理员
+        user_org = self.db.query(UserOrganization).filter(
+            and_(
+                UserOrganization.user_id == self.current_user_id,
+                UserOrganization.tenant_id == self.tenant_id,
                 UserOrganization.is_admin == True,
                 UserOrganization.is_active == True
             )

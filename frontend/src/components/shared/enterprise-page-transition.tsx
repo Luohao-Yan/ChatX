@@ -9,7 +9,7 @@
  * - 可配置的企业级动画
  */
 
-import React, { ReactNode, Suspense } from 'react'
+import React, { ReactNode, Suspense, useEffect, useRef, useCallback } from 'react'
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion'
 import { useLocation } from '@tanstack/react-router'
 import { useAppearance } from '@/context/appearance-context'
@@ -102,6 +102,8 @@ class AnimationErrorBoundary extends React.Component<
 export function EnterprisePageTransition({ children }: EnterprisePageTransitionProps) {
   const location = useLocation()
   const { pageTransition } = useAppearance()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const previousLocationRef = useRef(location.pathname)
 
   // 安全检查：如果动画类型不存在，降级到fade
   const safeTransition = pageTransition in enterpriseTransitions 
@@ -109,6 +111,115 @@ export function EnterprisePageTransition({ children }: EnterprisePageTransitionP
     : 'fade'
 
   const transitionConfig = enterpriseTransitions[safeTransition]
+
+  // 企业级焦点管理函数
+  const safeFocusManagement = useCallback(() => {
+    // 移除所有在aria-hidden元素内的焦点
+    const removeHiddenFocus = () => {
+      const hiddenElements = document.querySelectorAll('[aria-hidden="true"]')
+      let hasFocusRemoval = false
+      
+      hiddenElements.forEach(hiddenEl => {
+        const focusedInside = hiddenEl.querySelectorAll(':focus')
+        if (focusedInside.length > 0) {
+          hasFocusRemoval = true
+          focusedInside.forEach(focused => {
+            if (focused instanceof HTMLElement) {
+              focused.blur()
+            }
+          })
+        }
+      })
+      
+      // 如果移除了焦点，确保不会造成焦点丢失
+      if (hasFocusRemoval) {
+        const safeTarget = document.querySelector(
+          'main:not([aria-hidden="true"]) button:not([aria-hidden="true"]):not([disabled]), ' +
+          'main:not([aria-hidden="true"]) input:not([aria-hidden="true"]):not([disabled]), ' +
+          'main:not([aria-hidden="true"]) a[href]:not([aria-hidden="true"]), ' +
+          'body'
+        ) as HTMLElement
+        
+        if (safeTarget) {
+          requestAnimationFrame(() => {
+            safeTarget.focus()
+          })
+        }
+      }
+    }
+    
+    return removeHiddenFocus
+  }, [])
+
+  // 企业级焦点管理：主动预防aria-hidden冲突
+  useEffect(() => {
+    const removeHiddenFocus = safeFocusManagement()
+    
+    // 检测路由变化
+    if (previousLocationRef.current !== location.pathname) {
+      // 路由变化时，立即清理焦点
+      removeHiddenFocus()
+      previousLocationRef.current = location.pathname
+    }
+    
+    // 全局焦点监听器
+    const handleFocusIn = (event: FocusEvent) => {
+      const target = event.target as HTMLElement
+      if (target) {
+        const hiddenAncestor = target.closest('[aria-hidden="true"]')
+        if (hiddenAncestor) {
+          // 立即阻止事件并移除焦点
+          event.preventDefault()
+          event.stopImmediatePropagation()
+          target.blur()
+          
+          // 寻找安全的焦点目标
+          const safeTarget = document.querySelector(
+            'main:not([aria-hidden="true"]) [tabindex]:not([tabindex="-1"]):not([aria-hidden="true"]), ' +
+            'main:not([aria-hidden="true"]) button:not([disabled]):not([aria-hidden="true"]), ' +
+            'main:not([aria-hidden="true"]) input:not([disabled]):not([aria-hidden="true"]), ' +
+            'body'
+          ) as HTMLElement
+          
+          if (safeTarget && safeTarget !== target) {
+            requestAnimationFrame(() => safeTarget.focus())
+          }
+        }
+      }
+    }
+
+    // 使用capture阶段监听，确保最早处理
+    document.addEventListener('focusin', handleFocusIn, { capture: true, passive: false })
+    
+    // 监听aria-hidden属性变化
+    const observer = new MutationObserver((mutations) => {
+      let needsCleanup = false
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'aria-hidden') {
+          const target = mutation.target as HTMLElement
+          if (target.getAttribute('aria-hidden') === 'true') {
+            needsCleanup = true
+          }
+        }
+      })
+      
+      if (needsCleanup) {
+        // 延迟执行，确保DOM更新完成
+        requestAnimationFrame(removeHiddenFocus)
+      }
+    })
+    
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['aria-hidden'],
+      subtree: true
+    })
+    
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn, { capture: true } as any)
+      observer.disconnect()
+    }
+  }, [location.pathname, safeFocusManagement])
 
   // 如果是none模式，直接返回children，避免不必要的包装
   if (safeTransition === 'none') {
@@ -125,8 +236,21 @@ export function EnterprisePageTransition({ children }: EnterprisePageTransitionP
         <AnimatePresence
           mode="wait" // 等待退出动画完成再开始进入动画
           initial={false} // 初次加载不执行动画
+          onExitComplete={() => {
+            // 退出动画完成后，确保没有遗留的焦点问题
+            const hiddenElements = document.querySelectorAll('[aria-hidden="true"]')
+            hiddenElements.forEach(el => {
+              const focusedInside = el.querySelectorAll(':focus')
+              focusedInside.forEach(focused => {
+                if (focused instanceof HTMLElement) {
+                  focused.blur()
+                }
+              })
+            })
+          }}
         >
           <motion.div
+            ref={containerRef}
             key={location.pathname} // 以路径为key，确保路由变化时触发动画
             initial={transitionConfig.initial}
             animate={transitionConfig.animate}
@@ -139,13 +263,22 @@ export function EnterprisePageTransition({ children }: EnterprisePageTransitionP
               WebkitBackfaceVisibility: 'hidden',
               transform: 'translateZ(0)', // 强制硬件加速
             }}
-            // 错误恢复机制
+            onAnimationStart={() => {
+              // 动画开始时清理焦点
+              if (containerRef.current) {
+                const removeHiddenFocus = safeFocusManagement()
+                removeHiddenFocus()
+              }
+            }}
             onAnimationComplete={() => {
               // 动画完成后清理will-change，提升性能
-              const element = document.querySelector('[data-enterprise-transition]') as HTMLElement
-              if (element) {
-                element.style.willChange = 'auto'
+              if (containerRef.current) {
+                containerRef.current.style.willChange = 'auto'
               }
+              
+              // 再次确保焦点安全
+              const removeHiddenFocus = safeFocusManagement()
+              removeHiddenFocus()
             }}
             data-enterprise-transition={safeTransition}
           >

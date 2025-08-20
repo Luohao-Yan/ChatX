@@ -8,9 +8,20 @@ import { EnterprisePageTransition } from '@/components/shared/enterprise-page-tr
 import GeneralError from '@/features/errors/general-error'
 import NotFoundError from '@/features/errors/not-found-error'
 
-export const Route = createRootRouteWithContext<{
+interface RouterContext {
   queryClient: QueryClient
-}>()({
+  auth?: {
+    userInfo?: {
+      id: string
+      email: string
+      username: string
+      roles?: string[]
+      is_superuser?: boolean
+    }
+  }
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
   component: () => {
     return (
       <>

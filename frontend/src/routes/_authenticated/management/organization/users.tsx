@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import UsersManagement from '@/features/management/organization/users'
+import UsersManagement from '@/features/management/users'
 
 export const Route = createFileRoute('/_authenticated/management/organization/users')({
   component: UsersManagement,

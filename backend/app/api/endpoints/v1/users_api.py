@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.application.services.user_service import UserService
@@ -25,6 +25,16 @@ async def register_user(
 ):
     """用户注册，只处理HTTP层面的事务"""
     return await user_service.register_user(user_data)
+
+
+@router.post("", response_model=UserSchema)
+async def create_user(
+    user_data: UserCreate,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """管理员创建用户"""
+    return await user_service.create_user_by_admin(user_data, current_user)
 
 
 @router.post("/login", response_model=Token)
@@ -88,11 +98,16 @@ async def get_users(
     skip: int = 0,
     limit: int = 100,
     include_deleted: bool = False,
+    status: Optional[str] = None,
+    organization_id: Optional[str] = None,
+    search: Optional[str] = None,
     current_user: User = Depends(get_current_active_user),
     user_service: UserService = Depends(get_user_service),
 ):
     """获取用户列表"""
-    return await user_service.get_users_list(current_user, skip, limit, include_deleted)
+    return await user_service.get_users_list(
+        current_user, skip, limit, include_deleted, status, organization_id, search
+    )
 
 
 @router.get("/recycle-bin", response_model=List[UserSchema])
@@ -247,3 +262,114 @@ async def revoke_session(
     """撤销会话"""
     await user_service.revoke_user_session(session_id, current_user)
     return {"message": "会话已注销"}
+
+
+# ==================== 邀请管理接口 ====================
+
+@router.post("/invitations")
+async def create_user_invitation(
+    invitation_data: dict,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """创建用户邀请"""
+    invitation = await user_service.create_invitation(
+        inviter_id=current_user.id,
+        invitee_email=invitation_data["invitee_email"],
+        organization_id=invitation_data.get("organization_id"),
+        role_ids=invitation_data.get("role_ids", []),
+        message=invitation_data.get("message")
+    )
+    return {"message": "邀请已发送", "invitation_id": invitation["id"]}
+
+
+@router.post("/invitations/accept")
+async def accept_user_invitation(
+    token: str,
+    accept_data: dict,
+    user_service: UserService = Depends(get_user_service),
+):
+    """接受邀请"""
+    result = await user_service.accept_invitation(
+        token=token,
+        username=accept_data.get("username"),
+        password=accept_data.get("password"),
+        full_name=accept_data.get("full_name")
+    )
+    return {"message": "邀请接受成功", "user_id": result["user_id"]}
+
+
+@router.get("/invitations")
+async def get_user_invitations(
+    status: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 50,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """获取邀请列表"""
+    return await user_service.get_user_invitations(
+        current_user, status=status, skip=skip, limit=limit
+    )
+
+
+# ==================== 高级用户管理接口 ====================
+
+@router.post("/{user_id}/disable")
+async def disable_user(
+    user_id: str,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """停用用户"""
+    await user_service.disable_user(user_id, current_user)
+    return {"message": "用户已停用"}
+
+
+@router.post("/{user_id}/enable")
+async def enable_user(
+    user_id: str,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """启用用户"""
+    await user_service.enable_user(user_id, current_user)
+    return {"message": "用户已启用"}
+
+
+@router.get("/{user_id}/roles")
+async def get_user_roles(
+    user_id: str,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """获取用户角色列表"""
+    return await user_service.get_user_roles(user_id, current_user)
+
+
+@router.post("/{user_id}/roles")
+async def assign_user_roles(
+    user_id: str,
+    role_data: dict,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """分配用户角色"""
+    await user_service.assign_user_roles(
+        user_id=user_id,
+        role_ids=role_data["role_ids"],
+        current_user=current_user
+    )
+    return {"message": "角色分配成功"}
+
+
+@router.delete("/{user_id}/roles/{role_id}")
+async def revoke_user_role(
+    user_id: str,
+    role_id: str,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """撤销用户角色"""
+    await user_service.revoke_user_role(user_id, role_id, current_user)
+    return {"message": "角色撤销成功"}

@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
   Card,
@@ -22,6 +23,16 @@ export default function SignIn() {
             {t('auth.signInDescription', { 
               defaultValue: 'Enter your email and password below to log into your account' 
             })}
+            <br />
+            <span className="mt-2 block">
+              {t('auth.noAccount', { defaultValue: "Don't have an account?" })}{' '}
+              <Link
+                to='/sign-up'
+                className='hover:text-primary underline underline-offset-4 font-medium'
+              >
+                {t('auth.signUpLink', { defaultValue: 'Sign up' })}
+              </Link>
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent>

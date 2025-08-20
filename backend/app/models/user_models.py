@@ -30,6 +30,13 @@ class UserStatus(str, Enum):
     DELETED = "deleted"    # 已被软删除
 
 
+class UserType(str, Enum):
+    """用户类型枚举"""
+    INDIVIDUAL = "individual"  # 个人用户 - 通过登录页面注册
+    ENTERPRISE = "enterprise"  # 企业用户 - 由管理员在管理平台创建，有组织部门
+    SYSTEM = "system"         # 系统用户 - 系统管理员和租户管理员
+
+
 class User(Base):
     """用户主表模型 - 仅存储核心认证信息"""
     __tablename__ = "sys_users"
@@ -39,6 +46,7 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False, comment="电子邮箱")
     hashed_password = Column(String(255), nullable=False, comment="哈希密码")
     status = Column(String(20), default=UserStatus.PENDING, nullable=False, comment="用户状态")
+    user_type = Column(String(20), default=UserType.INDIVIDUAL, nullable=False, comment="用户类型：individual个人用户，enterprise企业用户，system系统用户")
     is_superuser = Column(Boolean, default=False, nullable=False, comment="是否为超级管理员")
     is_staff = Column(Boolean, default=False, nullable=False, comment="是否为员工")
     is_active = Column(Boolean, default=True, nullable=False, comment="是否激活")

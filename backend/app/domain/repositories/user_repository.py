@@ -27,6 +27,11 @@ class IUserRepository(ABC):
         pass
     
     @abstractmethod
+    async def get_by_phone(self, phone: str, tenant_id: str = None) -> Optional[User]:
+        """根据手机号获取用户"""
+        pass
+    
+    @abstractmethod
     async def update(self, user_id: str, update_data: dict) -> Optional[User]:
         """更新用户信息"""
         pass
@@ -38,7 +43,9 @@ class IUserRepository(ABC):
     
     @abstractmethod
     async def get_list(self, tenant_id: str = None, skip: int = 0, limit: int = 100, 
-                      include_deleted: bool = False, is_superuser: bool = False) -> List[User]:
+                      include_deleted: bool = False, is_superuser: bool = False,
+                      status: Optional[str] = None, organization_id: Optional[str] = None,
+                      search: Optional[str] = None) -> List[User]:
         """获取用户列表"""
         pass
     

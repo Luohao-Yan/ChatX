@@ -70,7 +70,15 @@
     "accessControl": "访问控制",
     "securityAudit": "安全审计",
     "systemConfiguration": "系统配置",
-    "integrationManagement": "集成管理"
+    "integrationManagement": "集成管理",
+    "tenantManagement": "租户管理",
+    "enterpriseManagement": "企业管理",
+    "systemUsers": "系统用户",
+    "departmentManagement": "部门管理",
+    "departmentUsers": "部门用户",
+    "departmentSettings": "部门设置",
+    "passwordPolicies": "密码策略",
+    "auditLogs": "审计日志"
   },
   "userMenu": {
     "upgradeToPro": "升级到专业版",
@@ -143,6 +151,12 @@
     "registerSuccess": "注册成功！",
     "signInDescription": "请输入您的邮箱和密码登录您的账户",
     "termsAgreement": "点击登录即表示您同意我们的服务条款和隐私政策。",
+    "noAccount": "还没有账户？",
+    "signUpLink": "立即注册",
+    "username": "用户名",
+    "usernamePlaceholder": "请输入用户名",
+    "identifier": "用户名/邮箱/手机号",
+    "identifierPlaceholder": "请输入用户名、邮箱或手机号",
     "forgotPassword": {
       "title": "忘记密码",
       "description": "请输入您的邮箱地址，我们将向您发送重置密码的链接。",
@@ -186,7 +200,8 @@
       "privacyPolicy": "隐私政策",
       "createAccountButton": "创建账户",
       "existingAccount": "已有账户？",
-      "signInLink": "点击登录"
+      "signInLink": "点击登录",
+      "success": "注册成功！请查看您的邮箱以验证账户。"
     },
     "errors": {
       "invalidCredentials": "邮箱或密码错误",
@@ -207,7 +222,14 @@
       "passwordMinLength": "密码至少需要6个字符",
       "confirmPasswordRequired": "请确认您的密码",
       "termsRequired": "您必须同意条款和条件",
-      "phoneInvalid": "请输入有效的手机号码"
+      "phoneInvalid": "请输入有效的手机号码",
+      "usernameRequired": "用户名为必填项",
+      "usernameMinLength": "用户名至少需要3个字符",
+      "invalidUsername": "用户名格式无效（3-20字符，只能包含字母、数字、下划线、连字符）",
+      "identifierRequired": "请输入用户名、邮箱或手机号",
+      "invalidIdentifier": "请输入有效的邮箱、手机号或用户名",
+      "weakPassword": "密码不符合安全要求",
+      "registrationFailed": "注册失败，请重试"
     },
     "validation": {
       "emailInvalid": "请输入有效的邮箱地址",

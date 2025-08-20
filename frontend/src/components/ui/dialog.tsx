@@ -49,19 +49,66 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  // 处理焦点管理以避免aria-hidden冲突
+  const handleOpenAutoFocus = React.useCallback((event: Event) => {
+    // 防止默认的自动聚焦行为
+    event.preventDefault()
+    
+    // 如果有自定义的onOpenAutoFocus处理器，调用它
+    if (onOpenAutoFocus) {
+      onOpenAutoFocus(event)
+    }
+    
+    // 延迟聚焦到第一个可聚焦元素，避免与动画冲突
+    setTimeout(() => {
+      const content = event.target as HTMLElement
+      
+      // 检查当前元素是否被aria-hidden
+      if (content.getAttribute('aria-hidden') === 'true' || 
+          content.closest('[aria-hidden="true"]')) {
+        return // 如果被隐藏，不进行聚焦
+      }
+      
+      const firstFocusable = content.querySelector(
+        'button:not([disabled]):not([aria-hidden="true"]), input:not([disabled]):not([aria-hidden="true"]), select:not([disabled]):not([aria-hidden="true"]), textarea:not([disabled]):not([aria-hidden="true"]), [tabindex]:not([tabindex="-1"]):not([aria-hidden="true"])'
+      ) as HTMLElement
+      
+      if (firstFocusable && !firstFocusable.closest('[aria-hidden="true"]')) {
+        firstFocusable.focus()
+      }
+    }, 150) // 等待动画完成
+  }, [onOpenAutoFocus])
+
+  const handleCloseAutoFocus = React.useCallback((event: Event) => {
+    // 防止默认的关闭聚焦行为，让触发器自然获得焦点
+    if (onCloseAutoFocus) {
+      onCloseAutoFocus(event)
+    }
+  }, [onCloseAutoFocus])
+
   return (
     <DialogPortal data-slot='dialog-portal'>
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot='dialog-content'
         className={cn(
-          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg',
+          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-[95vw] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-4 shadow-lg duration-200 overflow-y-auto',
+          // 如果没有自定义max-w类，则使用默认值
+          !className?.includes('max-w-') && 'max-w-[calc(100%-1rem)] sm:max-w-lg',
+          // 如果没有自定义max-h类，则使用默认值  
+          !className?.includes('max-h-') && 'max-h-[90vh]',
+          // 如果没有自定义padding类，则使用默认值
+          !className?.includes('p-') && !className?.includes('px-') && !className?.includes('py-') && 'sm:p-6',
           className
         )}
+        onOpenAutoFocus={handleOpenAutoFocus}
+        onCloseAutoFocus={handleCloseAutoFocus}
         {...props}
       >
         {children}

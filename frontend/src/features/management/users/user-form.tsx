@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useId, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,10 @@ import { Separator } from '@/components/ui/separator'
 import { SearchableSelect, SelectOption } from '@/components/ui/searchable-select'
 import { IconLoader2 } from '@tabler/icons-react'
 import { toast } from 'sonner'
-import { User } from '@/features/users/data/schema'
+import { User } from '@/types/entities/user'
+import { organizationAPI, type Organization, type Team } from '@/services/api/organization'
+import { roleAPI, type Role } from '@/services/api/roles'
+import { tenantAPI, type Tenant } from '@/services/api/tenants'
 
 const userSchema = z.object({
   username: z.string()
@@ -119,32 +122,14 @@ const checkPasswordStrength = (password: string) => {
 export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }: UserFormProps) {
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Partial<Record<keyof UserFormData, string>>>({})
+  const formId = useId() // 生成唯一ID前缀
   
-  // 模拟选项数据（实际应用中应该从API获取）
-  const [tenantOptions] = useState<SelectOption[]>([
-    { value: 'tenant1', label: '默认租户', description: '系统默认租户' },
-    { value: 'tenant2', label: '企业租户A', description: '企业级租户' },
-  ])
-  
-  const [organizationOptions] = useState<SelectOption[]>([
-    { value: 'org1', label: '技术部', description: '负责产品开发' },
-    { value: 'org2', label: '市场部', description: '负责产品推广' },
-    { value: 'org3', label: '人事部', description: '负责人力资源' },
-  ])
-  
-  const [teamOptions] = useState<SelectOption[]>([
-    { value: 'team1', label: '前端开发组', description: '负责前端开发' },
-    { value: 'team2', label: '后端开发组', description: '负责后端开发' },
-    { value: 'team3', label: '测试组', description: '负责质量保证' },
-    { value: 'team4', label: '运维组', description: '负责系统运维' },
-  ])
-  
-  const [roleOptions] = useState<SelectOption[]>([
-    { value: 'admin', label: '管理员', description: '系统管理员权限' },
-    { value: 'user', label: '普通用户', description: '基础用户权限' },
-    { value: 'moderator', label: '版主', description: '内容管理权限' },
-    { value: 'viewer', label: '访客', description: '只读权限' },
-  ])
+  // API数据状态
+  const [tenantOptions, setTenantOptions] = useState<SelectOption[]>([])
+  const [organizationOptions, setOrganizationOptions] = useState<SelectOption[]>([])
+  const [teamOptions, setTeamOptions] = useState<SelectOption[]>([])
+  const [roleOptions, setRoleOptions] = useState<SelectOption[]>([])
+  const [dataLoading, setDataLoading] = useState(true)
 
   const {
     register,
@@ -175,6 +160,86 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
   const selectedOrganization = watch('organization_id')
   const selectedTeam = watch('team_id')
   const selectedRoles = watch('roles')
+
+  // 加载选项数据
+  useEffect(() => {
+    const loadFormData = async () => {
+      try {
+        setDataLoading(true)
+        
+        // 并行加载所有数据
+        const [tenants, organizations, teams, roles] = await Promise.all([
+          tenantAPI.getTenants().catch(err => {
+            console.warn('租户数据加载失败:', err)
+            return [{
+              id: 'default',
+              name: '默认租户',
+              display_name: '默认租户',
+              description: '系统默认租户'
+            }]
+          }),
+          organizationAPI.getOrganizations().catch(err => {
+            console.warn('组织数据加载失败:', err)
+            return []
+          }),
+          organizationAPI.getTeams().catch(err => {
+            console.warn('团队数据加载失败:', err)
+            return []
+          }),
+          roleAPI.getRoles().catch(err => {
+            console.warn('角色数据加载失败:', err)
+            return []
+          })
+        ])
+
+        // 处理租户数据
+        setTenantOptions(tenants.map((tenant: any) => ({
+          value: tenant.id,
+          label: tenant.display_name || tenant.name,
+          description: tenant.description
+        })))
+
+        // 处理组织数据
+        setOrganizationOptions(organizations.map((org: Organization) => ({
+          value: org.id,
+          label: org.display_name || org.name,
+          description: org.description
+        })))
+
+        // 处理团队数据
+        setTeamOptions(teams.map((team: Team) => ({
+          value: team.id,
+          label: team.name,
+          description: team.description
+        })))
+
+        // 处理角色数据
+        setRoleOptions(roles.map((role: Role) => ({
+          value: role.id,
+          label: role.display_name || role.name,
+          description: role.description
+        })))
+
+      } catch (error) {
+        console.error('加载表单数据失败:', error)
+        toast.error('加载表单数据失败，请检查网络连接后重试')
+        
+        // 设置最小可用选项
+        setTenantOptions([{
+          value: 'default',
+          label: '默认租户',
+          description: '系统默认租户'
+        }])
+        setOrganizationOptions([])
+        setTeamOptions([])
+        setRoleOptions([])
+      } finally {
+        setDataLoading(false)
+      }
+    }
+
+    loadFormData()
+  }, [])
 
   const handleFormSubmit = async (data: UserFormData) => {
     try {
@@ -260,39 +325,49 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
     }
   }
 
+  // 如果数据正在加载，显示加载状态
+  if (dataLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <IconLoader2 size={24} className="animate-spin mr-2" />
+        <span>加载表单数据中...</span>
+      </div>
+    )
+  }
+
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4 sm:space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">基本信息</CardTitle>
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="text-base sm:text-lg">基本信息</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
-              <Label htmlFor="username">用户名 *</Label>
+              <Label htmlFor={`${formId}-username`}>用户名 *</Label>
               <Input
-                id="username"
+                id={`${formId}-username`}
                 {...register('username')}
                 placeholder="输入用户名"
                 disabled={isEditing} // 编辑时不允许修改用户名
               />
               {(formErrors.username || errors.username) && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-destructive">
                   {formErrors.username?.message || errors.username}
                 </p>
               )}
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="email">邮箱 *</Label>
+              <Label htmlFor={`${formId}-email`}>邮箱 *</Label>
               <Input
-                id="email"
+                id={`${formId}-email`}
                 type="email"
                 {...register('email')}
                 placeholder="输入邮箱地址"
               />
               {(formErrors.email || errors.email) && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-destructive">
                   {formErrors.email?.message || errors.email}
                 </p>
               )}
@@ -300,25 +375,25 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="full_name">真实姓名 *</Label>
+            <Label htmlFor={`${formId}-full_name`}>真实姓名 *</Label>
             <Input
-              id="full_name"
+              id={`${formId}-full_name`}
               {...register('full_name')}
               placeholder="输入真实姓名"
             />
             {(formErrors.full_name || errors.full_name) && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {formErrors.full_name?.message || errors.full_name}
               </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">
+            <Label htmlFor={`${formId}-password`}>
               密码 {isEditing ? '(留空表示不修改)' : '*'}
             </Label>
             <PasswordInput
-              id="password"
+              id={`${formId}-password`}
               autoComplete="new-password"
               spellCheck={false}
               {...register('password')}
@@ -331,19 +406,19 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
                 <div className="text-xs text-muted-foreground">密码强度要求：</div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                   {checkPasswordStrength(currentPassword).items.map((item, index) => (
-                    <div key={index} className={`flex items-center gap-1 ${item.met ? 'text-green-600' : 'text-gray-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${item.met ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <div key={index} className={`flex items-center gap-1 ${item.met ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                      <div className={`w-2 h-2 rounded-full ${item.met ? 'bg-green-500' : 'bg-muted-foreground/40'}`}></div>
                       <span>{item.label}</span>
                     </div>
                   ))}
                 </div>
                 <div className="text-xs">
-                  <span className={currentPassword.length >= 6 ? 'text-green-600' : 'text-gray-400'}>
+                  <span className={currentPassword.length >= 6 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}>
                     ✓ 至少6个字符 ({currentPassword.length}/6)
                   </span>
                 </div>
                 <div className="text-xs">
-                  <span className={checkPasswordStrength(currentPassword).score >= 3 ? 'text-green-600' : 'text-orange-500'}>
+                  <span className={checkPasswordStrength(currentPassword).score >= 3 ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}>
                     {checkPasswordStrength(currentPassword).score >= 3 
                       ? '✓ 密码强度符合要求' 
                       : `需要至少3种类型 (${checkPasswordStrength(currentPassword).score}/3)`
@@ -354,7 +429,7 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
             )}
             
             {(formErrors.password || errors.password) && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {formErrors.password?.message || errors.password}
               </p>
             )}
@@ -363,53 +438,56 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">组织信息</CardTitle>
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="text-base sm:text-lg">组织信息</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
-              <Label htmlFor="tenant_id">租户</Label>
+              <Label>租户</Label>
               <SearchableSelect
                 options={tenantOptions}
                 value={selectedTenant ? [selectedTenant] : []}
-                placeholder="选择租户"
+                placeholder={tenantOptions.length > 0 ? "选择租户" : "加载中..."}
                 searchPlaceholder="搜索租户..."
                 multiple={false}
+                disabled={tenantOptions.length === 0}
                 onValueChange={(value) => setValue('tenant_id', value[0] || '')}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="organization_id">组织</Label>
+              <Label>组织</Label>
               <SearchableSelect
                 options={organizationOptions}
                 value={selectedOrganization ? [selectedOrganization] : []}
-                placeholder="选择组织"
+                placeholder={organizationOptions.length > 0 ? "选择组织" : "加载中..."}
                 searchPlaceholder="搜索组织..."
                 multiple={false}
+                disabled={organizationOptions.length === 0}
                 onValueChange={(value) => setValue('organization_id', value[0] || '')}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
-              <Label htmlFor="team_id">部门/团队</Label>
+              <Label>部门/团队</Label>
               <SearchableSelect
                 options={teamOptions}
                 value={selectedTeam ? [selectedTeam] : []}
-                placeholder="选择部门"
+                placeholder={teamOptions.length > 0 ? "选择部门" : "加载中..."}
                 searchPlaceholder="搜索部门..."
                 multiple={false}
+                disabled={teamOptions.length === 0}
                 onValueChange={(value) => setValue('team_id', value[0] || '')}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="phone">联系电话</Label>
+              <Label htmlFor={`${formId}-phone`}>联系电话</Label>
               <Input
-                id="phone"
+                id={`${formId}-phone`}
                 {...register('phone')}
                 placeholder="输入联系电话"
               />
@@ -417,14 +495,15 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="roles">角色权限</Label>
+            <Label>角色权限</Label>
             <SearchableSelect
               options={roleOptions}
               value={selectedRoles || []}
-              placeholder="选择角色"
+              placeholder={roleOptions.length > 0 ? "选择角色" : "加载中..."}
               searchPlaceholder="搜索角色..."
               multiple={true}
               maxSelectedDisplay={3}
+              disabled={roleOptions.length === 0}
               onValueChange={(value) => setValue('roles', value)}
             />
             <p className="text-sm text-muted-foreground">
@@ -435,10 +514,10 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">权限设置</CardTitle>
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="text-base sm:text-lg">权限设置</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>账户状态</Label>
@@ -469,7 +548,7 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
         </CardContent>
       </Card>
 
-      <div className="flex flex-col sm:flex-row justify-end gap-3">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t">
         <Button 
           type="button" 
           variant="outline" 
@@ -479,7 +558,12 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
         >
           取消
         </Button>
-        <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+        <Button 
+          type="submit" 
+          disabled={loading} 
+          className="w-full sm:w-auto"
+          size="lg"
+        >
           {loading && <IconLoader2 size={16} className="mr-2 animate-spin" />}
           {isEditing ? '更新用户' : '创建用户'}
         </Button>

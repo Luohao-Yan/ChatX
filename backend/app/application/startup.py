@@ -15,6 +15,7 @@ from app.shared.monitoring.metrics import setup_system_metrics
 from app.core.banner import print_startup_banner, print_shutdown_banner
 from app.infrastructure.persistence.database import get_db_session
 from app.domain.initialization.rbac_init import initialize_rbac_system
+from app.domain.initialization.tenant_init import initialize_default_tenants
 from app.domain.initialization.admin_init import (
     initialize_super_admin,
     check_super_admin_exists,
@@ -36,14 +37,23 @@ async def initialize_system():
         if not admin_exists:
             logger.info("🔧 检测到系统未初始化，开始自动初始化...")
 
-            # 初始化RBAC系统
+            # 1. 初始化默认租户
+            logger.info("🏢 初始化默认租户...")
+            tenant_success = initialize_default_tenants(db_session)
+            if tenant_success:
+                logger.info("✅ 默认租户初始化成功")
+            else:
+                logger.error("❌ 默认租户初始化失败")
+                return  # 租户初始化失败则不继续
+
+            # 2. 初始化RBAC系统
             logger.info("🛡️ 初始化RBAC权限系统...")
             rbac_success = initialize_rbac_system(db_session)
 
             if rbac_success:
                 logger.info("✅ RBAC系统初始化成功")
 
-                # 初始化超级管理员
+                # 3. 初始化超级管理员
                 logger.info("👑 初始化超级管理员...")
                 admin_success = initialize_super_admin(db_session)
 

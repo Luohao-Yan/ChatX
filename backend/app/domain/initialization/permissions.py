@@ -423,6 +423,13 @@ class Permissions:
     RECYCLE_BIN_DELETE = "recycle_bin:delete"
     RECYCLE_BIN_MANAGE = "recycle_bin:manage"
 
+    # 租户管理
+    TENANT_CREATE = "tenant:create"
+    TENANT_READ = "tenant:read"
+    TENANT_UPDATE = "tenant:update"
+    TENANT_DELETE = "tenant:delete"
+    TENANT_MANAGE = "tenant:manage"
+
 
 # 预定义角色
 class DefaultRoles:

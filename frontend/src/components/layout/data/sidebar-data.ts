@@ -241,72 +241,116 @@ export const getSidebarData = (t: TFunction, user?: { name: string; email: strin
       },
       {
         title: t('nav.managementCenter'),
+        roles: ['super_admin', 'tenant_admin'], // 只有管理员级别用户可见整个管理中心
         items: [
           {
             title: t('nav.managementOverview'),
             url: '/management',
             icon: IconChartPie,
-          },
-          {
-            title: t('nav.organizationStructure'),
-            icon: IconBuilding,
-            items: [
-              {
-                title: t('nav.usersManagement'),
-                url: '/management/organization/users',
-                icon: IconUsers,
-              },
-              {
-                title: t('nav.organizationHierarchy'),
-                url: '/management/organization/hierarchy',
-                icon: IconBuildingBank,
-              },
-              {
-                title: t('nav.organizationChart'),
-                url: '/management/organization/chart',
-                icon: IconChartScatter3d,
-              },
-            ],
-          },
-          {
-            title: t('nav.securityPermissions'),
-            icon: IconLockAccess,
-            items: [
-              {
-                title: t('nav.rolesPermissions'),
-                url: '/management/security/roles',
-                icon: IconLock,
-              },
-              {
-                title: t('nav.accessControl'),
-                url: '/management/security/access',
-                icon: IconLockAccess,
-              },
-              {
-                title: t('nav.securityAudit'),
-                url: '/management/security/audit',
-                icon: IconScale,
-              },
-            ],
+            roles: ['super_admin', 'tenant_admin'], // 管理概览需要管理员权限
           },
           {
             title: t('nav.systemManagement'),
             icon: IconDatabase,
+            roles: ['super_admin'], // 只有超级管理员可见
             items: [
+              {
+                title: t('nav.tenantManagement'),
+                url: '/management/system/tenants',
+                icon: IconBuilding,
+                roles: ['super_admin'],
+              },
+              {
+                title: t('nav.systemUsers'),
+                url: '/management/system/users',
+                icon: IconUsers,
+                roles: ['super_admin'],
+              },
               {
                 title: t('nav.aiModelsManagement'),
                 url: '/management/system/ai-models',
                 icon: IconBrain,
+                roles: ['super_admin'],
               },
               {
                 title: t('nav.systemConfiguration'),
                 url: '/management/system/config',
                 icon: IconDatabase,
+                roles: ['super_admin'],
               },
               {
                 title: t('nav.integrationManagement'),
                 url: '/management/system/integrations',
                 icon: IconPackages,
+                roles: ['super_admin'],
+              },
+            ],
+          },
+          {
+            title: t('nav.enterpriseManagement'),
+            icon: IconBuilding,
+            roles: ['super_admin', 'tenant_admin'], // 超级管理员和租户管理员可见
+            items: [
+              {
+                title: t('nav.usersManagement'),
+                url: '/management/users',
+                icon: IconUsers,
+                roles: ['super_admin', 'tenant_admin'],
+              },
+              {
+                title: t('nav.organizationHierarchy'),
+                url: '/management/organization/hierarchy',
+                icon: IconBuildingBank,
+                roles: ['super_admin', 'tenant_admin'],
+              },
+              {
+                title: t('nav.organizationChart'),
+                url: '/management/organization/chart',
+                icon: IconChartScatter3d,
+                roles: ['super_admin', 'tenant_admin'],
+              },
+              {
+                title: t('nav.departmentUsers'),
+                url: '/management/department/users',
+                icon: IconUsers,
+                roles: ['super_admin', 'tenant_admin', 'dept_admin'],
+              },
+              {
+                title: t('nav.departmentSettings'),
+                url: '/management/department/settings',
+                icon: IconDatabase,
+                roles: ['super_admin', 'tenant_admin', 'dept_admin'],
+              },
+              {
+                title: t('nav.rolesPermissions'),
+                url: '/management/security/roles',
+                icon: IconLock,
+                roles: ['super_admin', 'tenant_admin'],
+              },
+              {
+                title: t('nav.passwordPolicies'),
+                url: '/management/security/password-policies',
+                icon: IconLock,
+                roles: ['super_admin', 'tenant_admin'],
+              },
+            ],
+          },
+          {
+            title: t('nav.securityAudit'),
+            icon: IconScale,
+            roles: ['super_admin', 'tenant_admin'],
+            items: [
+              {
+                title: t('nav.accessControl'),
+                url: '/management/security/access',
+                icon: IconLockAccess,
+                roles: ['super_admin', 'tenant_admin'],
+              },
+              {
+                title: t('nav.auditLogs'),
+                url: '/management/security/audit',
+                icon: IconScale,
+                roles: ['super_admin', 'tenant_admin'],
               },
             ],
           },

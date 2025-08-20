@@ -1,7 +1,7 @@
 // 通用类型定义
 
 export interface BaseEntity {
-  id: number
+  id: string
   created_at: string
   updated_at?: string
 }

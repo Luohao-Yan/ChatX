@@ -22,6 +22,7 @@ async def login_for_access_token(
     # 添加设备信息（创建新的LoginRequest对象）
     if request and not login_data.device_info:
         login_data = LoginRequest(
+            identifier=login_data.identifier,
             email=login_data.email,
             username=login_data.username,
             password=login_data.password,
@@ -149,3 +150,127 @@ async def read_users_me(
         pass  # 缓存更新失败不影响响应
     
     return user_data
+
+
+# ==================== 增强认证功能 ====================
+
+@router.post("/validate-token")
+async def validate_token(
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """验证令牌有效性并返回用户权限信息"""
+    permissions = await user_service.get_user_permissions(current_user.id)
+    return {
+        "valid": True,
+        "user_id": current_user.id,
+        "username": current_user.username,
+        "permissions": permissions,
+        "expires_in": 3600  # 可以从JWT中获取实际剩余时间
+    }
+
+
+@router.post("/permissions/check")
+async def check_permissions(
+    permission_data: dict,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """检查用户是否拥有特定权限"""
+    required_permissions = permission_data.get("permissions", [])
+    user_permissions = await user_service.get_user_permissions(current_user.id)
+    
+    # 检查每个权限
+    results = {}
+    for permission in required_permissions:
+        results[permission] = permission in user_permissions
+    
+    return {
+        "user_id": current_user.id,
+        "results": results,
+        "has_all": all(results.values()),
+        "has_any": any(results.values())
+    }
+
+
+@router.get("/permissions")
+async def get_current_user_permissions(
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """获取当前用户的所有权限"""
+    permissions = await user_service.get_user_permissions(current_user.id)
+    roles = await user_service.get_user_roles(current_user.id, current_user)
+    
+    return {
+        "user_id": current_user.id,
+        "permissions": permissions,
+        "roles": roles,
+        "is_superuser": current_user.is_superuser
+    }
+
+
+@router.post("/refresh-permissions")
+async def refresh_user_permissions(
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """刷新用户权限缓存"""
+    # 清除权限缓存
+    await user_service.clear_user_permissions_cache(current_user.id)
+    
+    # 重新获取权限
+    permissions = await user_service.get_user_permissions(current_user.id)
+    
+    return {
+        "message": "权限缓存已刷新",
+        "user_id": current_user.id,
+        "permissions": permissions
+    }
+
+
+# ==================== 审计日志接口 ====================
+
+@router.get("/audit-logs")
+async def get_user_audit_logs(
+    skip: int = 0,
+    limit: int = 50,
+    action_type: str = None,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """获取用户操作审计日志"""
+    logs = await user_service.get_user_audit_logs(
+        current_user.id, skip=skip, limit=limit, action_type=action_type
+    )
+    return {
+        "user_id": current_user.id,
+        "logs": logs,
+        "total": len(logs)
+    }
+
+
+@router.post("/audit-logs")
+async def create_audit_log(
+    log_data: dict,
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """创建审计日志记录"""
+    client_ip = request.client.host if request and request.client else None
+    
+    audit_log = await user_service.create_audit_log(
+        user_id=current_user.id,
+        action=log_data["action"],
+        resource_type=log_data.get("resource_type"),
+        resource_id=log_data.get("resource_id"),
+        details=log_data.get("details"),
+        ip_address=client_ip,
+        user_agent=request.headers.get("User-Agent") if request else None
+    )
+    
+    return {
+        "message": "审计日志已记录",
+        "log_id": audit_log["id"]
+    }

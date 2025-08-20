@@ -12,6 +12,12 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    tenant_id: Optional[str] = None
+    organization_id: Optional[str] = None
+    team_id: Optional[str] = None
+    roles: Optional[List[str]] = None
+    phone: Optional[str] = None
+    is_verified: Optional[bool] = None
 
     @field_validator("password")
     @classmethod
@@ -65,6 +71,9 @@ class UserInDBBase(UserBase):
 class User(UserInDBBase):
     roles: Optional[List[str]] = None  # 角色名列表
     permissions: Optional[List[str]] = None  # 权限名列表
+    is_superuser: Optional[bool] = None  # 是否超级管理员
+    current_tenant_id: Optional[str] = None  # 当前租户ID
+    tenant_ids: Optional[List[str]] = None  # 用户所属租户列表
     
     model_config = ConfigDict(from_attributes=True)
     
@@ -133,16 +142,17 @@ class TokenPayload(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: Optional[str] = None
-    username: Optional[str] = None
+    identifier: Optional[str] = None  # 统一的登录标识符（邮箱、用户名或手机号）
+    email: Optional[str] = None      # 保持向后兼容
+    username: Optional[str] = None   # 保持向后兼容
     password: str
     device_info: Optional[str] = None
     
     @model_validator(mode='after')
     def validate_login_identifier(self):
-        """验证至少提供email或username中的一个"""
-        if not self.email and not self.username:
-            raise ValueError('必须提供邮箱或用户名中的一个')
+        """验证至少提供identifier、email或username中的一个"""
+        if not self.identifier and not self.email and not self.username:
+            raise ValueError('必须提供登录标识符（用户名、邮箱或手机号）')
         return self
 
 

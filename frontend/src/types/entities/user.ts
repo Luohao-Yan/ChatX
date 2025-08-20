@@ -1,6 +1,7 @@
 import { BaseEntity } from '../common'
 
 export interface User extends BaseEntity {
+  // User specific fields
   email: string
   username: string
   full_name?: string
@@ -12,6 +13,8 @@ export interface User extends BaseEntity {
   roles?: string[]
   permissions?: string[]
   tenant_id?: string
+  current_tenant_id?: string
+  tenant_ids?: string[]
   organization_id?: string
   team_id?: string
   is_superuser?: boolean
@@ -67,7 +70,7 @@ export interface UserSession {
 }
 
 export interface LoginCredentials {
-  email: string
+  identifier: string // 支持邮箱、手机号或用户名
   password: string
   remember_me?: boolean
   device_info?: unknown

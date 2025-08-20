@@ -23,7 +23,6 @@ import { Route as authResetPasswordRouteImport } from './routes/(auth)/reset-pas
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
-import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedManagementIndexRouteImport } from './routes/_authenticated/management/index'
@@ -49,10 +48,13 @@ import { Route as AuthenticatedDocumentsStorageRouteImport } from './routes/_aut
 import { Route as AuthenticatedDocumentsSharedRouteImport } from './routes/_authenticated/documents/shared'
 import { Route as AuthenticatedDocumentsRecentRouteImport } from './routes/_authenticated/documents/recent'
 import { Route as AuthenticatedDocumentsFavoritesRouteImport } from './routes/_authenticated/documents/favorites'
+import { Route as AuthenticatedManagementSystemUsersRouteImport } from './routes/_authenticated/management/system/users'
+import { Route as AuthenticatedManagementSystemTenantsRouteImport } from './routes/_authenticated/management/system/tenants'
 import { Route as AuthenticatedManagementSystemIntegrationsRouteImport } from './routes/_authenticated/management/system/integrations'
 import { Route as AuthenticatedManagementSystemConfigRouteImport } from './routes/_authenticated/management/system/config'
 import { Route as AuthenticatedManagementSystemAiModelsRouteImport } from './routes/_authenticated/management/system/ai-models'
 import { Route as AuthenticatedManagementSecurityRolesRouteImport } from './routes/_authenticated/management/security/roles'
+import { Route as AuthenticatedManagementSecurityPasswordPoliciesRouteImport } from './routes/_authenticated/management/security/password-policies'
 import { Route as AuthenticatedManagementSecurityAuditRouteImport } from './routes/_authenticated/management/security/audit'
 import { Route as AuthenticatedManagementSecurityAccessRouteImport } from './routes/_authenticated/management/security/access'
 import { Route as AuthenticatedManagementOrganizationUsersRouteImport } from './routes/_authenticated/management/organization/users'
@@ -60,6 +62,7 @@ import { Route as AuthenticatedManagementOrganizationHierarchyRouteImport } from
 import { Route as AuthenticatedManagementOrganizationChartRouteImport } from './routes/_authenticated/management/organization/chart'
 import { Route as AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRouteImport } from './routes/_authenticated/documents/settings/knowledgeQualityAssessment'
 import { Route as AuthenticatedDocumentsSettingsCategoriesRouteImport } from './routes/_authenticated/documents/settings/categories'
+import { Route as AuthenticatedAuthOauthCallbackProviderRouteImport } from './routes/_authenticated/auth/oauth/callback/$provider'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -131,11 +134,6 @@ const AuthenticatedSettingsRouteRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
-  id: '/users/',
-  path: '/users/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
   id: '/tasks/',
   path: '/tasks/',
@@ -283,6 +281,18 @@ const AuthenticatedDocumentsFavoritesRoute =
     path: '/documents/favorites',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedManagementSystemUsersRoute =
+  AuthenticatedManagementSystemUsersRouteImport.update({
+    id: '/management/system/users',
+    path: '/management/system/users',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManagementSystemTenantsRoute =
+  AuthenticatedManagementSystemTenantsRouteImport.update({
+    id: '/management/system/tenants',
+    path: '/management/system/tenants',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedManagementSystemIntegrationsRoute =
   AuthenticatedManagementSystemIntegrationsRouteImport.update({
     id: '/management/system/integrations',
@@ -305,6 +315,12 @@ const AuthenticatedManagementSecurityRolesRoute =
   AuthenticatedManagementSecurityRolesRouteImport.update({
     id: '/management/security/roles',
     path: '/management/security/roles',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManagementSecurityPasswordPoliciesRoute =
+  AuthenticatedManagementSecurityPasswordPoliciesRouteImport.update({
+    id: '/management/security/password-policies',
+    path: '/management/security/password-policies',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedManagementSecurityAuditRoute =
@@ -349,6 +365,12 @@ const AuthenticatedDocumentsSettingsCategoriesRoute =
     path: '/documents/settings/categories',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAuthOauthCallbackProviderRoute =
+  AuthenticatedAuthOauthCallbackProviderRouteImport.update({
+    id: '/auth/oauth/callback/$provider',
+    path: '/auth/oauth/callback/$provider',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
@@ -389,7 +411,6 @@ export interface FileRoutesByFullPath {
   '/management': typeof AuthenticatedManagementIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
-  '/users': typeof AuthenticatedUsersIndexRoute
   '/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
   '/documents/settings/knowledgeQualityAssessment': typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
   '/management/organization/chart': typeof AuthenticatedManagementOrganizationChartRoute
@@ -397,10 +418,14 @@ export interface FileRoutesByFullPath {
   '/management/organization/users': typeof AuthenticatedManagementOrganizationUsersRoute
   '/management/security/access': typeof AuthenticatedManagementSecurityAccessRoute
   '/management/security/audit': typeof AuthenticatedManagementSecurityAuditRoute
+  '/management/security/password-policies': typeof AuthenticatedManagementSecurityPasswordPoliciesRoute
   '/management/security/roles': typeof AuthenticatedManagementSecurityRolesRoute
   '/management/system/ai-models': typeof AuthenticatedManagementSystemAiModelsRoute
   '/management/system/config': typeof AuthenticatedManagementSystemConfigRoute
   '/management/system/integrations': typeof AuthenticatedManagementSystemIntegrationsRoute
+  '/management/system/tenants': typeof AuthenticatedManagementSystemTenantsRoute
+  '/management/system/users': typeof AuthenticatedManagementSystemUsersRoute
+  '/auth/oauth/callback/$provider': typeof AuthenticatedAuthOauthCallbackProviderRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof authForgotPasswordRoute
@@ -440,7 +465,6 @@ export interface FileRoutesByTo {
   '/management': typeof AuthenticatedManagementIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
-  '/users': typeof AuthenticatedUsersIndexRoute
   '/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
   '/documents/settings/knowledgeQualityAssessment': typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
   '/management/organization/chart': typeof AuthenticatedManagementOrganizationChartRoute
@@ -448,10 +472,14 @@ export interface FileRoutesByTo {
   '/management/organization/users': typeof AuthenticatedManagementOrganizationUsersRoute
   '/management/security/access': typeof AuthenticatedManagementSecurityAccessRoute
   '/management/security/audit': typeof AuthenticatedManagementSecurityAuditRoute
+  '/management/security/password-policies': typeof AuthenticatedManagementSecurityPasswordPoliciesRoute
   '/management/security/roles': typeof AuthenticatedManagementSecurityRolesRoute
   '/management/system/ai-models': typeof AuthenticatedManagementSystemAiModelsRoute
   '/management/system/config': typeof AuthenticatedManagementSystemConfigRoute
   '/management/system/integrations': typeof AuthenticatedManagementSystemIntegrationsRoute
+  '/management/system/tenants': typeof AuthenticatedManagementSystemTenantsRoute
+  '/management/system/users': typeof AuthenticatedManagementSystemUsersRoute
+  '/auth/oauth/callback/$provider': typeof AuthenticatedAuthOauthCallbackProviderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -494,7 +522,6 @@ export interface FileRoutesById {
   '/_authenticated/management/': typeof AuthenticatedManagementIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
-  '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/documents/settings/categories': typeof AuthenticatedDocumentsSettingsCategoriesRoute
   '/_authenticated/documents/settings/knowledgeQualityAssessment': typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
   '/_authenticated/management/organization/chart': typeof AuthenticatedManagementOrganizationChartRoute
@@ -502,10 +529,14 @@ export interface FileRoutesById {
   '/_authenticated/management/organization/users': typeof AuthenticatedManagementOrganizationUsersRoute
   '/_authenticated/management/security/access': typeof AuthenticatedManagementSecurityAccessRoute
   '/_authenticated/management/security/audit': typeof AuthenticatedManagementSecurityAuditRoute
+  '/_authenticated/management/security/password-policies': typeof AuthenticatedManagementSecurityPasswordPoliciesRoute
   '/_authenticated/management/security/roles': typeof AuthenticatedManagementSecurityRolesRoute
   '/_authenticated/management/system/ai-models': typeof AuthenticatedManagementSystemAiModelsRoute
   '/_authenticated/management/system/config': typeof AuthenticatedManagementSystemConfigRoute
   '/_authenticated/management/system/integrations': typeof AuthenticatedManagementSystemIntegrationsRoute
+  '/_authenticated/management/system/tenants': typeof AuthenticatedManagementSystemTenantsRoute
+  '/_authenticated/management/system/users': typeof AuthenticatedManagementSystemUsersRoute
+  '/_authenticated/auth/oauth/callback/$provider': typeof AuthenticatedAuthOauthCallbackProviderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -548,7 +579,6 @@ export interface FileRouteTypes {
     | '/management'
     | '/settings/'
     | '/tasks'
-    | '/users'
     | '/documents/settings/categories'
     | '/documents/settings/knowledgeQualityAssessment'
     | '/management/organization/chart'
@@ -556,10 +586,14 @@ export interface FileRouteTypes {
     | '/management/organization/users'
     | '/management/security/access'
     | '/management/security/audit'
+    | '/management/security/password-policies'
     | '/management/security/roles'
     | '/management/system/ai-models'
     | '/management/system/config'
     | '/management/system/integrations'
+    | '/management/system/tenants'
+    | '/management/system/users'
+    | '/auth/oauth/callback/$provider'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -599,7 +633,6 @@ export interface FileRouteTypes {
     | '/management'
     | '/settings'
     | '/tasks'
-    | '/users'
     | '/documents/settings/categories'
     | '/documents/settings/knowledgeQualityAssessment'
     | '/management/organization/chart'
@@ -607,10 +640,14 @@ export interface FileRouteTypes {
     | '/management/organization/users'
     | '/management/security/access'
     | '/management/security/audit'
+    | '/management/security/password-policies'
     | '/management/security/roles'
     | '/management/system/ai-models'
     | '/management/system/config'
     | '/management/system/integrations'
+    | '/management/system/tenants'
+    | '/management/system/users'
+    | '/auth/oauth/callback/$provider'
   id:
     | '__root__'
     | '/_authenticated'
@@ -652,7 +689,6 @@ export interface FileRouteTypes {
     | '/_authenticated/management/'
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
-    | '/_authenticated/users/'
     | '/_authenticated/documents/settings/categories'
     | '/_authenticated/documents/settings/knowledgeQualityAssessment'
     | '/_authenticated/management/organization/chart'
@@ -660,10 +696,14 @@ export interface FileRouteTypes {
     | '/_authenticated/management/organization/users'
     | '/_authenticated/management/security/access'
     | '/_authenticated/management/security/audit'
+    | '/_authenticated/management/security/password-policies'
     | '/_authenticated/management/security/roles'
     | '/_authenticated/management/system/ai-models'
     | '/_authenticated/management/system/config'
     | '/_authenticated/management/system/integrations'
+    | '/_authenticated/management/system/tenants'
+    | '/_authenticated/management/system/users'
+    | '/_authenticated/auth/oauth/callback/$provider'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -779,13 +819,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/users/': {
-      id: '/_authenticated/users/'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AuthenticatedUsersIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tasks/': {
@@ -963,6 +996,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsFavoritesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/management/system/users': {
+      id: '/_authenticated/management/system/users'
+      path: '/management/system/users'
+      fullPath: '/management/system/users'
+      preLoaderRoute: typeof AuthenticatedManagementSystemUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/management/system/tenants': {
+      id: '/_authenticated/management/system/tenants'
+      path: '/management/system/tenants'
+      fullPath: '/management/system/tenants'
+      preLoaderRoute: typeof AuthenticatedManagementSystemTenantsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/management/system/integrations': {
       id: '/_authenticated/management/system/integrations'
       path: '/management/system/integrations'
@@ -989,6 +1036,13 @@ declare module '@tanstack/react-router' {
       path: '/management/security/roles'
       fullPath: '/management/security/roles'
       preLoaderRoute: typeof AuthenticatedManagementSecurityRolesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/management/security/password-policies': {
+      id: '/_authenticated/management/security/password-policies'
+      path: '/management/security/password-policies'
+      fullPath: '/management/security/password-policies'
+      preLoaderRoute: typeof AuthenticatedManagementSecurityPasswordPoliciesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/management/security/audit': {
@@ -1038,6 +1092,13 @@ declare module '@tanstack/react-router' {
       path: '/documents/settings/categories'
       fullPath: '/documents/settings/categories'
       preLoaderRoute: typeof AuthenticatedDocumentsSettingsCategoriesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/auth/oauth/callback/$provider': {
+      id: '/_authenticated/auth/oauth/callback/$provider'
+      path: '/auth/oauth/callback/$provider'
+      fullPath: '/auth/oauth/callback/$provider'
+      preLoaderRoute: typeof AuthenticatedAuthOauthCallbackProviderRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
@@ -1090,7 +1151,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedManagementIndexRoute: typeof AuthenticatedManagementIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
-  AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
   AuthenticatedDocumentsSettingsCategoriesRoute: typeof AuthenticatedDocumentsSettingsCategoriesRoute
   AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute: typeof AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute
   AuthenticatedManagementOrganizationChartRoute: typeof AuthenticatedManagementOrganizationChartRoute
@@ -1098,10 +1158,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedManagementOrganizationUsersRoute: typeof AuthenticatedManagementOrganizationUsersRoute
   AuthenticatedManagementSecurityAccessRoute: typeof AuthenticatedManagementSecurityAccessRoute
   AuthenticatedManagementSecurityAuditRoute: typeof AuthenticatedManagementSecurityAuditRoute
+  AuthenticatedManagementSecurityPasswordPoliciesRoute: typeof AuthenticatedManagementSecurityPasswordPoliciesRoute
   AuthenticatedManagementSecurityRolesRoute: typeof AuthenticatedManagementSecurityRolesRoute
   AuthenticatedManagementSystemAiModelsRoute: typeof AuthenticatedManagementSystemAiModelsRoute
   AuthenticatedManagementSystemConfigRoute: typeof AuthenticatedManagementSystemConfigRoute
   AuthenticatedManagementSystemIntegrationsRoute: typeof AuthenticatedManagementSystemIntegrationsRoute
+  AuthenticatedManagementSystemTenantsRoute: typeof AuthenticatedManagementSystemTenantsRoute
+  AuthenticatedManagementSystemUsersRoute: typeof AuthenticatedManagementSystemUsersRoute
+  AuthenticatedAuthOauthCallbackProviderRoute: typeof AuthenticatedAuthOauthCallbackProviderRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1128,7 +1192,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedManagementIndexRoute: AuthenticatedManagementIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
-  AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
   AuthenticatedDocumentsSettingsCategoriesRoute:
     AuthenticatedDocumentsSettingsCategoriesRoute,
   AuthenticatedDocumentsSettingsKnowledgeQualityAssessmentRoute:
@@ -1143,6 +1206,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedManagementSecurityAccessRoute,
   AuthenticatedManagementSecurityAuditRoute:
     AuthenticatedManagementSecurityAuditRoute,
+  AuthenticatedManagementSecurityPasswordPoliciesRoute:
+    AuthenticatedManagementSecurityPasswordPoliciesRoute,
   AuthenticatedManagementSecurityRolesRoute:
     AuthenticatedManagementSecurityRolesRoute,
   AuthenticatedManagementSystemAiModelsRoute:
@@ -1151,6 +1216,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedManagementSystemConfigRoute,
   AuthenticatedManagementSystemIntegrationsRoute:
     AuthenticatedManagementSystemIntegrationsRoute,
+  AuthenticatedManagementSystemTenantsRoute:
+    AuthenticatedManagementSystemTenantsRoute,
+  AuthenticatedManagementSystemUsersRoute:
+    AuthenticatedManagementSystemUsersRoute,
+  AuthenticatedAuthOauthCallbackProviderRoute:
+    AuthenticatedAuthOauthCallbackProviderRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

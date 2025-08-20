@@ -182,6 +182,11 @@ export function AppearanceProvider({
 }: AppearanceProviderProps) {
   const { theme } = useTheme()
   
+  // 添加系统主题状态监听
+  const [systemTheme, setSystemTheme] = useState<'dark' | 'light'>(() => {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  })
+  
   const [colorScheme, _setColorScheme] = useState<ColorScheme>(() => {
     const stored = localStorage.getItem(`${storageKeyPrefix}${STORAGE_KEYS.colorScheme}`)
     return (stored as ColorScheme) || defaultColorScheme
@@ -227,12 +232,34 @@ export function AppearanceProvider({
     return stored === 'true'
   })
 
+  // 监听系统主题变化 - 只在用户选择 system 时监听
+  useEffect(() => {
+    if (theme !== 'system') {
+      return // 用户选择了明确的 light 或 dark，不监听系统变化
+    }
+    
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    
+    const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+      setSystemTheme(e.matches ? 'dark' : 'light')
+    }
+    
+    // 初始设置当前系统主题
+    setSystemTheme(mediaQuery.matches ? 'dark' : 'light')
+    
+    mediaQuery.addEventListener('change', handleSystemThemeChange)
+    
+    return () => {
+      mediaQuery.removeEventListener('change', handleSystemThemeChange)
+    }
+  }, [theme]) // 依赖 theme，当用户切换主题模式时重新执行
+
   // 应用所有CSS变量
   useEffect(() => {
     const root = window.document.documentElement
     
-    // 颜色方案变量
-    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    // 颜色方案变量 - 使用systemTheme状态而不是直接查询
+    const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark')
     const colorVars = getColorSchemeVars(colorScheme, isDark)
     
     // 圆角变量
@@ -270,7 +297,7 @@ export function AppearanceProvider({
     root.classList.toggle('sidebar-right', sidebarPosition === 'right')
     root.classList.toggle('sidebar-left', sidebarPosition === 'left')
     
-  }, [colorScheme, radius, customRadius, useCustomRadius, fontSize, spacingDensity, interfaceWidth, sidebarPosition, pageTransition, theme])
+  }, [colorScheme, radius, customRadius, useCustomRadius, fontSize, spacingDensity, interfaceWidth, sidebarPosition, pageTransition, theme, systemTheme])
 
   // 设置函数
   const setColorScheme = (newColorScheme: ColorScheme) => {

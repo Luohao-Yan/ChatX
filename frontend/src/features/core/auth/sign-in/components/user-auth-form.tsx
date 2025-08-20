@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { IconBrandFacebook, IconBrandGithub, IconEye, IconEyeOff } from '@tabler/icons-react'
+import { IconEye, IconEyeOff } from '@tabler/icons-react'
 import { cn } from '@/utils/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,6 +22,7 @@ import { useAuth, useAuthError } from '@/hooks/use-auth'
 import { AuthErrorType } from '@/config/auth-config'
 import { deviceManager } from '@/services/auth'
 import { toast } from 'sonner'
+import { OAuthLogin } from '@/features/core/auth/oauth'
 
 type UserAuthFormProps = HTMLAttributes<HTMLFormElement>
 
@@ -35,10 +36,19 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [loginAttempts, setLoginAttempts] = useState(0)
 
   const formSchema = z.object({
-    email: z
+    identifier: z
       .string()
-      .min(1, t('auth.errors.emailRequired'))
-      .email(t('auth.errors.invalidEmail')),
+      .min(1, t('auth.errors.identifierRequired', { defaultValue: 'Please enter your username, email, or phone number' }))
+      .refine((value) => {
+        // 支持邮箱、手机号或用户名
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        const phonePattern = /^1[3-9]\d{9}$/
+        const usernamePattern = /^[a-zA-Z0-9_-]{3,20}$/
+        
+        return emailPattern.test(value) || phonePattern.test(value) || usernamePattern.test(value)
+      }, {
+        message: t('auth.errors.invalidIdentifier', { defaultValue: 'Please enter a valid email, phone number, or username' })
+      }),
     password: z
       .string()
       .min(1, t('auth.errors.passwordRequired'))
@@ -49,7 +59,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      identifier: '',
       password: '',
       rememberMe: false,
     },
@@ -71,7 +81,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       
       // 准备登录数据
       const loginData = {
-        email: data.email,
+        identifier: data.identifier, // 后端会自动识别是邮箱、手机号还是用户名
         password: data.password,
         rememberMe: data.rememberMe,
         deviceInfo: deviceManager.getDeviceInfo(),
@@ -107,11 +117,6 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     router.navigate({ to: '/forgot-password' })
   }
   
-  // 处理社交登录（暂时未实现）
-  const handleSocialLogin = (provider: 'github' | 'facebook') => {
-    const providerName = provider === 'github' ? 'GitHub' : 'Facebook'
-    toast.info(t('common.comingSoon', { feature: `${providerName} ${t('nav.signIn')}` }) || `${providerName} login coming soon`)
-  }
   
   // 处理错误关闭
   const handleErrorDismiss = () => {
@@ -155,15 +160,15 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         )}
         <FormField
           control={form.control}
-          name='email'
+          name='identifier'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('auth.email')}</FormLabel>
+              <FormLabel>{t('auth.identifier', { defaultValue: 'Username/Email/Phone' })}</FormLabel>
               <FormControl>
                 <Input 
-                  type="email"
-                  placeholder={t('auth.emailPlaceholder')}
-                  autoComplete="email"
+                  type="text"
+                  placeholder={t('auth.identifierPlaceholder', { defaultValue: 'Enter your username, email, or phone number' })}
+                  autoComplete="username"
                   disabled={isLoading || isLocked}
                   {...field} 
                 />
@@ -251,39 +256,16 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
           {isLoading ? t('common.loading') : t('auth.signInButton')}
         </Button>
 
-        <div className='relative my-4'>
-          <div className='absolute inset-0 flex items-center'>
-            <span className='w-full border-t' />
-          </div>
-          <div className='relative flex justify-center text-xs uppercase'>
-            <span className='bg-background text-muted-foreground px-2'>
-              {t('auth.orContinueWith')}
-            </span>
-          </div>
-        </div>
-
-        <div className='grid grid-cols-2 gap-3'>
-          <Button 
-            variant='outline' 
-            type='button' 
-            disabled={isLoading || isLocked}
-            onClick={() => handleSocialLogin('github')}
-            className="h-10"
-          >
-            <IconBrandGithub className='h-4 w-4 mr-2' /> 
-            {t('auth.signInWithGithub')}
-          </Button>
-          <Button 
-            variant='outline' 
-            type='button' 
-            disabled={isLoading || isLocked}
-            onClick={() => handleSocialLogin('facebook')}
-            className="h-10"
-          >
-            <IconBrandFacebook className='h-4 w-4 mr-2' /> 
-            {t('auth.signInWithFacebook')}
-          </Button>
-        </div>
+        {/* OAuth第三方登录 */}
+        <OAuthLogin 
+          className="mt-4"
+          onSuccess={() => {
+            // OAuth登录成功后的回调会在hook中处理
+          }}
+          onError={(error) => {
+            toast.error(error)
+          }}
+        />
         
         {/* 登录尝试次数提示 */}
         {loginAttempts > 2 && !isLocked && (

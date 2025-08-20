@@ -17,12 +17,12 @@ class IRoleRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_name(self, name: str, tenant_id: int) -> Optional[Role]:
+    async def get_by_name(self, name: str, tenant_id: str) -> Optional[Role]:
         """根据名称获取角色"""
         pass
     
     @abstractmethod
-    async def get_tenant_roles(self, tenant_id: int, include_deleted: bool = False) -> List[Role]:
+    async def get_tenant_roles(self, tenant_id: str, include_deleted: bool = False) -> List[Role]:
         """获取租户角色列表"""
         pass
     
@@ -37,7 +37,7 @@ class IRoleRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_role_hierarchy(self, tenant_id: int) -> List[Dict]:
+    async def get_role_hierarchy(self, tenant_id: str) -> List[Dict]:
         """获取角色层级结构"""
         pass
     
@@ -62,7 +62,7 @@ class IRoleRepository(ABC):
         pass
     
     @abstractmethod
-    async def exists_by_name(self, name: str, tenant_id: int, exclude_id: int = None) -> bool:
+    async def exists_by_name(self, name: str, tenant_id: str, exclude_id: int = None) -> bool:
         """检查角色名是否已存在"""
         pass
 

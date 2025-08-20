@@ -18,12 +18,15 @@ interface AuthUser {
   full_name?: string
   is_active: boolean
   is_verified: boolean
+  is_superuser?: boolean
   avatar_url?: string
   phone?: string
   bio?: string
   urls?: { value: string }[]
   date_of_birth?: string
   preferred_language?: string
+  current_tenant_id?: string
+  tenant_ids?: string[]
   created_at: string
   updated_at?: string
   last_login?: string
@@ -52,7 +55,7 @@ interface LoginAttempt {
 }
 
 interface LoginCredentials {
-  email: string
+  identifier: string // 支持邮箱、手机号或用户名
   password: string
   rememberMe?: boolean
   deviceInfo?: unknown
@@ -207,7 +210,7 @@ export const useAuthStore = create<AuthState>()(devtools(
 
         // 准备登录数据
         const loginPayload = {
-          email: credentials.email,
+          identifier: credentials.identifier, // 支持邮箱、手机号或用户名
           password: credentials.password
         }
 

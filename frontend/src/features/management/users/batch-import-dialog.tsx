@@ -21,6 +21,7 @@ import {
   IconLoader2
 } from '@tabler/icons-react'
 import { toast } from 'sonner'
+import { http } from '@/services/http'
 
 interface BatchImportDialogProps {
   open: boolean
@@ -74,19 +75,59 @@ export function BatchImportDialog({ open, onOpenChange, onImportSuccess }: Batch
     try {
       setDownloadingTemplate(true)
       
-      const response = await fetch('/api/v1/users/import/template/download', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
+      // 使用HTTP客户端的stream方法下载二进制文件
+      const stream = await http.stream({
+        url: '/v1/users/import/template/download',
+        method: 'GET'
       })
 
-      if (!response.ok) {
-        throw new Error('下载模板失败')
+      if (!stream) {
+        throw new Error('服务器未返回文件流，请稍后重试')
       }
 
-      // 创建下载链接
-      const blob = await response.blob()
+      // 读取流数据
+      const reader = stream.getReader()
+      const chunks: Uint8Array[] = []
+      
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        if (value) chunks.push(value)
+      }
+
+      // 验证是否获取到数据
+      if (chunks.length === 0) {
+        throw new Error('服务器返回的文件为空，请检查服务器状态')
+      }
+
+      // 合并所有数据块
+      const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0)
+      
+      // 验证文件大小（Excel文件至少应该有几KB）
+      if (totalLength < 1024) {
+        throw new Error('服务器返回的文件大小异常，可能文件生成失败')
+      }
+
+      const result = new Uint8Array(totalLength)
+      let position = 0
+      
+      for (const chunk of chunks) {
+        result.set(chunk, position)
+        position += chunk.length
+      }
+
+      // 验证文件头（Excel文件应该以特定字节开头）
+      // XLSX文件开头应该是 PK (ZIP文件格式)
+      if (result.length >= 2 && !(result[0] === 0x50 && result[1] === 0x4B)) {
+        console.warn('Warning: 文件可能不是有效的Excel格式')
+        // 不抛出错误，但给出警告，因为可能是其他格式但仍然有效
+      }
+
+      // 创建blob和下载链接
+      const blob = new Blob([result], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      })
+      
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -96,10 +137,10 @@ export function BatchImportDialog({ open, onOpenChange, onImportSuccess }: Batch
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
 
-      toast.success('模板下载成功')
+      toast.success(`模板下载成功（${(totalLength / 1024).toFixed(1)} KB）`)
     } catch (error) {
       console.error('Download template error:', error)
-      toast.error('下载模板失败，请稍后重试')
+      toast.error(error instanceof Error ? error.message : '下载模板失败，请稍后重试')
     } finally {
       setDownloadingTemplate(false)
     }
@@ -118,19 +159,15 @@ export function BatchImportDialog({ open, onOpenChange, onImportSuccess }: Batch
       const formData = new FormData()
       formData.append('file', selectedFile)
 
-      const response = await fetch('/api/v1/users/import/upload', {
+      // 使用标准HTTP组件处理文件上传
+      const response = await http.request({
+        url: '/v1/users/import/upload',
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        },
         body: formData
+        // 不设置Content-Type头，让HTTP客户端和浏览器自动处理multipart/form-data
       })
 
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.detail || '导入失败')
-      }
+      const result = response.data as ImportResult
 
       setImportResult(result)
       
@@ -166,7 +203,7 @@ export function BatchImportDialog({ open, onOpenChange, onImportSuccess }: Batch
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] md:w-full overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base md:text-lg">
             <IconFileSpreadsheet size={20} />

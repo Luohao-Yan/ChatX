@@ -15,6 +15,7 @@ interface BaseNavItem {
   title: string
   badge?: string
   icon?: React.ElementType
+  roles?: string[] // 允许访问的角色列表
 }
 
 type NavLink = BaseNavItem & {
@@ -32,6 +33,7 @@ type NavItem = NavCollapsible | NavLink
 interface NavGroup {
   title: string
   items: NavItem[]
+  roles?: string[] // 导航组级别的权限控制
 }
 
 interface SidebarData {

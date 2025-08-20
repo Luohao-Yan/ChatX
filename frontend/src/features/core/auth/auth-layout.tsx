@@ -6,9 +6,10 @@ interface Props {
 }
 
 export default function AuthLayout({ children }: Props) {
+
   return (
     <div className='bg-primary-foreground container grid h-svh max-w-none items-center justify-center'>
-      {/* Language and Theme Switch */}
+      {/* Top controls */}
       <div className='absolute top-4 right-4 flex items-center gap-2'>
         <LanguageSwitcher />
         <ThemeSwitch />
