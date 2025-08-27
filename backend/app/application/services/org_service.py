@@ -95,11 +95,15 @@ class OrgService:
     
     def get_organizations(self, skip: int = 0, limit: int = 100, 
                          parent_id: Optional[str] = None,
-                         search: Optional[str] = None) -> List[OrganizationResponse]:
+                         search: Optional[str] = None,
+                         tenant_id: Optional[str] = None) -> List[OrganizationResponse]:
         """获取组织列表"""
+        # 确定使用的租户ID：如果提供了tenant_id参数则使用它，否则使用当前用户的租户ID
+        effective_tenant_id = tenant_id if tenant_id else self.tenant_id
+        
         query = self.db.query(Organization).filter(
             and_(
-                Organization.tenant_id == self.tenant_id,
+                Organization.tenant_id == effective_tenant_id,
                 Organization.deleted_at.is_(None)
             )
         )
@@ -134,7 +138,7 @@ class OrgService:
             child_count = self.db.query(Organization).filter(
                 and_(
                     Organization.parent_id == org.id,
-                    Organization.tenant_id == self.tenant_id,
+                    Organization.tenant_id == effective_tenant_id,
                     Organization.deleted_at.is_(None)
                 )
             ).count()

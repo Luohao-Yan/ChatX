@@ -41,7 +41,7 @@ export function RecycleBinDialog({ open, onOpenChange, onUserRestored }: Recycle
       setLoading(true)
       const deletedUsers = await usersAPI.getDeletedUsers()
       setDeletedUsers(deletedUsers)
-    } catch (error) {
+    } catch (_error) {
       toast.error('加载回收站数据失败')
     } finally {
       setLoading(false)
@@ -78,7 +78,8 @@ export function RecycleBinDialog({ open, onOpenChange, onUserRestored }: Recycle
       await loadDeletedUsers()
       onUserRestored?.() // 通知父组件刷新用户列表
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || '恢复失败')
+      const errorMessage = error.response?.data?.detail || '恢复失败'
+      toast.error(errorMessage)
     } finally {
       setProcessing(false)
     }
@@ -106,7 +107,8 @@ export function RecycleBinDialog({ open, onOpenChange, onUserRestored }: Recycle
       setSelectedUsers([])
       await loadDeletedUsers()
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || '删除失败')
+      const errorMessage = error.response?.data?.detail || '删除失败'
+      toast.error(errorMessage)
     } finally {
       setProcessing(false)
     }
@@ -251,7 +253,7 @@ export function RecycleBinDialog({ open, onOpenChange, onUserRestored }: Recycle
                         </TableCell>
                         <TableCell>
                           <div className="text-sm text-muted-foreground">
-                            {user.deleted_by || '-'}
+                            -
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -359,8 +361,8 @@ export function RecycleBinDialog({ open, onOpenChange, onUserRestored }: Recycle
                         </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">删除者：</span>
-                        <span className="block">{user.deleted_by || '-'}</span>
+                        <span className="text-muted-foreground">删除时间：</span>
+                        <span className="block">{user.deleted_at ? new Date(user.deleted_at).toLocaleString() : '-'}</span>
                       </div>
                     </div>
 

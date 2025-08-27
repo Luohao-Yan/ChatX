@@ -14,6 +14,7 @@ class OrganizationBase(BaseModel):
     description: Optional[str] = Field(None, description="组织描述")
     logo_url: Optional[str] = Field(None, max_length=255, description="组织Logo URL")
     parent_id: Optional[str] = Field(None, description="父组织ID")
+    priority: Optional[int] = Field(0, ge=0, description="组织优先级，数值越大优先级越高")
     settings: Optional[Dict[str, Any]] = Field(None, description="组织配置")
 
 
@@ -29,6 +30,7 @@ class OrganizationUpdate(BaseModel):
     description: Optional[str] = Field(None, description="组织描述")
     logo_url: Optional[str] = Field(None, max_length=255, description="组织Logo URL")
     parent_id: Optional[str] = Field(None, description="父组织ID")
+    priority: Optional[int] = Field(None, ge=0, description="组织优先级，数值越大优先级越高")
     settings: Optional[Dict[str, Any]] = Field(None, description="组织配置")
     is_active: Optional[bool] = Field(None, description="是否激活")
 
@@ -40,6 +42,7 @@ class OrganizationResponse(OrganizationBase):
     owner_id: str
     path: str
     level: int
+    priority: int
     is_active: bool
     member_count: int
     created_at: datetime

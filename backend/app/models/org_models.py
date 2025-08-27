@@ -45,6 +45,7 @@ class Organization(Base):
     parent_id = Column(String(50), nullable=True, index=True, comment="父组织ID")
     path = Column(String(500), nullable=False, index=True, comment="组织层级路径")
     level = Column(Integer, default=0, nullable=False, comment="组织层级")
+    priority = Column(Integer, default=0, nullable=False, comment="组织优先级，数值越大优先级越高")
     is_active = Column(Boolean, default=True, nullable=False, comment="组织是否激活")
     
     # 组织配置
@@ -62,6 +63,7 @@ class Organization(Base):
         Index('idx_org_parent_path', 'parent_id', 'path'),
         Index('idx_org_owner', 'owner_id'),
         Index('idx_org_deleted', 'deleted_at', 'tenant_id'),
+        Index('idx_org_priority', 'tenant_id', 'priority', 'name'),
         {"comment": "组织架构表，管理公司的层级组织结构"}
     )
 

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from app.models.user_models import User, UserSession, UserVerification
 
 
@@ -137,4 +137,10 @@ class IUserVerificationRepository(ABC):
     @abstractmethod
     async def cleanup_expired(self) -> int:
         """清理过期的验证记录"""
+        pass
+    
+    @abstractmethod
+    async def get_user_statistics(self, tenant_id: Optional[str] = None,
+                                organization_id: Optional[str] = None) -> Dict[str, Any]:
+        """获取用户统计信息"""
         pass

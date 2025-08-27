@@ -44,6 +44,16 @@ export interface UserUpdateRequest {
   is_active?: boolean
 }
 
+export interface UserStatistics {
+  total: number
+  active: number
+  inactive: number
+  new_this_month: number
+  super_admin: number
+  admin: number
+  normal: number
+}
+
 // ==================== API服务类 ====================
 
 /**
@@ -158,6 +168,17 @@ export class UsersAPI {
     const response = await http.get<User[]>(`${this.baseURL}/users/recycle-bin`, { params })
     return response.data
   }
+
+  /**
+   * 获取用户统计信息
+   */
+  async getUserStatistics(params?: {
+    tenant_id?: string
+    organization_id?: string
+  }): Promise<UserStatistics> {
+    const response = await http.get<UserStatistics>(`${this.baseURL}/users/stats`, { params })
+    return response.data
+  }
 }
 
 // 导出单例实例
@@ -176,7 +197,8 @@ export const {
   batchRestoreUsers,
   permanentlyDeleteUser,
   batchPermanentlyDeleteUsers,
-  getDeletedUsers
+  getDeletedUsers,
+  getUserStatistics
 } = usersAPI
 
 export default usersAPI

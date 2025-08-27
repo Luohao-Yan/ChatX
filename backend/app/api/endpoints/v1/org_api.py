@@ -60,11 +60,12 @@ async def get_organizations(
     limit: int = Query(100, ge=1, le=1000, description="返回记录数"),
     parent_id: Optional[str] = Query(None, description="父组织ID"),
     search: Optional[str] = Query(None, description="搜索关键词"),
+    tenant_id: Optional[str] = Query(None, description="租户ID"),
     org_service: OrgService = Depends(get_org_service),
 ):
     """获取组织列表"""
     return org_service.get_organizations(
-        skip=skip, limit=limit, parent_id=parent_id, search=search
+        skip=skip, limit=limit, parent_id=parent_id, search=search, tenant_id=tenant_id
     )
 
 

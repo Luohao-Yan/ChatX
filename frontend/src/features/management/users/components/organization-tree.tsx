@@ -20,6 +20,9 @@ interface OrganizationTreeProps {
   selectedOrgId?: string | null
   onOrgSelect: (orgId: string | null, orgName: string) => void
   onAddUser?: (orgId: string) => void
+  currentTenantId?: string | null
+  isSuperAdmin?: boolean
+  currentUserTenantId?: string | null
 }
 
 interface TreeNode extends Organization {
@@ -27,7 +30,7 @@ interface TreeNode extends Organization {
   expanded: boolean
 }
 
-export function OrganizationTree({ selectedOrgId, onOrgSelect, onAddUser }: OrganizationTreeProps) {
+export function OrganizationTree({ selectedOrgId, onOrgSelect, onAddUser, currentTenantId, isSuperAdmin, currentUserTenantId }: OrganizationTreeProps) {
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [treeData, setTreeData] = useState<TreeNode[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,11 +41,29 @@ export function OrganizationTree({ selectedOrgId, onOrgSelect, onAddUser }: Orga
   const fetchOrganizations = async () => {
     try {
       setLoading(true)
-      const data = await organizationAPI.getOrganizations()
+      const params: {
+        skip: number
+        limit: number
+        tenant_id?: string
+      } = {
+        skip: 0,
+        limit: 100
+      }
+      
+      // 传递租户ID
+      if (isSuperAdmin && currentTenantId) {
+        // 超级管理员：使用选中的租户
+        params.tenant_id = currentTenantId
+      } else if (!isSuperAdmin && currentUserTenantId) {
+        // 非超级管理员：使用自己的租户ID
+        params.tenant_id = currentUserTenantId
+      }
+      
+      const data = await organizationAPI.getOrganizations(params)
       setOrganizations(data)
       buildTree(data)
     } catch (error) {
-      console.error('Failed to fetch organizations:', error)
+      console.warn('Failed to fetch organizations:', error)
       toast.error('获取组织列表失败')
     } finally {
       setLoading(false)
@@ -51,7 +72,8 @@ export function OrganizationTree({ selectedOrgId, onOrgSelect, onAddUser }: Orga
 
   useEffect(() => {
     fetchOrganizations()
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTenantId, isSuperAdmin, currentUserTenantId])
 
   // 构建树形结构
   const buildTree = (orgList: Organization[]) => {
@@ -78,9 +100,21 @@ export function OrganizationTree({ selectedOrgId, onOrgSelect, onAddUser }: Orga
       }
     })
 
-    // 排序
+    // 排序：根据level、priority和名称进行排序
     const sortNodes = (nodes: TreeNode[]) => {
-      nodes.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
+      nodes.sort((a, b) => {
+        // 先按level排序
+        if (a.level !== b.level) {
+          return a.level - b.level
+        }
+        // 同级组织优先按优先级降序排序（数值越大优先级越高）
+        if (a.priority !== b.priority) {
+          return b.priority - a.priority
+        }
+        // 优先级相同时按名称字母顺序排序（支持中文排序）
+        return a.name.localeCompare(b.name, 'zh-CN')
+      })
+      // 递归排序子节点
       nodes.forEach(node => sortNodes(node.children))
     }
 
@@ -101,24 +135,36 @@ export function OrganizationTree({ selectedOrgId, onOrgSelect, onAddUser }: Orga
   }
 
   // 获取组织类型图标
-  const getOrgIcon = (level: number, hasChildren: boolean) => {
+  const getOrgIcon = (level: number) => {
     if (level === 0) {
-      return <IconBuilding className="h-4 w-4 text-blue-600" />
+      return (
+        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+          <IconBuilding className="h-4 w-4 text-blue-600" />
+        </div>
+      )
     } else if (level === 1) {
-      return <IconBuildingBank className="h-4 w-4 text-green-600" />
+      return (
+        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+          <IconBuildingBank className="h-4 w-4 text-green-600" />
+        </div>
+      )
     } else {
-      return <IconUsers className="h-4 w-4 text-purple-600" />
+      return (
+        <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+          <IconUsers className="h-4 w-4 text-purple-600" />
+        </div>
+      )
     }
   }
 
   // 获取组织类型徽章
   const getOrgBadge = (level: number) => {
     if (level === 0) {
-      return <Badge variant="default" className="text-xs">公司</Badge>
+      return <Badge variant="default" className="text-xs px-1.5 py-0.5 h-5">公司</Badge>
     } else if (level === 1) {
-      return <Badge variant="secondary" className="text-xs">部门</Badge>
+      return <Badge variant="secondary" className="text-xs px-1.5 py-0.5 h-5">部门</Badge>
     } else {
-      return <Badge variant="outline" className="text-xs">团队</Badge>
+      return <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5">团队</Badge>
     }
   }
 
@@ -132,9 +178,9 @@ export function OrganizationTree({ selectedOrgId, onOrgSelect, onAddUser }: Orga
       <div key={node.id} className="select-none">
         <div
           className={cn(
-            "flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors",
-            "hover:bg-muted/50",
-            isSelected && "bg-primary/10 border border-primary/20"
+            "flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200",
+            "hover:bg-muted/60 hover:shadow-sm",
+            isSelected && "bg-primary/5 border-l-3 border-l-primary/70 shadow-sm ring-1 ring-primary/10"
           )}
           style={{ marginLeft: `${depth * 16}px` }}
           onClick={() => onOrgSelect(node.id, node.display_name || node.name)}
@@ -161,16 +207,16 @@ export function OrganizationTree({ selectedOrgId, onOrgSelect, onAddUser }: Orga
           </div>
 
           {/* 组织图标 */}
-          <div className="flex items-center justify-center w-5 h-5">
-            {getOrgIcon(node.level, hasChildren)}
+          <div className="flex items-center justify-center">
+            {getOrgIcon(node.level)}
           </div>
 
           {/* 组织信息 */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className={cn(
-                "text-sm font-medium truncate",
-                isSelected && "text-primary"
+                "text-sm font-medium truncate transition-colors",
+                isSelected && "text-primary/90 font-semibold"
               )}>
                 {node.display_name || node.name}
               </span>
@@ -230,9 +276,9 @@ export function OrganizationTree({ selectedOrgId, onOrgSelect, onAddUser }: Orga
   })
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full gap-2">
       {/* 头部工具栏 */}
-      <div className="flex flex-col gap-3 p-4 border-b">
+      <div className="flex flex-col gap-3 ">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">组织架构</h3>
           <Button variant="outline" size="sm" onClick={fetchOrganizations}>
@@ -258,7 +304,10 @@ export function OrganizationTree({ selectedOrgId, onOrgSelect, onAddUser }: Orga
             variant="outline"
             size="sm"
             onClick={() => onOrgSelect(null, '全部用户')}
-            className={cn(selectedOrgId === null && "bg-primary/10 border-primary/20")}
+            className={cn(
+              "transition-all duration-200",
+              selectedOrgId === null && "bg-primary/8 border-primary/70 shadow-sm ring-1 ring-primary/10 font-semibold text-primary/90"
+            )}
           >
             <IconUsers className="h-4 w-4 mr-1" />
             全部用户
@@ -267,7 +316,7 @@ export function OrganizationTree({ selectedOrgId, onOrgSelect, onAddUser }: Orga
       </div>
 
       {/* 树形结构 */}
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-32">
             <div className="text-sm text-muted-foreground">加载中...</div>

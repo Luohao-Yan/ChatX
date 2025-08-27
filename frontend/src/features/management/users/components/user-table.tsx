@@ -30,8 +30,10 @@ import {
   IconCrown,
   IconShield,
   IconUser,
+  IconBuilding,
 } from '@tabler/icons-react'
 import { User } from '@/types/entities/user'
+import { Organization } from '@/services/api/organization'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 
@@ -39,6 +41,7 @@ interface UserTableProps {
   users: User[]
   loading: boolean
   selectedUsers: User[]
+  organizations: Organization[]
   onUserSelect: (user: User, selected: boolean) => void
   onSelectAll: (selected: boolean) => void
   onUserEdit: (user: User) => void
@@ -53,6 +56,7 @@ export function UserTable({
   users,
   loading,
   selectedUsers,
+  organizations,
   onUserSelect,
   onSelectAll,
   onUserEdit,
@@ -127,6 +131,13 @@ export function UserTable({
     return 'outline'
   }
 
+  // 获取用户所属组织名称
+  const getUserOrganizationName = (organizationId?: string) => {
+    if (!organizationId || !organizations) return '-'
+    const org = organizations.find(o => o.id === organizationId)
+    return org ? org.name : '未知组织'
+  }
+
   if (loading) {
     return (
       <div className="bg-card rounded-lg shadow-sm border">
@@ -174,7 +185,10 @@ export function UserTable({
                 checked={allSelected}
                 onCheckedChange={onSelectAll}
                 ref={(el) => {
-                  if (el) el.indeterminate = someSelected && !allSelected
+                  if (el) {
+                    const checkbox = el.querySelector('button')
+                    if (checkbox) checkbox.setAttribute('data-indeterminate', (someSelected && !allSelected).toString())
+                  }
                 }}
                 aria-label="选择所有用户"
               />
@@ -201,6 +215,7 @@ export function UserTable({
                 )}
               </div>
             </TableHead>
+            <TableHead>组织</TableHead>
             <TableHead>角色</TableHead>
             <TableHead 
               className="cursor-pointer select-none hover:bg-muted/80 transition-colors"
@@ -224,7 +239,7 @@ export function UserTable({
                 )}
               </div>
             </TableHead>
-            <TableHead className="text-right">操作</TableHead>
+            <TableHead className="text-center">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -251,7 +266,7 @@ export function UserTable({
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
                       <AvatarImage 
-                        src={user.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${user.username}`} 
+                        src={user.avatar_url} 
                         alt={user.username} 
                       />
                       <AvatarFallback>
@@ -288,6 +303,12 @@ export function UserTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
+                    <IconBuilding size={16} className="text-muted-foreground" />
+                    <span className="text-sm">{getUserOrganizationName(user.organization_id)}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
                     {getUserRoleIcon(user.roles)}
                     <Badge variant={getUserRoleBadgeVariant(user.roles)} className="text-xs">
                       {getUserRoleText(user.roles)}
@@ -317,7 +338,7 @@ export function UserTable({
                     })}
                   </span>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-center">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0">

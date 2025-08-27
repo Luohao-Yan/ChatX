@@ -2,6 +2,9 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 from app.domain.repositories.user_repository import (
     IUserRepository, IUserSessionRepository, IUserVerificationRepository
@@ -10,6 +13,7 @@ from app.domain.services.user_domain_service import UserDomainService
 from app.schemas.user_schemas import UserCreate, UserUpdate, LoginRequest, UserBatchImportResponse
 from app.schemas.batch_schemas import BatchOperationResponse
 from app.models.user_models import User, UserSession, UserVerification, UserType
+from app.models.org_models import UserOrganization
 from app.infrastructure.securities import security
 from app.application.middleware.verification_service import get_verification_service
 from app.application.middleware.session_cache_service import get_session_cache_service
@@ -17,7 +21,7 @@ from app.application.middleware.api_cache_service import get_api_cache_service, 
 from app.application.middleware.rate_limiter_service import get_rate_limiter_service
 from app.tasks.user_tasks import send_verification_email
 from app.application.services.email_service import get_email_service
-from app.domain.initialization.tenant_init import ensure_public_tenant_exists
+from app.domain.initialization.tenant_init import ensure_public_tenant_exists, ensure_public_default_organization_exists
 
 
 class UserService:
@@ -68,11 +72,13 @@ class UserService:
         # 5. 获取public租户ID - 个人用户注册时自动分配到public租户
         public_tenant_id = ensure_public_tenant_exists(self.user_repo.db)
         
+        # 5.1. 确保公共租户的默认组织存在
+        public_org_id = ensure_public_default_organization_exists(self.user_repo.db)
+        
         # 6. 创建用户 - 个人用户类型，分配到public租户
         user_create_data = {
             "email": user_data.email,
             "username": user_data.username,
-            "full_name": user_data.full_name,
             "hashed_password": hashed_password,
             "user_type": UserType.INDIVIDUAL,  # 个人用户类型
             "current_tenant_id": public_tenant_id,  # 使用public租户
@@ -83,11 +89,15 @@ class UserService:
         
         user = await self.user_repo.create(user_create_data)
         
-        # 7. 创建邮箱验证码
-        await self._create_email_verification(user.id, user.email)
+        # 6.1. 创建用户资料（如果有full_name）
+        if user_data.full_name:
+            await self._create_user_profile(user.id, user_data.full_name)
         
-        # 注意: 个人用户(INDIVIDUAL)注册后不会自动关联任何组织部门
-        # 他们可以后续自由创建团队或被邀请加入企业组织
+        # 7. 将用户自动加入公共组织
+        await self._add_user_to_public_organization(user.id, public_org_id, public_tenant_id)
+        
+        # 8. 创建邮箱验证码
+        await self._create_email_verification(user.id, user.email)
         
         return user
     
@@ -448,19 +458,25 @@ class UserService:
     async def get_users_list(self, current_user: User, skip: int = 0, 
                            limit: int = 100, include_deleted: bool = False,
                            status: Optional[str] = None, organization_id: Optional[str] = None,
-                           search: Optional[str] = None) -> List[User]:
+                           search: Optional[str] = None, tenant_id: Optional[str] = None) -> List[User]:
         """获取用户列表
         
         根据用户角色决定可见范围：
-        - 超级管理员：可以看到所有租户的用户
+        - 超级管理员：可以查看指定租户的用户（通过tenant_id参数）
         - 普通管理员：只能看到自己租户的用户
         """
+        # 确定使用的租户ID
+        target_tenant_id = current_user.current_tenant_id  # 默认使用当前用户的租户
+        
+        # 如果是超级管理员且指定了tenant_id，则使用指定的租户ID
+        if current_user.is_superuser and tenant_id:
+            target_tenant_id = tenant_id
+        
         return await self.user_repo.get_list(
-            tenant_id=current_user.current_tenant_id,
+            tenant_id=target_tenant_id,
             skip=skip, 
             limit=limit, 
             include_deleted=include_deleted,
-            is_superuser=current_user.is_superuser,
             status=status,
             organization_id=organization_id,
             search=search
@@ -471,8 +487,7 @@ class UserService:
         return await self.user_repo.get_deleted_list(
             tenant_id=current_user.current_tenant_id,
             skip=skip,
-            limit=limit,
-            is_superuser=current_user.is_superuser
+            limit=limit
         )
     
     async def update_user(self, user_id: str, update_data: UserUpdate, 
@@ -836,6 +851,39 @@ class UserService:
                 detail=f"验证码发送过于频繁，请等待 {cooldown_remaining} 秒后重试"
             )
 
+    async def _add_user_to_public_organization(self, user_id: str, org_id: str, tenant_id: str) -> bool:
+        """将用户添加到公共组织"""
+        try:
+            # 检查是否已存在关联
+            existing_relation = self.user_repo.db.query(UserOrganization).filter(
+                UserOrganization.user_id == user_id,
+                UserOrganization.organization_id == org_id
+            ).first()
+            
+            if existing_relation:
+                return True  # 已存在关联，无需重复创建
+            
+            # 创建用户-组织关联
+            user_org_relation = UserOrganization(
+                id=uuid.uuid4(),
+                tenant_id=tenant_id,
+                user_id=user_id,
+                organization_id=org_id,
+                role="member",  # 普通成员
+                is_admin=False,
+                is_active=True
+            )
+            
+            self.user_repo.db.add(user_org_relation)
+            self.user_repo.db.commit()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"将用户 {user_id} 添加到公共组织失败: {e}")
+            self.user_repo.db.rollback()
+            return False
+
     async def _create_email_verification(self, user_id: str, email: str) -> None:
         """创建邮箱验证码"""
         # 使用Redis验证码服务
@@ -858,6 +906,31 @@ class UserService:
                 status_code=429, 
                 detail="验证码发送过于频繁，请稍后再试"
             )
+    
+    async def _create_user_profile(self, user_id: str, full_name: str) -> None:
+        """创建用户资料"""
+        try:
+            from app.models.user_models import UserProfile
+            from app.infrastructure.persistence.database import get_async_session
+            from uuid import uuid4
+            
+            # 创建UserProfile数据
+            profile_data = {
+                "id": str(uuid4()),
+                "user_id": user_id,
+                "full_name": full_name,
+                "nickname": full_name,  # 默认使用full_name作为nickname
+            }
+            
+            # 使用异步数据库会话创建UserProfile
+            async with get_async_session() as session:
+                profile = UserProfile(**profile_data)
+                session.add(profile)
+                await session.commit()
+            
+        except Exception as e:
+            logger.error(f"创建用户资料失败: {e}")
+            # 不抛出异常，因为用户已经创建成功，只是资料创建失败
     
     async def update_user_activity(self, user_id: str, activity_time: datetime = None) -> bool:
         """更新用户最后活动时间
@@ -1146,3 +1219,32 @@ class UserService:
         await self.logout_all_devices(user_id)
         
         return True
+    
+    async def get_user_statistics(self, current_user: User, tenant_id: Optional[str] = None,
+                                organization_id: Optional[str] = None) -> Dict[str, Any]:
+        """获取用户统计信息
+        
+        Args:
+            current_user: 当前用户
+            tenant_id: 租户ID（超级管理员可指定）
+            organization_id: 组织ID（可选）
+            
+        Returns:
+            用户统计数据
+        """
+        # 确定有效租户ID
+        effective_tenant_id = tenant_id
+        if not current_user.is_superuser:
+            # 非超级管理员只能查看自己租户的统计
+            effective_tenant_id = current_user.current_tenant_id
+        elif not effective_tenant_id:
+            # 超级管理员未指定租户ID时，默认使用自己的租户ID
+            effective_tenant_id = current_user.current_tenant_id
+        
+        # 通过仓储获取统计数据
+        stats = await self.user_repo.get_user_statistics(
+            tenant_id=effective_tenant_id,
+            organization_id=organization_id
+        )
+        
+        return stats

@@ -1,13 +1,13 @@
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { useState } from 'react'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import {
   IconUsers,
   IconUserPlus,
   IconUserOff,
   IconTrendingUp,
-  IconCrown,
-  IconShield,
-  IconUser,
+  IconChevronDown,
+  IconChartBar,
 } from '@tabler/icons-react'
 
 interface UserStats {
@@ -26,6 +26,8 @@ interface UserStatsCardsProps {
 }
 
 export function UserStatsCards({ stats, loading }: UserStatsCardsProps) {
+  const [isExpanded, setIsExpanded] = useState(true)
+  
   const statsCards = [
     {
       title: '总用户数',
@@ -53,103 +55,66 @@ export function UserStatsCards({ stats, loading }: UserStatsCardsProps) {
     }
   ]
 
-  const roleStats = [
-    {
-      title: '超级管理员',
-      value: stats.super_admin,
-      icon: IconCrown
-    },
-    {
-      title: '管理员',
-      value: stats.admin,
-      icon: IconShield
-    },
-    {
-      title: '普通用户',
-      value: stats.normal,
-      icon: IconUser
-    }
-  ]
-
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="relative overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-8 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-3 bg-gray-200 rounded animate-pulse" />
-                </div>
-                <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-6 mb-8">
-      {/* 基础统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsCards.map((card, index) => (
-          <Card key={index} className="relative overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {card.title}
-                  </p>
-                  <p className="text-3xl font-bold text-foreground">
-                    {card.value?.toLocaleString() ?? 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {card.description}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
-                  <card.icon className="h-6 w-6 text-primary-foreground" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* 角色分布卡片 */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-foreground">用户角色分布</h3>
-            <Badge variant="outline" className="text-xs px-2 py-1">
-              统计信息
-            </Badge>
+    <Card className="shadow-sm">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <IconChartBar className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">用户统计</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {roleStats.map((role, index) => (
-              <div key={index} className="bg-secondary/50 rounded-lg p-4 border">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
-                    <role.icon className="h-5 w-5 text-secondary-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {role.title}
-                    </p>
-                    <p className="text-2xl font-bold text-foreground">
-                      {role.value?.toLocaleString() ?? 0}
-                    </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="h-8 w-8 p-0"
+          >
+            <IconChevronDown 
+              className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} 
+            />
+          </Button>
+        </div>
+      </CardHeader>
+      
+      {isExpanded && (
+        <CardContent className="pt-0">
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="border rounded-lg p-3">
+                  <div className="flex flex-col space-y-2">
+                    <div className="h-3 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-6 bg-gray-200 rounded animate-pulse w-16" />
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* 基础统计卡片 - 紧凑布局 */}
+              {statsCards.map((card, index) => (
+                <div key={index} className="border rounded-lg p-3 hover:shadow-sm transition-all duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                      <card.icon className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground truncate">
+                        {card.title}
+                      </p>
+                      <p className="text-xl font-bold text-foreground">
+                        {card.value?.toLocaleString() ?? 0}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
-      </Card>
-    </div>
+      )}
+    </Card>
   )
 }

@@ -16,6 +16,7 @@ export interface Organization {
   parent_id?: string
   path: string
   level: number
+  priority: number
   is_active: boolean
   member_count: number
   settings?: Record<string, unknown>
@@ -30,6 +31,7 @@ export interface OrganizationCreate {
   description?: string
   logo_url?: string
   parent_id?: string
+  priority?: number
   settings?: Record<string, unknown>
 }
 
@@ -39,6 +41,7 @@ export interface OrganizationUpdate {
   description?: string
   logo_url?: string
   parent_id?: string
+  priority?: number
   settings?: Record<string, unknown>
   is_active?: boolean
 }

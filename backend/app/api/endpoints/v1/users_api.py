@@ -101,12 +101,13 @@ async def get_users(
     status: Optional[str] = None,
     organization_id: Optional[str] = None,
     search: Optional[str] = None,
+    tenant_id: Optional[str] = None,
     current_user: User = Depends(get_current_active_user),
     user_service: UserService = Depends(get_user_service),
 ):
     """获取用户列表"""
     return await user_service.get_users_list(
-        current_user, skip, limit, include_deleted, status, organization_id, search
+        current_user, skip, limit, include_deleted, status, organization_id, search, tenant_id
     )
 
 
@@ -310,6 +311,19 @@ async def get_user_invitations(
     """获取邀请列表"""
     return await user_service.get_user_invitations(
         current_user, status=status, skip=skip, limit=limit
+    )
+
+
+@router.get("/stats")
+async def get_user_statistics(
+    tenant_id: Optional[str] = None,
+    organization_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """获取用户统计信息"""
+    return await user_service.get_user_statistics(
+        current_user, tenant_id=tenant_id, organization_id=organization_id
     )
 
 

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -24,9 +23,10 @@ import {
   IconShield,
   IconUser,
   IconCalendar,
-  IconMapPin,
+  IconBuilding,
 } from '@tabler/icons-react'
 import { User } from '@/types/entities/user'
+import { Organization } from '@/services/api/organization'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 
@@ -34,6 +34,7 @@ interface UserCardListProps {
   users: User[]
   loading: boolean
   selectedUsers: User[]
+  organizations: Organization[]
   onUserSelect: (user: User, selected: boolean) => void
   onUserEdit: (user: User) => void
   onUserDelete: (user: User) => void
@@ -47,6 +48,7 @@ export function UserCardList({
   users,
   loading,
   selectedUsers,
+  organizations,
   onUserSelect,
   onUserEdit,
   onUserDelete,
@@ -89,6 +91,13 @@ export function UserCardList({
       return 'secondary'
     }
     return 'outline'
+  }
+
+  // 获取用户所属组织名称
+  const getUserOrganizationName = (organizationId?: string) => {
+    if (!organizationId || !organizations) return '未分配组织'
+    const org = organizations.find(o => o.id === organizationId)
+    return org ? org.name : '未知组织'
   }
 
   if (loading) {
@@ -159,12 +168,12 @@ export function UserCardList({
                 </div>
 
                 {/* 头像 */}
-                <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                <Avatar className="h-12 w-12">
                   <AvatarImage 
-                    src={user.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${user.username}`} 
+                    src={user.avatar_url} 
                     alt={user.username} 
                   />
-                  <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                  <AvatarFallback>
                     {user.full_name ? user.full_name.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -252,6 +261,14 @@ export function UserCardList({
                     <IconMail size={14} className="text-muted-foreground shrink-0" />
                     <span className="text-sm text-muted-foreground truncate">
                       {user.email}
+                    </span>
+                  </div>
+
+                  {/* 组织信息 */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <IconBuilding size={14} className="text-muted-foreground shrink-0" />
+                    <span className="text-sm text-muted-foreground truncate">
+                      {getUserOrganizationName(user.organization_id)}
                     </span>
                   </div>
 

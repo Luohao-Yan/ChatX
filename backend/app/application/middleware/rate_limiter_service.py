@@ -17,7 +17,7 @@ class RateLimiterService:
         # 默认限流配置
         self.default_rate_limits = {
             "login": {"requests": 5, "window": 300},  # 5分钟内最多5次登录尝试
-            "register": {"requests": 3, "window": 3600},  # 1小时内最多3次注册
+            "register": {"requests": 5, "window": 600},  # 10分钟内最多5次注册（开发环境友好）
             "send_code": {"requests": 3, "window": 300},  # 5分钟内最多发送3次验证码
             "api": {"requests": 100, "window": 60},  # 1分钟内最多100次API调用
         }
