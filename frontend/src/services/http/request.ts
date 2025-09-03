@@ -412,8 +412,8 @@ class HttpClient {
     return this.request<T>({ ...config, url, method: 'PATCH', body: data as BodyInit })
   }
 
-  async delete<T = unknown>(url: string, config?: Omit<RequestConfig, 'url' | 'method'>): Promise<ApiResponse<T>> {
-    return this.request<T>({ ...config, url, method: 'DELETE' })
+  async delete<T = unknown>(url: string, data?: RequestBody, config?: Omit<RequestConfig, 'url' | 'method' | 'body'>): Promise<ApiResponse<T>> {
+    return this.request<T>({ ...config, url, method: 'DELETE', body: data as BodyInit })
   }
 
   // 流式请求方法

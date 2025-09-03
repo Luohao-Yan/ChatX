@@ -5,6 +5,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.infrastructure.persistence.database import get_db
 from app.utils.deps import get_current_active_user
@@ -16,6 +17,8 @@ from app.schemas.org_schemas import (
     OrganizationResponse,
     OrganizationListResponse,
     TeamCreate,
+    BatchOrganizationRequest,
+    BatchOperationResponse,
     TeamUpdate,
     TeamResponse,
     TeamListResponse,
@@ -41,15 +44,35 @@ def get_org_service(
 
 @router.post("/organizations", response_model=OrganizationResponse, tags=["组织管理"])
 async def create_organization(
-    org_data: OrganizationCreate, org_service: OrgService = Depends(get_org_service)
+    org_data: OrganizationCreate, 
+    org_service: OrgService = Depends(get_org_service),
+    current_user: User = Depends(get_current_active_user)
 ):
     """创建组织"""
     try:
+        # 如果请求中包含tenant_id且与当前用户的租户ID不同，需要检查是否是超级管理员
+        if org_data.tenant_id and org_data.tenant_id != current_user.current_tenant_id:
+            if not current_user.is_superuser:
+                raise HTTPException(status_code=403, detail="只有超级管理员可以跨租户创建组织")
+        
         return org_service.create_organization(org_data)
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
+    except IntegrityError as e:
+        if "duplicate key value violates unique constraint" in str(e):
+            if "idx_org_tenant_name" in str(e):
+                raise HTTPException(status_code=400, detail="该租户下已存在同名组织")
+            else:
+                raise HTTPException(status_code=400, detail="数据冲突，请检查输入信息")
+        else:
+            raise HTTPException(status_code=400, detail="数据完整性错误")
+    except Exception as e:
+        # 记录未预期的错误
+        import logging
+        logging.error(f"创建组织时发生未预期错误: {str(e)}")
+        raise HTTPException(status_code=500, detail="服务器内部错误")
 
 
 @router.get(
@@ -77,12 +100,13 @@ async def get_organizations(
 async def get_deleted_organizations(
     skip: int = Query(0, ge=0, description="跳过记录数"),
     limit: int = Query(100, ge=1, le=1000, description="返回记录数"),
+    tenant_id: Optional[str] = Query(None, description="租户ID（超级管理员可指定）"),
     current_user: User = Depends(get_current_active_user),
     org_service: OrgService = Depends(get_org_service),
 ):
     """获取回收站中的组织列表"""
     try:
-        return org_service.get_deleted_organizations(skip=skip, limit=limit)
+        return org_service.get_deleted_organizations(skip=skip, limit=limit, tenant_id=tenant_id)
     except Exception as e:
         import logging
 
@@ -242,6 +266,35 @@ async def permanently_delete_organization(
         raise HTTPException(status_code=400, detail=str(e))
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
+
+
+# ==================== 批量操作接口 ====================
+
+
+@router.post("/organizations/batch/restore", response_model=BatchOperationResponse, tags=["组织管理"])
+async def batch_restore_organizations(
+    request: BatchOrganizationRequest,
+    org_service: OrgService = Depends(get_org_service)
+):
+    """批量恢复组织"""
+    try:
+        result = org_service.batch_restore_organizations(request.organization_ids)
+        return BatchOperationResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"批量恢复失败: {str(e)}")
+
+
+@router.delete("/organizations/batch/permanent", response_model=BatchOperationResponse, tags=["组织管理"])
+async def batch_permanently_delete_organizations(
+    request: BatchOrganizationRequest,
+    org_service: OrgService = Depends(get_org_service)
+):
+    """批量永久删除组织"""
+    try:
+        result = org_service.batch_permanently_delete_organizations(request.organization_ids)
+        return BatchOperationResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"批量删除失败: {str(e)}")
 
 
 # ==================== 组织移动接口 ====================

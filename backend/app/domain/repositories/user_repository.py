@@ -79,6 +79,12 @@ class IUserRepository(ABC):
     async def get_all_users_including_deleted(self, tenant_id: str = None) -> List[User]:
         """获取所有用户，包括已删除的用户"""
         pass
+    
+    @abstractmethod
+    def get_user_statistics(self, tenant_id: Optional[str] = None,
+                           organization_id: Optional[str] = None) -> Dict[str, Any]:
+        """获取用户统计信息"""
+        pass
 
 
 class IUserSessionRepository(ABC):
@@ -137,10 +143,4 @@ class IUserVerificationRepository(ABC):
     @abstractmethod
     async def cleanup_expired(self) -> int:
         """清理过期的验证记录"""
-        pass
-    
-    @abstractmethod
-    async def get_user_statistics(self, tenant_id: Optional[str] = None,
-                                organization_id: Optional[str] = None) -> Dict[str, Any]:
-        """获取用户统计信息"""
         pass

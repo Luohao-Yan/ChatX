@@ -44,6 +44,8 @@ class TenantResponse(BaseModel):
     description: Optional[str] = Field(None, description="租户描述")
     schema_name: str = Field(..., description="数据库Schema名称")
     owner_id: str = Field(..., description="租户所有者ID")
+    owner_name: Optional[str] = Field(None, description="租户所有者名称")
+    owner_display_name: Optional[str] = Field(None, description="租户所有者显示名称")
     status: str = Field(..., description="租户状态")
     is_active: bool = Field(..., description="租户是否激活")
     slug: Optional[str] = Field(None, description="租户标识符")

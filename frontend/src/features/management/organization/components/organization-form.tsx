@@ -38,6 +38,7 @@ type OrganizationFormData = z.infer<typeof organizationSchema>
 interface OrganizationFormProps {
   organization?: Organization
   parentOrganizations: Organization[]
+  currentTenantId?: string
   onSuccess: () => void
   onCancel: () => void
 }
@@ -45,11 +46,21 @@ interface OrganizationFormProps {
 export function OrganizationForm({
   organization,
   parentOrganizations,
+  currentTenantId,
   onSuccess,
   onCancel,
 }: OrganizationFormProps) {
   const [loading, setLoading] = useState(false)
   const isEditing = !!organization
+  
+  // 调试：组件接收到的参数
+  console.log('[OrganizationForm] 组件初始化:', {
+    hasOrganization: !!organization,
+    organizationId: organization?.id,
+    currentTenantId,
+    hasCurrentTenantId: !!currentTenantId,
+    isEditing
+  })
 
   const form = useForm<OrganizationFormData>({
     resolver: zodResolver(organizationSchema),
@@ -63,26 +74,51 @@ export function OrganizationForm({
   })
 
   const onSubmit = async (data: OrganizationFormData) => {
+    // 将"root"值转换为空字符串，表示无上级组织
+    const submitData = {
+      ...data,
+      parent_id: data.parent_id === 'root' ? '' : data.parent_id,
+      // 如果提供了currentTenantId，则添加到请求数据中
+      ...(currentTenantId && { tenant_id: currentTenantId })
+    }
+
     try {
       setLoading(true)
       
-      // 将"root"值转换为空字符串，表示无上级组织
-      const submitData = {
-        ...data,
-        parent_id: data.parent_id === 'root' ? '' : data.parent_id
-      }
-      
+      console.log('[OrganizationForm] 提交组织操作:', {
+        isEditing,
+        submitData,
+        currentTenantId,
+        timestamp: new Date().toISOString()
+      })
+
       if (isEditing) {
-        await organizationAPI.updateOrganization(organization.id, submitData)
+        const result = await organizationAPI.updateOrganization(organization.id, submitData)
+        console.log('[OrganizationForm] 组织更新成功:', {
+          organizationId: organization.id,
+          result,
+          currentTenantId
+        })
         toast.success('组织更新成功')
       } else {
-        await organizationAPI.createOrganization(submitData)
+        const result = await organizationAPI.createOrganization(submitData)
+        console.log('[OrganizationForm] 组织创建成功:', {
+          result,
+          currentTenantId,
+          createdUnderTenant: result?.tenant_id || '未知租户'
+        })
         toast.success('组织创建成功')
       }
       
       onSuccess()
     } catch (error) {
-      console.error('组织操作失败:', error)
+      console.error('[OrganizationForm] 组织操作失败:', {
+        isEditing,
+        error,
+        currentTenantId,
+        submitData,
+        errorDetails: error instanceof Error ? error.message : '未知错误'
+      })
       toast.error(isEditing ? '组织更新失败' : '组织创建失败')
     } finally {
       setLoading(false)

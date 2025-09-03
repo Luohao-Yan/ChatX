@@ -164,7 +164,8 @@ fi
 
 # 检查数据库迁移
 echo "🗃️ 检查数据库迁移..."
-export $(cat .env.dev | grep -v ^# | xargs)
+# 重新读取环境变量（避免重复export）
+export $(cat .env.dev 2>/dev/null | grep -v ^# | xargs) 2>/dev/null || true
 
 if ! alembic current &>/dev/null; then
     echo "📊 运行数据库迁移..."

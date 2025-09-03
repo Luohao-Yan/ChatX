@@ -31,6 +31,7 @@ import {
   IconBrain,
 } from '@tabler/icons-react'
 import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
+import { TeamLogoIcon } from '@/components/team-logo-icon'
 import { TFunction } from 'i18next'
 import { type SidebarData } from '../types'
 // import { title } from 'process'
@@ -46,7 +47,7 @@ export const getSidebarData = (t: TFunction, user?: { name: string; email: strin
     teams: [
       {
         name: 'ChatX',
-        logo: Command,
+        logo: TeamLogoIcon,
         plan: 'Vite + ChatX',
       },
       {

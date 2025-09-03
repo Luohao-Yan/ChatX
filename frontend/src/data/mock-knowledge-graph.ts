@@ -3,7 +3,7 @@ import {
   KnowledgeNode, 
   KnowledgeNodeType, 
   KnowledgeLinkType 
-} from '@/types/knowledge-graph'
+} from '@/features/knowledge/types'
 
 /**
  * Mock知识图谱数据

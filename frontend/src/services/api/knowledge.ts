@@ -19,13 +19,13 @@ import type {
 
 // ==================== 知识图谱API ====================
 export class KnowledgeGraphAPI {
-  private static readonly BASE_PATH = '/v1/knowledge/graph'
+  private static readonly BASE_PATH = '/v1/knowledge'
 
   /**
    * 获取知识图谱数据
    */
   static async getGraph(params?: KnowledgeGraphRequest): Promise<KnowledgeGraphData> {
-    const response = await http.get<KnowledgeGraphResponse>(this.BASE_PATH, { 
+    const response = await http.get<KnowledgeGraphResponse>(`${this.BASE_PATH}/graph`, { 
       params 
     })
     return response.data.data
@@ -35,10 +35,14 @@ export class KnowledgeGraphAPI {
    * 搜索知识节点
    */
   static async searchNodes(params: KnowledgeSearchParams): Promise<KnowledgeGraphData> {
-    const response = await http.get<KnowledgeGraphResponse>(`${this.BASE_PATH}/search`, {
+    const response = await http.get<{nodes: any[], total: number}>(`${this.BASE_PATH}/graph/search`, {
       params
     })
-    return response.data.data
+    // 搜索API返回的是SearchResponse，需要转换为GraphData格式
+    return {
+      nodes: response.data.nodes || [],
+      links: []
+    }
   }
 
   /**

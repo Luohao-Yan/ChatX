@@ -1,0 +1,153 @@
+<svg width="301" height="301" viewBox="0 0 301 301" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 现代极简渐变 - 清新配色 -->
+    <linearGradient id="freshGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1">
+        <animate attributeName="stop-color" 
+          values="#667eea;#764ba2;#a8edea;#fed6e3;#667eea" 
+          dur="12s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1">
+        <animate attributeName="stop-color" 
+          values="#764ba2;#a8edea;#fed6e3;#ffecd2;#667eea" 
+          dur="12s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+    
+    <!-- 玻璃拟态高级渐变 -->
+    <radialGradient id="glassmorphism" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.4);stop-opacity:1"/>
+      <stop offset="50%" style="stop-color:rgba(255,255,255,0.2);stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.05);stop-opacity:1"/>
+    </radialGradient>
+    
+    <!-- 超柔和阴影 -->
+    <filter id="softShadow" x="-100%" y="-100%" width="300%" height="300%">
+      <feDropShadow dx="0" dy="16" stdDeviation="32" flood-color="#000000" flood-opacity="0.08"/>
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.04"/>
+      <feGaussianBlur stdDeviation="0.5" result="smooth"/>
+      <feMerge>
+        <feMergeNode in="smooth"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- 柔和模糊 -->
+    <filter id="gentleBlur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feColorMatrix type="saturate" values="1.2"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- 背景氛围层 -->
+  <circle cx="150.5" cy="150.5" r="135" fill="url(#freshGradient)" opacity="0.12">
+    <animate attributeName="r" values="130;140;130" dur="10s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.08;0.16;0.08" dur="10s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- 主圆形 - 现代拟态 -->
+  <circle cx="150.5" cy="150.5" r="95" fill="url(#freshGradient)" filter="url(#softShadow)">
+    <animate attributeName="r" values="93;97;93" dur="8s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- 玻璃拟态叠加 -->
+  <circle cx="150.5" cy="150.5" r="95" fill="url(#glassmorphism)" filter="url(#gentleBlur)">
+    <animate attributeName="opacity" values="0.6;0.8;0.6" dur="9s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- 超现代聊天设计 -->
+  <g transform="translate(150.5, 150.5)">
+    <!-- 主聊天泡泡 - 流线型 -->
+    <g filter="url(#softShadow)">
+      <path d="M-28 -16 C-32 -16 -35 -13 -35 -9 L-35 7 C-35 11 -32 14 -28 14 L-10 14 L-6 22 L-2 14 L10 14 C14 14 17 11 17 7 L17 -9 C17 -13 14 -16 10 -16 Z" 
+            fill="rgba(255,255,255,0.95)" 
+            opacity="0.95">
+        <animate attributeName="opacity" values="0.9;1;0.9" dur="6s" repeatCount="indefinite"/>
+        <animateTransform attributeName="transform" type="scale" values="1;1.02;1" dur="7s" repeatCount="indefinite"/>
+      </path>
+      
+      <!-- 超现代消息条 -->
+      <g>
+        <rect x="-22" y="-9" width="18" height="2.5" rx="1.25" fill="#667eea" opacity="0.9">
+          <animate attributeName="fill" values="#667eea;#764ba2;#a8edea;#667eea" dur="8s" repeatCount="indefinite"/>
+          <animate attributeName="width" values="14;20;14" dur="5s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="-22" y="-5" width="24" height="2.5" rx="1.25" fill="#764ba2" opacity="0.8">
+          <animate attributeName="fill" values="#764ba2;#a8edea;#fed6e3;#764ba2" dur="8s" repeatCount="indefinite"/>
+          <animate attributeName="width" values="20;28;20" dur="6s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="-22" y="-1" width="14" height="2.5" rx="1.25" fill="#a8edea" opacity="0.7">
+          <animate attributeName="fill" values="#a8edea;#fed6e3;#ffecd2;#a8edea" dur="8s" repeatCount="indefinite"/>
+          <animate attributeName="width" values="10;16;10" dur="4.5s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="-22" y="3" width="20" height="2.5" rx="1.25" fill="#fed6e3" opacity="0.9">
+          <animate attributeName="fill" values="#fed6e3;#ffecd2;#667eea;#fed6e3" dur="8s" repeatCount="indefinite"/>
+          <animate attributeName="width" values="16;22;16" dur="5.5s" repeatCount="indefinite"/>
+        </rect>
+      </g>
+    </g>
+    
+    <!-- 次要泡泡 - 优雅简约 -->
+    <g transform="translate(18, 18)">
+      <path d="M-10 -6 C-13 -6 -15 -4 -15 -1 L-15 5 C-15 8 -13 10 -10 10 L0 10 L3 14 L6 10 L10 10 C13 10 15 8 15 5 L15 -1 C15 -4 13 -6 10 -6 Z" 
+            fill="rgba(255,255,255,0.9)" 
+            opacity="0.85" 
+            filter="url(#softShadow)">
+        <animate attributeName="opacity" values="0.8;0.95;0.8" dur="7s" repeatCount="indefinite"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;2 -1;0 0" dur="8s" repeatCount="indefinite"/>
+      </path>
+      
+      <!-- 简约消息指示器 -->
+      <rect x="-6" y="-1" width="8" height="1.5" rx="0.75" fill="#ffecd2" opacity="0.8">
+        <animate attributeName="fill" values="#ffecd2;#fed6e3;#a8edea;#ffecd2" dur="6s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="-6" y="2" width="6" height="1.5" rx="0.75" fill="#a8edea" opacity="0.7">
+        <animate attributeName="fill" values="#a8edea;#667eea;#764ba2;#a8edea" dur="6s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+  </g>
+  
+  <!-- 精致装饰粒子 -->
+  <g opacity="0.5">
+    <!-- 浮动装饰 -->
+    <circle cx="85" cy="85" r="2.5" fill="rgba(255,255,255,0.8)" opacity="0.8">
+      <animateTransform attributeName="transform" type="translate" values="0 0;8 8;0 0" dur="12s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="6s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="2;3.5;2" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    
+    <circle cx="215" cy="215" r="3" fill="rgba(255,255,255,0.7)" opacity="0.6">
+      <animateTransform attributeName="transform" type="translate" values="0 0;-6 -6;0 0" dur="14s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.4;0.9;0.4" dur="7s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="2.5;4;2.5" dur="5s" repeatCount="indefinite"/>
+    </circle>
+    
+    <!-- 几何点缀 -->
+    <rect x="82" y="212" width="4" height="4" rx="1" fill="rgba(255,255,255,0.6)" opacity="0.7">
+      <animateTransform attributeName="transform" type="rotate" values="0 84 214;360 84 214" dur="16s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="8s" repeatCount="indefinite"/>
+    </rect>
+    
+    <polygon points="213,85 216,80 219,85 216,90" fill="rgba(255,255,255,0.7)" opacity="0.8">
+      <animateTransform attributeName="transform" type="rotate" values="0 216 85;-360 216 85" dur="20s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="9s" repeatCount="indefinite"/>
+    </polygon>
+  </g>
+  
+  <!-- 中心亮点 -->
+  <circle cx="150.5" cy="150.5" r="3" fill="rgba(255,255,255,0.9)" opacity="0.8">
+    <animate attributeName="r" values="2;5;2" dur="6s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="6s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- 环形律动 -->
+  <circle cx="150.5" cy="150.5" r="78" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.5" opacity="0.3" stroke-dasharray="2,4">
+    <animate attributeName="stroke-dashoffset" values="0;6" dur="4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.2;0.4;0.2" dur="8s" repeatCount="indefinite"/>
+  </circle>
+  
+</svg>

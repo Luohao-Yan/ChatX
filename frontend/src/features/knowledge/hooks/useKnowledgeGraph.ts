@@ -149,10 +149,12 @@ export const useKnowledgeGraph = (
     try {
       await refetch()
       toast.success('知识图谱加载成功')
-    } catch (error) {
+    } catch (_error) {
       toast.error('加载知识图谱失败')
     }
   }, [refetch])
+
+  const { mutateAsync: searchMutateAsync } = searchMutation
 
   const searchNodes = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -163,16 +165,16 @@ export const useKnowledgeGraph = (
     setFilterState(prev => ({ ...prev, searchQuery: query }))
     
     try {
-      await searchMutation.mutateAsync({
+      await searchMutateAsync({
         query,
         nodeTypes: filterState.selectedNodeTypes,
         organizationId: filterState.selectedOrganization,
         departmentId: filterState.selectedDepartment,
       })
-    } catch (error) {
+    } catch (_error) {
       // Error already handled in mutation
     }
-  }, [searchMutation, filterState])
+  }, [searchMutateAsync, filterState])
 
   const setSearchQuery = useCallback((query: string) => {
     setFilterState(prev => ({ ...prev, searchQuery: query }))

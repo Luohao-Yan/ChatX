@@ -1,1 +1,39 @@
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24" height="24" viewBox="948,463.5,24,24"><defs><clipPath id="clip-1"><rect x="948" y="463.5" width="24" height="24" id="clip-1" stroke="none"/></clipPath></defs><g fill="none" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal"><g><g id="Group 1"><g clip-path="url(#clip-1)" id="Group 1"><path d="M963,469.5v12c0,1.65685 1.34315,3 3,3c1.65685,0 3,-1.34315 3,-3c0,-1.65685 -1.34315,-3 -3,-3h-12c-1.65685,0 -3,1.34315 -3,3c0,1.65685 1.34315,3 3,3c1.65685,0 3,-1.34315 3,-3v-12c0,-1.65685 -1.34315,-3 -3,-3c-1.65685,0 -3,1.34315 -3,3c0,1.65685 1.34315,3 3,3h12c1.65685,0 3,-1.34315 3,-3c0,-1.65685 -1.34315,-3 -3,-3c-1.65685,0 -3,1.34315 -3,3" id="Path 1" stroke="#f2f2f2"/></g></g></g></g></svg>
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 简洁的白色背景圆形 -->
+  <circle cx="16" cy="16" r="15" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="1"/>
+  
+  <!-- 主对话框气泡 - 无填充版本 -->
+  <g transform="translate(16, 16)">
+    <path 
+      d="M-8 -5 C-9.5 -5 -10.5 -4 -10.5 -2.5 L-10.5 2.5 C-10.5 4 -9.5 5 -8 5 L-2.5 5 L0 9 L2.5 5 L8 5 C9.5 5 10.5 4 10.5 2.5 L10.5 -2.5 C10.5 -4 9.5 -5 8 -5 Z" 
+      fill="none" 
+      stroke="#4F46E5" 
+      stroke-width="1.5" 
+      opacity="0.9">
+    </path>
+    
+    <!-- 消息内容线条 -->
+    <g opacity="0.8">
+      <rect x="-6.5" y="-2.5" width="8" height="1.2" rx="0.6" fill="none" stroke="#06B6D4" stroke-width="1"/>
+      <rect x="-6.5" y="-0.4" width="10" height="1.2" rx="0.6" fill="none" stroke="#10B981" stroke-width="1"/>
+      <rect x="-6.5" y="1.8" width="5" height="1.2" rx="0.6" fill="none" stroke="#8B5CF6" stroke-width="1"/>
+    </g>
+  </g>
+  
+  <!-- 次要对话框气泡 - 无填充版本 -->
+  <g transform="translate(24, 8)">
+    <path 
+      d="M-4 -2.5 C-4.5 -2.5 -5 -2 -5 -1.5 L-5 1.5 C-5 2 -4.5 2.5 -4 2.5 L-1.5 2.5 L0 4 L1.5 2.5 L4 2.5 C4.5 2.5 5 2 5 1.5 L5 -1.5 C5 -2 4.5 -2.5 4 -2.5 Z" 
+      fill="none" 
+      stroke="#06B6D4" 
+      stroke-width="1.2" 
+      opacity="0.8">
+    </path>
+    
+    <!-- 简单消息线条指示器 -->
+    <g opacity="0.7">
+      <rect x="-2.5" y="-0.5" width="4" height="0.8" rx="0.4" fill="none" stroke="#10B981" stroke-width="0.8"/>
+      <rect x="-2.5" y="0.7" width="2.5" height="0.8" rx="0.4" fill="none" stroke="#8B5CF6" stroke-width="0.8"/>
+    </g>
+  </g>
+</svg>

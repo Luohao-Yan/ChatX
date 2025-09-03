@@ -1,0 +1,134 @@
+<svg width="301" height="301" viewBox="0 0 301 301" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 优雅金色渐变 -->
+    <linearGradient id="elegantGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F7931E;stop-opacity:1">
+        <animate attributeName="stop-color" 
+          values="#F7931E;#FFD700;#FFA500;#FF8C00;#F7931E" 
+          dur="15s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" style="stop-color:#FFD700;stop-opacity:1">
+        <animate attributeName="stop-color" 
+          values="#FFD700;#FFA500;#FF8C00;#F7931E;#FFD700" 
+          dur="15s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+    
+    <!-- 珍珠质感 -->
+    <radialGradient id="pearlGradient" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.8"/>
+      <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0.2"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </radialGradient>
+    
+    <!-- 优雅阴影 -->
+    <filter id="elegantShadow" x="-100%" y="-100%" width="300%" height="300%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#D97706" flood-opacity="0.3"/>
+      <feGaussianBlur stdDeviation="1" result="softBlur"/>
+      <feMerge>
+        <feMergeNode in="softBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- 外部光晕 -->
+  <circle cx="150.5" cy="150.5" r="130" fill="url(#elegantGradient)" opacity="0.1">
+    <animate attributeName="r" values="125;135;125" dur="10s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.08;0.15;0.08" dur="10s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- 主要椭圆 -->
+  <ellipse cx="150.5" cy="150.5" rx="90" ry="105" fill="url(#elegantGradient)" filter="url(#elegantShadow)">
+    <animate attributeName="rx" values="88;92;88" dur="8s" repeatCount="indefinite"/>
+    <animate attributeName="ry" values="103;107;103" dur="8s" repeatCount="indefinite"/>
+  </ellipse>
+  
+  <!-- 珍珠质感叠加 -->
+  <ellipse cx="150.5" cy="150.5" rx="90" ry="105" fill="url(#pearlGradient)">
+    <animate attributeName="opacity" values="0.3;0.6;0.3" dur="12s" repeatCount="indefinite"/>
+  </ellipse>
+  
+  <!-- 优雅的对话设计 -->
+  <g transform="translate(150.5, 150.5)">
+    <!-- 主对话气泡 - 优雅设计 -->
+    <g>
+      <path d="M-30 -20 C-35 -20 -40 -15 -40 -10 L-40 5 C-40 10 -35 15 -30 15 L-15 15 L-10 25 L-5 15 L10 15 C15 15 20 10 20 5 L20 -10 C20 -15 15 -20 10 -20 Z" 
+            fill="#ffffff" 
+            opacity="0.95" 
+            filter="url(#elegantShadow)">
+        <animate attributeName="opacity" values="0.9;1;0.9" dur="6s" repeatCount="indefinite"/>
+        <animateTransform attributeName="transform" type="scale" values="1;1.02;1" dur="8s" repeatCount="indefinite"/>
+      </path>
+      
+      <!-- 优雅装饰线条 -->
+      <path d="M-25 -8 Q0 -12 25 -8" stroke="#D97706" stroke-width="1.5" fill="none" opacity="0.6">
+        <animate attributeName="opacity" values="0.4;0.8;0.4" dur="4s" repeatCount="indefinite"/>
+        <animate attributeName="stroke" values="#D97706;#F7931E;#FFD700;#D97706" dur="8s" repeatCount="indefinite"/>
+      </path>
+      <path d="M-25 0 Q0 -2 25 0" stroke="#F7931E" stroke-width="1.5" fill="none" opacity="0.7">
+        <animate attributeName="opacity" values="0.5;0.9;0.5" dur="5s" repeatCount="indefinite"/>
+        <animate attributeName="stroke" values="#F7931E;#FFD700;#FFA500;#F7931E" dur="8s" repeatCount="indefinite"/>
+      </path>
+      <path d="M-25 8 Q0 6 25 8" stroke="#FFA500" stroke-width="1.5" fill="none" opacity="0.5">
+        <animate attributeName="opacity" values="0.3;0.7;0.3" dur="6s" repeatCount="indefinite"/>
+        <animate attributeName="stroke" values="#FFA500;#FF8C00;#D97706;#FFA500" dur="8s" repeatCount="indefinite"/>
+      </path>
+    </g>
+    
+    <!-- 次要气泡 -->
+    <g transform="translate(25, 20)">
+      <path d="M-15 -8 C-18 -8 -20 -6 -20 -3 L-20 3 C-20 6 -18 8 -15 8 L-5 8 L0 12 L5 8 L10 8 C13 8 15 6 15 3 L15 -3 C15 -6 13 -8 10 -8 Z" 
+            fill="#ffffff" 
+            opacity="0.8">
+        <animate attributeName="opacity" values="0.7;0.9;0.7" dur="7s" repeatCount="indefinite"/>
+        <animateTransform attributeName="transform" type="translate" values="0 0;2 -1;0 0" dur="9s" repeatCount="indefinite"/>
+      </path>
+      
+      <!-- 简约装饰 -->
+      <circle cx="-5" cy="0" r="1.5" fill="#D97706" opacity="0.7">
+        <animate attributeName="fill" values="#D97706;#F7931E;#FFD700;#D97706" dur="6s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="5" cy="0" r="1.5" fill="#F7931E" opacity="0.6">
+        <animate attributeName="fill" values="#F7931E;#FFD700;#FFA500;#F7931E" dur="6s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+  </g>
+  
+  <!-- 优雅装饰元素 -->
+  <g opacity="0.4">
+    <!-- 装饰花瓣 -->
+    <g transform="translate(75, 75)">
+      <path d="M0 -8 C-3 -5 -3 5 0 8 C3 5 3 -5 0 -8 Z" fill="#F7931E" opacity="0.6">
+        <animateTransform attributeName="transform" type="rotate" values="0 0 0;360 0 0" dur="20s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.4;0.8;0.4" dur="6s" repeatCount="indefinite"/>
+      </path>
+    </g>
+    
+    <!-- 装饰叶子 -->
+    <g transform="translate(225, 225)">
+      <path d="M-6 0 C-6 -4 -3 -6 0 -6 C3 -6 6 -4 6 0 C6 4 3 6 0 6 C-3 6 -6 4 -6 0 Z" fill="#FFD700" opacity="0.5">
+        <animateTransform attributeName="transform" type="rotate" values="0 0 0;-360 0 0" dur="25s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.3;0.7;0.3" dur="8s" repeatCount="indefinite"/>
+      </path>
+    </g>
+    
+    <!-- 装饰曲线 -->
+    <path d="M80 220 Q150 200 220 220" stroke="#FFA500" stroke-width="2" fill="none" opacity="0.3">
+      <animate attributeName="opacity" values="0.2;0.5;0.2" dur="10s" repeatCount="indefinite"/>
+      <animate attributeName="stroke" values="#FFA500;#FF8C00;#D97706;#FFA500" dur="12s" repeatCount="indefinite"/>
+    </path>
+    
+    <path d="M220 80 Q150 100 80 80" stroke="#FF8C00" stroke-width="2" fill="none" opacity="0.3">
+      <animate attributeName="opacity" values="0.2;0.5;0.2" dur="12s" repeatCount="indefinite"/>
+      <animate attributeName="stroke" values="#FF8C00;#D97706;#F7931E;#FF8C00" dur="10s" repeatCount="indefinite"/>
+    </path>
+  </g>
+  
+  <!-- 中心优雅点 -->
+  <circle cx="150.5" cy="150.5" r="4" fill="#ffffff" opacity="0.8">
+    <animate attributeName="r" values="3;6;3" dur="8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="8s" repeatCount="indefinite"/>
+  </circle>
+  
+</svg>

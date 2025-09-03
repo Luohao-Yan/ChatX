@@ -252,7 +252,7 @@ export function UserTable({
                 key={user.id} 
                 className={`hover:bg-muted/50 transition-colors ${
                   isSelected ? 'bg-primary/10' : ''
-                } ${isCurrentUser ? 'ring-2 ring-primary/20' : ''}`}
+                }`}
               >
                 <TableCell>
                   <Checkbox

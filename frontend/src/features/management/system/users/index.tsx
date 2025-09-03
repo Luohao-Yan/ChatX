@@ -67,7 +67,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { usersAPI } from '@/services/api/users'
-import { TenantAPI, Tenant } from '@/services/api/tenants'
+import { tenantAPI, Tenant } from '@/services/api/tenants'
 import { User } from '@/types/entities/user'
 import { toast } from 'sonner'
 import { useAuth } from '@/stores/auth'
@@ -94,9 +94,6 @@ export default function SystemUsersManagement() {
   const [pageSize] = useState(10)
   // const [totalUsers, setTotalUsers] = useState(0)
   
-  // 使用 usersAPI 实例
-  const tenantApi = new TenantAPI()
-
   const breadcrumbItems = [
     { label: t('nav.managementCenter') },
     { label: t('nav.systemManagement') },
@@ -110,7 +107,7 @@ export default function SystemUsersManagement() {
   const fetchTenants = useCallback(async () => {
     try {
       setTenantsLoading(true)
-      const tenantsData = await tenantApi.getTenants()
+      const tenantsData = await tenantAPI.getTenants()
       setTenants(tenantsData)
     } catch (error) {
       console.error('❌ [SystemUsers] 获取租户列表失败:', error)
@@ -118,7 +115,7 @@ export default function SystemUsersManagement() {
     } finally {
       setTenantsLoading(false)
     }
-  }, [tenantApi])
+  }, [])
 
   // 获取租户用户列表
   const fetchTenantUsers = useCallback(async (page = currentPage, size = pageSize) => {
@@ -153,7 +150,6 @@ export default function SystemUsersManagement() {
         filteredUsers = users.filter(user => user.current_tenant_id === selectedTenantId)
       }
       
-      console.log(`✅ [SystemUsers] 租户 ${selectedTenantId}: 获取到 ${users.length} 个用户，过滤后用户数量: ${filteredUsers.length}`)
       setUsers(filteredUsers)
       // setTotalUsers(filteredUsers.length)
     } catch (error) {
@@ -173,7 +169,7 @@ export default function SystemUsersManagement() {
 
     try {
       setIsProcessing(true)
-      await tenantApi.removeTenantUser(selectedTenantId, userId)
+      await tenantAPI.removeTenantUser(selectedTenantId, userId)
       toast.success('用户移除成功')
       // 刷新用户列表
       await fetchTenantUsers()
@@ -183,7 +179,7 @@ export default function SystemUsersManagement() {
     } finally {
       setIsProcessing(false)
     }
-  }, [selectedTenantId, tenantApi, fetchTenantUsers])
+  }, [selectedTenantId, fetchTenantUsers])
 
   useEffect(() => {
     fetchTenants()
@@ -198,7 +194,7 @@ export default function SystemUsersManagement() {
     if (selectedTenantId) {
       fetchTenantUsers(1, pageSize) // 重置到第一页
     }
-  }, [selectedTenantId])
+  }, [selectedTenantId, fetchTenantUsers, pageSize])
 
   // 过滤用户
   const filteredUsers = searchQuery ? users.filter(user => 

@@ -108,13 +108,31 @@ class TenantApplicationService:
         
         tenants = query.order_by(Tenant.created_at.desc()).all()
         
-        # 为每个租户添加统计信息
+        # 为每个租户添加统计信息和创建者信息
+        enhanced_tenants = []
         for tenant in tenants:
-            tenant.user_count = self._get_tenant_user_count(tenant.id)
-            tenant.org_count = self._get_tenant_org_count(tenant.id)
-            tenant.storage_used = self._get_tenant_storage_usage(tenant.id)
+            # Create a temporary object to hold additional attributes
+            enhanced_tenant = type('EnhancedTenant', (), {})()
+            
+            # Copy all original tenant attributes
+            for attr in ['id', 'name', 'display_name', 'description', 'schema_name', 'owner_id', 
+                        'status', 'is_active', 'slug', 'domain', 'subdomain', 'settings', 
+                        'features', 'limits', 'created_at', 'updated_at', 'deleted_at']:
+                setattr(enhanced_tenant, attr, getattr(tenant, attr, None))
+            
+            # Add statistical information
+            enhanced_tenant.user_count = self._get_tenant_user_count(tenant.id)
+            enhanced_tenant.org_count = self._get_tenant_org_count(tenant.id)
+            enhanced_tenant.storage_used = self._get_tenant_storage_usage(tenant.id)
+            
+            # Add creator information
+            owner_info = self._get_owner_info(tenant.owner_id)
+            enhanced_tenant.owner_name = owner_info.get('name', tenant.owner_id)
+            enhanced_tenant.owner_display_name = owner_info.get('display_name', tenant.owner_id)
+            
+            enhanced_tenants.append(enhanced_tenant)
         
-        return tenants
+        return enhanced_tenants
 
     def get_tenant_by_id(self, tenant_id: str) -> Optional[Tenant]:
         """根据ID获取租户"""
@@ -590,3 +608,22 @@ class TenantApplicationService:
         return self.db.query(TenantBackup).filter(
             TenantBackup.source_tenant_id == tenant_id
         ).order_by(TenantBackup.created_at.desc()).all()
+
+    def _get_owner_info(self, owner_id: str) -> Dict[str, str]:
+        """获取所有者信息"""
+        if owner_id == 'system':
+            return {'name': '系统', 'display_name': '系统'}
+        
+        # 查询用户信息
+        user = self.db.query(User).filter(User.id == owner_id).first()
+        if user:
+            # User 模型只有 username 和 email，没有 full_name
+            # 显示名称优先使用 username，然后是 email
+            display_name = user.username or user.email or owner_id
+            return {
+                'name': user.username or user.email or owner_id,
+                'display_name': display_name
+            }
+        
+        # 如果找不到用户，返回默认值
+        return {'name': '未知用户', 'display_name': '未知用户'}

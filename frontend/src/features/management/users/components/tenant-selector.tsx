@@ -55,11 +55,11 @@ export function TenantSelector({
 
   return (
     <Card>
-      <CardContent className="p-2">
+      <CardContent className="p-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <IconBuilding className="h-4 w-4 text-primary-foreground" />
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+              <IconBuilding className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
@@ -77,15 +77,22 @@ export function TenantSelector({
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            {/* 只有超级管理员才显示租户切换功能 */}
-            {isSuperAdmin && (
+          {/* 只有超级管理员才显示租户切换功能 */}
+          {isSuperAdmin && (
+            <div className="flex-shrink-0">
               <DropdownMenu open={isTenantSelectorOpen} onOpenChange={setIsTenantSelectorOpen}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5 h-7 px-2.5 text-xs">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-1.5 h-7 px-2.5 text-xs"
+                  >
                     <IconSwitchHorizontal size={12} />
                     <span className="hidden sm:inline">切换租户</span>
-                    <IconChevronDown size={10} className={`transition-transform ${isTenantSelectorOpen ? 'rotate-180' : ''}`} />
+                    <IconChevronDown 
+                      size={10} 
+                      className={`transition-transform ${isTenantSelectorOpen ? 'rotate-180' : ''}`} 
+                    />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-72 max-h-80 overflow-y-auto">
@@ -169,8 +176,8 @@ export function TenantSelector({
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

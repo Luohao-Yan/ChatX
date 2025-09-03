@@ -30,12 +30,26 @@ class OrgService:
     
     def create_organization(self, org_data: OrganizationCreate) -> OrganizationResponse:
         """创建组织"""
+        # 🎯 首先检查用户权限
+        current_user = self.db.query(User).filter(User.id == self.current_user_id).first()
+        is_superuser = current_user and current_user.is_superuser
+        
+        # 确定使用的租户ID：如果请求中包含tenant_id则使用它，否则使用当前用户的租户ID
+        effective_tenant_id = org_data.tenant_id if org_data.tenant_id else self.tenant_id
+        
+        # 权限检查：超级管理员可以创建任意租户的组织，普通用户只能创建自己租户的组织
+        if not is_superuser and effective_tenant_id != self.tenant_id:
+            raise PermissionError("没有权限在此租户下创建组织")
+        
+        # 🎯 修复parent_id处理：空字符串应该视为None
+        parent_id = org_data.parent_id if org_data.parent_id and org_data.parent_id.strip() else None
+        
         # 检查组织名称是否重复
         existing = self.db.query(Organization).filter(
             and_(
-                Organization.tenant_id == self.tenant_id,
+                Organization.tenant_id == effective_tenant_id,
                 Organization.name == org_data.name,
-                Organization.parent_id == org_data.parent_id
+                Organization.parent_id == parent_id
             )
         ).first()
         
@@ -45,15 +59,24 @@ class OrgService:
         # 计算路径和层级
         path = ""
         level = 0
-        if org_data.parent_id:
-            parent = self.db.query(Organization).filter(
-                and_(
-                    Organization.id == org_data.parent_id,
-                    Organization.tenant_id == self.tenant_id
-                )
-            ).first()
+        if parent_id:
+            # 🎯 修复父组织查询：超级管理员可以跨租户查询
+            parent_query_filters = [Organization.id == parent_id]
+            
+            # 对于普通用户，需要确保父组织在同一租户下
+            # 对于超级管理员，允许跨租户但父组织必须存在
+            if not is_superuser:
+                parent_query_filters.append(Organization.tenant_id == effective_tenant_id)
+            
+            parent = self.db.query(Organization).filter(and_(*parent_query_filters)).first()
             if not parent:
                 raise ValidationError("父组织不存在")
+            
+            # 如果是超级管理员跨租户创建，确保新组织与父组织在同一租户下是合理的
+            if is_superuser and parent.tenant_id != effective_tenant_id:
+                # 允许超级管理员创建跨租户的子组织，但需要明确指定
+                pass  # 可以在这里添加额外的业务逻辑
+            
             path = f"{parent.path}/{parent.id}"
             level = parent.level + 1
         
@@ -61,25 +84,36 @@ class OrgService:
         org_id = str(uuid.uuid4())
         organization = Organization(
             id=org_id,
-            tenant_id=self.tenant_id,
+            tenant_id=effective_tenant_id,
             name=org_data.name,
             display_name=org_data.display_name,
             description=org_data.description,
             logo_url=org_data.logo_url,
             owner_id=self.current_user_id,
-            parent_id=org_data.parent_id,
+            parent_id=parent_id,  # 🎯 使用处理过的parent_id
             path=path,
             level=level,
             settings=org_data.settings or {}
         )
         
-        self.db.add(organization)
-        self.db.commit()
-        self.db.refresh(organization)
+        try:
+            self.db.add(organization)
+            self.db.commit()
+            self.db.refresh(organization)
+        except Exception as e:
+            self.db.rollback()
+            # 检查是否是唯一约束冲突
+            if "duplicate key value violates unique constraint" in str(e):
+                if "idx_org_tenant_parent_name" in str(e):
+                    raise ValidationError("同一层级下组织名称不能重复")
+                else:
+                    raise ValidationError("数据冲突，请检查输入信息")
+            else:
+                raise ValidationError(f"创建组织失败: {str(e)}")
         
         # 将创建者添加为组织管理员
         user_org = UserOrganization(
-            tenant_id=self.tenant_id,
+            tenant_id=effective_tenant_id,
             user_id=self.current_user_id,
             organization_id=org_id,
             role="admin",
@@ -195,8 +229,12 @@ class OrgService:
         if not organization:
             raise ValidationError("组织不存在")
         
-        # 检查权限 - 只有组织管理员或拥有者可以更新
-        if not self._check_org_admin_permission(org_id):
+        # 🎯 修复权限检查：超级管理员或组织管理员可以修改组织
+        current_user = self.db.query(User).filter(User.id == self.current_user_id).first()
+        is_superuser = current_user and current_user.is_superuser
+        is_org_admin = self._check_org_admin_permission(org_id)
+        
+        if not (is_superuser or is_org_admin):
             raise PermissionError("没有权限修改此组织")
         
         # 更新字段
@@ -213,19 +251,29 @@ class OrgService:
         """软删除组织"""
         from datetime import datetime, timezone
         
-        organization = self.db.query(Organization).filter(
-            and_(
-                Organization.id == org_id,
-                Organization.tenant_id == self.tenant_id,
-                Organization.deleted_at.is_(None)
-            )
-        ).first()
+        # 🎯 首先检查用户权限，确定查询条件
+        current_user = self.db.query(User).filter(User.id == self.current_user_id).first()
+        is_superuser = current_user and current_user.is_superuser
+        
+        # 构建查询条件：超级管理员可以跨租户操作
+        query_filters = [
+            Organization.id == org_id,
+            Organization.deleted_at.is_(None)
+        ]
+        
+        # 非超级管理员需要限制租户
+        if not is_superuser:
+            query_filters.append(Organization.tenant_id == self.tenant_id)
+        
+        organization = self.db.query(Organization).filter(and_(*query_filters)).first()
         
         if not organization:
             raise ValidationError("组织不存在")
         
-        # 检查权限
-        if not self._check_org_admin_permission(org_id):
+        # 权限检查：超级管理员或组织管理员可以删除组织
+        is_org_admin = self._check_org_admin_permission(org_id)
+        
+        if not (is_superuser or is_org_admin):
             raise PermissionError("没有权限删除此组织")
         
         # 软删除组织（设置deleted_at时间戳）
@@ -233,13 +281,16 @@ class OrgService:
         organization.deleted_by = self.current_user_id
         
         # 同时软删除所有子组织
-        child_orgs = self.db.query(Organization).filter(
-            and_(
-                Organization.parent_id == org_id,
-                Organization.tenant_id == self.tenant_id,
-                Organization.deleted_at.is_(None)
-            )
-        ).all()
+        child_query_filters = [
+            Organization.parent_id == org_id,
+            Organization.deleted_at.is_(None)
+        ]
+        
+        # 非超级管理员需要限制租户
+        if not is_superuser:
+            child_query_filters.append(Organization.tenant_id == self.tenant_id)
+        
+        child_orgs = self.db.query(Organization).filter(and_(*child_query_filters)).all()
         
         for child in child_orgs:
             child.deleted_at = datetime.now(timezone.utc)
@@ -272,11 +323,18 @@ class OrgService:
     
     # ==================== 回收站管理 ====================
     
-    def get_deleted_organizations(self, skip: int = 0, limit: int = 100) -> List[OrganizationResponse]:
+    def get_deleted_organizations(self, skip: int = 0, limit: int = 100, tenant_id: Optional[str] = None) -> List[OrganizationResponse]:
         """获取回收站中的已删除组织"""
+        # 🎯 权限检查：超级管理员可以指定租户ID
+        current_user = self.db.query(User).filter(User.id == self.current_user_id).first()
+        is_superuser = current_user and current_user.is_superuser
+        
+        # 确定使用的租户ID：如果提供了tenant_id参数则使用它，否则使用当前用户的租户ID
+        effective_tenant_id = tenant_id if tenant_id and is_superuser else self.tenant_id
+        
         organizations = self.db.query(Organization).filter(
             and_(
-                Organization.tenant_id == self.tenant_id,
+                Organization.tenant_id == effective_tenant_id,
                 Organization.deleted_at.isnot(None)
             )
         ).order_by(desc(Organization.deleted_at)).offset(skip).limit(limit).all()
@@ -285,20 +343,27 @@ class OrgService:
     
     def restore_organization(self, org_id: str) -> bool:
         """恢复已删除的组织"""
-        organization = self.db.query(Organization).filter(
-            and_(
-                Organization.id == org_id,
-                Organization.tenant_id == self.tenant_id,
-                Organization.deleted_at.isnot(None)
-            )
-        ).first()
+        # 🎯 首先检查用户权限，确定查询条件
+        current_user = self.db.query(User).filter(User.id == self.current_user_id).first()
+        is_superuser = current_user and current_user.is_superuser
+        
+        # 构建查询条件：超级管理员可以跨租户操作
+        query_filters = [
+            Organization.id == org_id,
+            Organization.deleted_at.isnot(None)
+        ]
+        
+        # 非超级管理员需要限制租户
+        if not is_superuser:
+            query_filters.append(Organization.tenant_id == self.tenant_id)
+        
+        organization = self.db.query(Organization).filter(and_(*query_filters)).first()
         
         if not organization:
             raise ValidationError("组织不存在或未被删除")
         
-        # 检查权限 - 对于已删除的组织，检查用户是否为系统管理员或租户管理员
-        current_user = self.db.query(User).filter(User.id == self.current_user_id).first()
-        if not (current_user and (current_user.is_superuser or self._check_tenant_admin_permission())):
+        # 权限检查：超级管理员或租户管理员可以恢复组织
+        if not (is_superuser or self._check_tenant_admin_permission()):
             raise PermissionError("没有权限恢复此组织")
         
         # 恢复组织
@@ -306,13 +371,16 @@ class OrgService:
         organization.deleted_by = None
         
         # 恢复所有子组织
-        child_orgs = self.db.query(Organization).filter(
-            and_(
-                Organization.parent_id == org_id,
-                Organization.tenant_id == self.tenant_id,
-                Organization.deleted_at.isnot(None)
-            )
-        ).all()
+        child_query_filters = [
+            Organization.parent_id == org_id,
+            Organization.deleted_at.isnot(None)
+        ]
+        
+        # 非超级管理员需要限制租户
+        if not is_superuser:
+            child_query_filters.append(Organization.tenant_id == self.tenant_id)
+        
+        child_orgs = self.db.query(Organization).filter(and_(*child_query_filters)).all()
         
         for child in child_orgs:
             child.deleted_at = None
@@ -321,31 +389,59 @@ class OrgService:
         self.db.commit()
         return True
     
+    def batch_restore_organizations(self, org_ids: List[str]) -> Dict[str, Any]:
+        """批量恢复组织"""
+        success_ids = []
+        failed_ids = []
+        
+        for org_id in org_ids:
+            try:
+                self.restore_organization(org_id)
+                success_ids.append(org_id)
+            except Exception:
+                failed_ids.append(org_id)
+        
+        return {
+            "message": f"批量恢复完成：成功 {len(success_ids)} 个，失败 {len(failed_ids)} 个",
+            "successCount": len(success_ids),
+            "failedCount": len(failed_ids),
+            "successIds": success_ids,
+            "failedIds": failed_ids
+        }
+    
     def permanently_delete_organization(self, org_id: str) -> bool:
         """永久删除组织"""
-        organization = self.db.query(Organization).filter(
-            and_(
-                Organization.id == org_id,
-                Organization.tenant_id == self.tenant_id,
-                Organization.deleted_at.isnot(None)
-            )
-        ).first()
+        # 🎯 首先检查用户权限，确定查询条件
+        current_user = self.db.query(User).filter(User.id == self.current_user_id).first()
+        is_superuser = current_user and current_user.is_superuser
+        
+        # 构建查询条件：超级管理员可以跨租户操作
+        query_filters = [
+            Organization.id == org_id,
+            Organization.deleted_at.isnot(None)
+        ]
+        
+        # 非超级管理员需要限制租户
+        if not is_superuser:
+            query_filters.append(Organization.tenant_id == self.tenant_id)
+        
+        organization = self.db.query(Organization).filter(and_(*query_filters)).first()
         
         if not organization:
             raise ValidationError("组织不存在或未被删除")
         
-        # 检查权限 - 对于已删除的组织，检查用户是否为系统管理员或租户管理员
-        current_user = self.db.query(User).filter(User.id == self.current_user_id).first()
-        if not (current_user and (current_user.is_superuser or self._check_tenant_admin_permission())):
+        # 权限检查：超级管理员或租户管理员可以永久删除组织
+        if not (is_superuser or self._check_tenant_admin_permission()):
             raise PermissionError("没有权限永久删除此组织")
         
         # 永久删除所有子组织
-        child_orgs = self.db.query(Organization).filter(
-            and_(
-                Organization.parent_id == org_id,
-                Organization.tenant_id == self.tenant_id
-            )
-        ).all()
+        child_query_filters = [Organization.parent_id == org_id]
+        
+        # 非超级管理员需要限制租户
+        if not is_superuser:
+            child_query_filters.append(Organization.tenant_id == self.tenant_id)
+        
+        child_orgs = self.db.query(Organization).filter(and_(*child_query_filters)).all()
         
         for child in child_orgs:
             # 删除子组织的成员关系
@@ -365,6 +461,26 @@ class OrgService:
         self.db.commit()
         
         return True
+    
+    def batch_permanently_delete_organizations(self, org_ids: List[str]) -> Dict[str, Any]:
+        """批量永久删除组织"""
+        success_ids = []
+        failed_ids = []
+        
+        for org_id in org_ids:
+            try:
+                self.permanently_delete_organization(org_id)
+                success_ids.append(org_id)
+            except Exception:
+                failed_ids.append(org_id)
+        
+        return {
+            "message": f"批量删除完成：成功 {len(success_ids)} 个，失败 {len(failed_ids)} 个",
+            "successCount": len(success_ids),
+            "failedCount": len(failed_ids),
+            "successIds": success_ids,
+            "failedIds": failed_ids
+        }
     
     # ==================== 团队管理 ====================
     

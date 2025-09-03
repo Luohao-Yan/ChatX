@@ -33,6 +33,7 @@ export interface OrganizationCreate {
   parent_id?: string
   priority?: number
   settings?: Record<string, unknown>
+  tenant_id?: string
 }
 
 export interface OrganizationUpdate {
@@ -44,6 +45,7 @@ export interface OrganizationUpdate {
   priority?: number
   settings?: Record<string, unknown>
   is_active?: boolean
+  tenant_id?: string
 }
 
 export interface Team {
@@ -205,6 +207,26 @@ export class OrganizationAPI {
   }
 
   /**
+   * 批量恢复组织
+   */
+  async batchRestoreOrganizations(orgIds: string[]): Promise<{ message: string; successCount: number; failedCount: number }> {
+    const response = await http.post<{ message: string; successCount: number; failedCount: number }>(`${this.baseURL}/organizations/batch/restore`, {
+      organization_ids: orgIds
+    })
+    return response.data
+  }
+
+  /**
+   * 批量永久删除组织
+   */
+  async batchPermanentlyDeleteOrganizations(orgIds: string[]): Promise<{ message: string; successCount: number; failedCount: number }> {
+    const response = await http.delete<{ message: string; successCount: number; failedCount: number }>(`${this.baseURL}/organizations/batch/permanent`, 
+      { organization_ids: orgIds }
+    )
+    return response.data
+  }
+
+  /**
    * 移动组织
    */
   async moveOrganization(orgId: string, newParentId?: string): Promise<Organization> {
@@ -261,6 +283,8 @@ export const {
   getDeletedOrganizations,
   restoreOrganization,
   permanentlyDeleteOrganization,
+  batchRestoreOrganizations,
+  batchPermanentlyDeleteOrganizations,
   moveOrganization,
   createTeam,
   getTeams,

@@ -1,4 +1,5 @@
 from typing import Generator, Optional
+import logging
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
@@ -37,6 +38,7 @@ from app.infrastructure.clients.minio_client import get_minio
 from app.infrastructure.clients.weaviate_client import get_weaviate
 from app.infrastructure.clients.neo4j_client import get_neo4j
 
+logger = logging.getLogger(__name__)
 security = HTTPBearer()
 
 
@@ -50,27 +52,82 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    # 调试：记录Token信息
+    logger.debug(f"收到Token: {credentials.credentials[:50]}...")
+
     try:
         payload = jwt.decode(
             credentials.credentials,
             settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM],
         )
+        logger.debug(f"JWT解码成功: {payload}")
         token_data = TokenPayload(**payload)
-    except JWTError:
+        logger.debug(f"TokenPayload创建成功，用户ID: {token_data.sub}")
+    except JWTError as e:
+        logger.warning(f"JWT解码失败: {e}")
+        raise credentials_exception
+    except Exception as e:
+        logger.warning(f"TokenPayload创建失败: {e}")
         raise credentials_exception
 
-    user = db.query(User).filter(User.id == token_data.sub).first()
+    # 查询数据库，增加重试机制和更好的错误处理
+    logger.debug(f"查询数据库中的用户ID: {token_data.sub}")
+    
+    # 尝试多次查询以处理潜在的数据库连接问题
+    user = None
+    for attempt in range(2):  # 最多尝试2次
+        try:
+            user = db.query(User).filter(User.id == token_data.sub).first()
+            if user is not None:
+                break
+            else:
+                logger.warning(f"第{attempt + 1}次查询用户失败，用户ID: {token_data.sub}")
+                if attempt == 0:
+                    # 第一次失败时，刷新数据库连接
+                    db.rollback()
+                    import time
+                    time.sleep(0.1)  # 等待100毫秒
+        except Exception as e:
+            logger.error(f"数据库查询异常，第{attempt + 1}次尝试: {e}")
+            if attempt == 0:
+                db.rollback()
+                import time
+                time.sleep(0.1)
+            else:
+                raise
+    
     if user is None:
-        raise credentials_exception
+        # 提供更详细的错误信息用于调试
+        logger.error(f"JWT Token用户ID '{token_data.sub}' 在数据库中不存在")
+        # 查询所有用户ID进行对比
+        try:
+            all_users = db.query(User.id).all()
+            logger.debug(f"数据库中的所有用户ID: {[u.id for u in all_users]}")
+        except Exception as e:
+            logger.error(f"查询所有用户ID失败: {e}")
+        
+        raise HTTPException(
+            status_code=404, 
+            detail="用户不存在",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
+    logger.debug(f"找到用户: {user.username} ({user.id})")
     return user
 
 
 def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
+    logger.debug(f"get_current_active_user调用")
+    logger.debug(f"当前用户: {current_user.username}, 是否激活: {current_user.is_active}")
+    
     if not current_user.is_active:
+        logger.warning(f"用户未激活，抛出异常")
         raise HTTPException(status_code=400, detail="Inactive user")
+    
+    logger.debug(f"get_current_active_user成功")
     return current_user
 
 

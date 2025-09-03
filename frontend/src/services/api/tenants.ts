@@ -36,6 +36,8 @@ export interface Tenant {
   schema_name: string
   description?: string
   owner_id: string
+  owner_name?: string
+  owner_display_name?: string
   status: TenantStatus
   is_active: boolean
   slug: string

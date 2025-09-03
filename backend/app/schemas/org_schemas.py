@@ -20,7 +20,7 @@ class OrganizationBase(BaseModel):
 
 class OrganizationCreate(OrganizationBase):
     """创建组织模型"""
-    pass
+    tenant_id: Optional[str] = Field(None, description="租户ID，超级管理员可指定，普通用户使用当前租户")
 
 
 class OrganizationUpdate(BaseModel):
@@ -205,3 +205,17 @@ class OrganizationStatsResponse(BaseModel):
     total_members: int
     active_organizations: int
     organization_levels: int
+
+
+class BatchOrganizationRequest(BaseModel):
+    """批量组织操作请求模型"""
+    organization_ids: List[str] = Field(..., description="组织ID列表")
+
+
+class BatchOperationResponse(BaseModel):
+    """批量操作响应模型"""
+    message: str = Field(..., description="操作结果消息")
+    successCount: int = Field(..., description="成功数量")
+    failedCount: int = Field(..., description="失败数量")
+    successIds: List[str] = Field(..., description="成功的ID列表")
+    failedIds: List[str] = Field(..., description="失败的ID列表")

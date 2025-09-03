@@ -57,7 +57,35 @@ async def get_tenants(
     """获取租户列表"""
     try:
         tenants = tenant_service.get_tenants(include_deleted)
-        return [TenantResponse.from_orm(tenant) for tenant in tenants]
+        # Convert to TenantResponse with owner information
+        tenant_responses = []
+        for tenant in tenants:
+            tenant_dict = {
+                "id": tenant.id,
+                "name": tenant.name,
+                "display_name": tenant.display_name,
+                "description": tenant.description,
+                "schema_name": tenant.schema_name,
+                "owner_id": tenant.owner_id,
+                "status": tenant.status,
+                "is_active": tenant.is_active,
+                "slug": tenant.slug,
+                "domain": tenant.domain,
+                "subdomain": tenant.subdomain,
+                "settings": tenant.settings,
+                "features": tenant.features,
+                "limits": tenant.limits,
+                "created_at": tenant.created_at,
+                "updated_at": tenant.updated_at,
+                "deleted_at": tenant.deleted_at,
+                "user_count": getattr(tenant, 'user_count', None),
+                "org_count": getattr(tenant, 'org_count', None),
+                "storage_used": getattr(tenant, 'storage_used', None),
+                "owner_name": getattr(tenant, 'owner_name', None),
+                "owner_display_name": getattr(tenant, 'owner_display_name', None),
+            }
+            tenant_responses.append(TenantResponse(**tenant_dict))
+        return tenant_responses
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:

@@ -1,0 +1,19 @@
+<svg width="301" height="301" viewBox="0 0 301 301" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect x="50" y="50" width="200" height="200" rx="20" fill="#F3F4F6" stroke="#D1D5DB" stroke-width="2"/>
+  
+  <!-- 图片占位符图标 -->
+  <path d="M120 120 L180 120 L180 140 L160 160 L140 140 L120 140 Z" fill="#9CA3AF"/>
+  <circle cx="140" cy="135" r="8" fill="#9CA3AF"/>
+  <path d="M120 160 L180 160 L180 180 L120 180 Z" fill="#D1D5DB"/>
+  
+  <!-- 文字 -->
+  <text x="150" y="210" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#6B7280">
+    Logo
+  </text>
+  
+  <!-- 文字 ChatX -->
+  <text x="150.5" y="280" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#9CA3AF">
+    ChatX
+  </text>
+</svg>

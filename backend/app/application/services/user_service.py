@@ -165,7 +165,7 @@ class UserService:
                     await session.commit()
                     
             except Exception as e:
-                print(f"Failed to create user profile: {e}")
+                logger.warning(f"Failed to create user profile for user {user.id}: {e}")
                 # 资料创建失败不影响用户创建
         
         # 9. 如果指定了角色，分配角色
@@ -176,7 +176,7 @@ class UserService:
                 pass
             except Exception as e:
                 # 角色分配失败不影响用户创建
-                print(f"Role assignment failed: {e}")
+                logger.warning(f"Role assignment failed for user {user.id}: {e}")
         
         # 10. 如果指定了组织，自动关联到组织
         if hasattr(user_data, 'organization_id') and user_data.organization_id:
@@ -198,11 +198,11 @@ class UserService:
                 # 添加用户到组织
                 success = org_service.add_user_to_organization(user_org_data)
                 if not success:
-                    print(f"Failed to add user to organization: {user_data.organization_id}")
+                    logger.warning(f"Failed to add user {user.id} to organization {user_data.organization_id}")
                         
             except Exception as e:
                 # 组织关联失败不影响用户创建
-                print(f"Organization association failed: {e}")
+                logger.warning(f"Organization association failed for user {user.id}: {e}")
         
         # 11. 如果需要邮箱验证且未验证，创建验证码
         if not user.is_verified:
@@ -210,7 +210,7 @@ class UserService:
                 await self._create_email_verification(user.id, user.email)
             except Exception as e:
                 # 验证码创建失败不影响用户创建
-                print(f"Email verification creation failed: {e}")
+                logger.warning(f"Email verification creation failed for user {user.id}: {e}")
         
         return user
     
@@ -465,12 +465,18 @@ class UserService:
         - 超级管理员：可以查看指定租户的用户（通过tenant_id参数）
         - 普通管理员：只能看到自己租户的用户
         """
-        # 确定使用的租户ID
-        target_tenant_id = current_user.current_tenant_id  # 默认使用当前用户的租户
+        # 🎯 修复：超级管理员权限检查逻辑
+        if current_user.is_superuser:
+            # ✅ 超级管理员：可以查看任何租户的用户数据
+            if tenant_id:
+                target_tenant_id = tenant_id  # 使用前端指定的租户ID
+            else:
+                target_tenant_id = current_user.current_tenant_id  # 默认使用自己的租户ID
+        else:
+            # 非超级管理员：只能查看自己租户的用户
+            target_tenant_id = current_user.current_tenant_id
         
-        # 如果是超级管理员且指定了tenant_id，则使用指定的租户ID
-        if current_user.is_superuser and tenant_id:
-            target_tenant_id = tenant_id
+        logger.debug(f"获取用户列表 - 超级管理员: {current_user.is_superuser}, 目标租户ID: {target_tenant_id}")
         
         return await self.user_repo.get_list(
             tenant_id=target_tenant_id,
@@ -1232,19 +1238,29 @@ class UserService:
         Returns:
             用户统计数据
         """
-        # 确定有效租户ID
-        effective_tenant_id = tenant_id
-        if not current_user.is_superuser:
-            # 非超级管理员只能查看自己租户的统计
-            effective_tenant_id = current_user.current_tenant_id
-        elif not effective_tenant_id:
-            # 超级管理员未指定租户ID时，默认使用自己的租户ID
-            effective_tenant_id = current_user.current_tenant_id
+        # 权限检查和租户ID确定
+        effective_tenant_id = self._determine_effective_tenant_id(current_user, tenant_id)
         
         # 通过仓储获取统计数据
-        stats = await self.user_repo.get_user_statistics(
+        stats = self.user_repo.get_user_statistics(
             tenant_id=effective_tenant_id,
             organization_id=organization_id
         )
         
         return stats
+    
+    def _determine_effective_tenant_id(self, current_user: User, requested_tenant_id: Optional[str]) -> str:
+        """确定有效的租户ID，处理权限检查"""
+        if current_user.is_superuser:
+            # 超级管理员：可以查看任何租户的统计数据
+            if requested_tenant_id:
+                return requested_tenant_id
+            else:
+                # 如果没有指定租户ID，使用当前用户的租户ID
+                return current_user.current_tenant_id
+        else:
+            # 非超级管理员：只能查看自己租户的统计，忽略请求中的租户ID
+            if requested_tenant_id and requested_tenant_id != current_user.current_tenant_id:
+                # 如果请求的租户ID与当前用户不匹配，记录警告并使用用户自己的租户ID
+                logger.warning(f"用户 {current_user.username} 尝试访问其他租户 {requested_tenant_id} 的数据")
+            return current_user.current_tenant_id

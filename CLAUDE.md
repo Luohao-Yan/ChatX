@@ -522,6 +522,7 @@ frontend/src/
 **When generating or modifying frontend code, ALWAYS follow this strict file organization:**
 
 #### **API Services Organization**
+
 ```
 /services/api/
 ├── auth.ts              # 认证API (类型定义 + API调用方法)
@@ -533,12 +534,14 @@ frontend/src/
 ```
 
 **API服务文件必须包含**:
+
 1. 类型定义 (interfaces/types)
 2. API调用类或方法
 3. 统一的import: `import { http } from '../http'`
 4. 统一的导出模式
 
 #### **工具类和基础设施组织**
+
 ```
 /services/auth/
 ├── auth-utils.ts       # Token管理、验证、存储等工具
@@ -551,6 +554,7 @@ frontend/src/
 ```
 
 #### **状态管理组织**
+
 ```
 /stores/
 ├── auth/
@@ -605,6 +609,7 @@ export default FeatureAPI
 ### 🎯 **导入规则 (Import Rules)**
 
 #### **API服务导入**
+
 ```typescript
 // ✅ 正确的API导入方式
 import { AuthAPI } from '@/services/api/auth'
@@ -616,6 +621,7 @@ import { AuthAPI } from '@/services/auth'  // 工具类目录，不是API
 ```
 
 #### **工具类导入**
+
 ```typescript
 // ✅ 正确的工具类导入
 import { storage, validator } from '@/services/auth'
@@ -637,6 +643,7 @@ import { AuthStorage } from '@/services/api/auth'  // API目录，不是工具�
 ### 📝 **组件开发规则**
 
 #### **组件文件组织**
+
 ```
 /features/{feature}/
 ├── components/
@@ -651,6 +658,7 @@ import { AuthStorage } from '@/services/api/auth'  // API目录，不是工具�
 ```
 
 #### **组件导入顺序**
+
 ```typescript
 // 1. React相关
 import { useState, useEffect } from 'react'
@@ -676,6 +684,7 @@ import type { User } from '@/types/entities/user'
 ### ⚠️ **常见错误避免**
 
 #### **❌ 错误的做法**
+
 ```typescript
 // 1. 在错误位置创建API文件
 /features/auth/services/auth-api.ts  // 错误!
@@ -695,6 +704,7 @@ export class AuthAPI {
 ```
 
 #### **✅ 正确的做法**
+
 ```typescript
 // 1. API服务只负责HTTP调用
 export class AuthAPI {
@@ -738,6 +748,7 @@ const authStore = {
 ### 🔗 **前后端API对接规则**
 
 #### **类型定义同步**
+
 - 前端类型定义必须与后端Pydantic模型保持一致
 - 使用相同的字段名和数据类型
 - 注意Python的`snake_case`与TypeScript的`camelCase`转换
@@ -757,6 +768,7 @@ export interface UserResponse {
 ```
 
 #### **API路径规范**
+
 - 所有API路径必须以`/v1/`开头
 - 与后端路由保持完全一致
 - 使用REST风格的URL设计
@@ -777,6 +789,7 @@ export class FeatureAPI {
 ```
 
 #### **错误处理规范**
+
 - 统一处理HTTP状态码
 - 解析后端返回的错误详情
 - 提供用户友好的错误消息
@@ -796,11 +809,13 @@ try {
 ### 🎨 **UI组件开发规则**
 
 #### **shadcn/ui使用规范**
+
 - 优先使用项目已有的UI组件
 - 新增组件时遵循shadcn/ui的设计系统
 - 保持组件的一致性和可复用性
 
 #### **表单处理标准**
+
 ```typescript
 // ✅ 标准表单处理模式
 const form = useForm<z.infer<typeof formSchema>>({
@@ -826,6 +841,7 @@ async function onSubmit(data: z.infer<typeof formSchema>) {
 ```
 
 #### **国际化处理**
+
 - 所有用户可见的文本必须支持国际化
 - 使用`useTranslation`hook
 - 提供默认的英文文本
@@ -842,6 +858,7 @@ const { t } = useTranslation()
 ### 📱 **移动端适配要求**
 
 #### **响应式组件设计**
+
 - 所有新组件必须支持移动端显示
 - 使用Tailwind的响应式类名
 - 确保触摸友好的交互设计
@@ -858,6 +875,7 @@ const { t } = useTranslation()
 ### 🚀 **性能优化规则**
 
 #### **代码分割和懒加载**
+
 ```typescript
 // ✅ 路由懒加载
 const LazyComponent = lazy(() => import('./components/HeavyComponent'))
@@ -869,6 +887,7 @@ const LazyComponent = lazy(() => import('./components/HeavyComponent'))
 ```
 
 #### **状态管理优化**
+
 - 合理使用React状态管理
 - 避免不必要的重渲染
 - 使用useMemo和useCallback优化性能
@@ -876,11 +895,13 @@ const LazyComponent = lazy(() => import('./components/HeavyComponent'))
 ### 🔒 **安全性要求**
 
 #### **认证和授权**
+
 - 所有需要认证的页面必须使用AuthGuard
 - API调用自动携带认证Token
 - 处理Token过期和刷新
 
 #### **数据验证**
+
 - 前端必须进行基础数据验证
 - 使用Zod进行运行时类型检查
 - 不要依赖前端验证作为唯一的安全措施

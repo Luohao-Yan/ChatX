@@ -16,7 +16,8 @@ from app.api.endpoints.v1 import (
     org_api,
     tenant_api,
     oauth_api,
-    password_policy_api
+    password_policy_api,
+    knowledge_api
 )
 
 
@@ -37,6 +38,7 @@ def create_v1_router() -> APIRouter:
     v1_router.include_router(tenant_api.router, prefix="/tenants", tags=["租户管理"])
     v1_router.include_router(oauth_api.router, prefix="/auth", tags=["OAuth认证"])
     v1_router.include_router(password_policy_api.router, prefix="/password-policies", tags=["密码策略管理"])
+    v1_router.include_router(knowledge_api.router, prefix="/knowledge", tags=["知识管理"])
     
     return v1_router
 

@@ -275,6 +275,330 @@ class Neo4jClient:
         
         return stats
 
+    # ===================== 知识图谱专用方法 =====================
+    
+    def create_knowledge_node(self, node_id: str, node_type: str, name: str, 
+                             description: str = None, properties: Dict = None, 
+                             tenant_id: str = None) -> bool:
+        """创建知识节点"""
+        # 根据节点类型设置标签
+        type_labels = {
+            'document': 'Document',
+            'concept': 'Concept', 
+            'person': 'Person',
+            'organization': 'Organization',
+            'department': 'Department',
+            'topic': 'Topic',
+            'tag': 'Tag',
+            'website': 'Website',
+            'wechat_article': 'WechatArticle'
+        }
+        
+        label = type_labels.get(node_type, 'KnowledgeNode')
+        
+        query = f"""
+        MERGE (n:{label} {{id: $node_id}})
+        SET n.name = $name,
+            n.type = $node_type,
+            n.description = $description,
+            n.tenant_id = $tenant_id,
+            n.created_at = datetime(),
+            n.updated_at = datetime()
+        """
+        
+        # 添加自定义属性
+        if properties:
+            set_props = ", ".join([f"n.{key} = ${key}" for key in properties.keys()])
+            query += f", {set_props}"
+        
+        query += " RETURN n"
+        
+        try:
+            parameters = {
+                "node_id": node_id,
+                "name": name,
+                "node_type": node_type,
+                "description": description,
+                "tenant_id": tenant_id
+            }
+            if properties:
+                parameters.update(properties)
+            
+            self.run_query(query, parameters)
+            logger.info(f"成功创建知识节点: {node_id} ({node_type})")
+            return True
+        except Exception as e:
+            logger.error(f"创建知识节点失败: {e}")
+            return False
+    
+    def create_knowledge_relationship(self, source_id: str, target_id: str, 
+                                    relationship_type: str, weight: float = 1.0,
+                                    properties: Dict = None, tenant_id: str = None) -> bool:
+        """创建知识关系"""
+        query = """
+        MATCH (source {id: $source_id})
+        MATCH (target {id: $target_id})
+        WHERE source.tenant_id = $tenant_id AND target.tenant_id = $tenant_id
+        MERGE (source)-[r:KNOWLEDGE_RELATION]->(target)
+        SET r.type = $relationship_type,
+            r.weight = $weight,
+            r.tenant_id = $tenant_id,
+            r.created_at = datetime(),
+            r.updated_at = datetime()
+        """
+        
+        if properties:
+            set_props = ", ".join([f"r.{key} = ${key}" for key in properties.keys()])
+            query += f", {set_props}"
+        
+        query += " RETURN r"
+        
+        try:
+            parameters = {
+                "source_id": source_id,
+                "target_id": target_id,
+                "relationship_type": relationship_type,
+                "weight": weight,
+                "tenant_id": tenant_id
+            }
+            if properties:
+                parameters.update(properties)
+            
+            self.run_query(query, parameters)
+            logger.info(f"成功创建知识关系: {source_id} -> {target_id}")
+            return True
+        except Exception as e:
+            logger.error(f"创建知识关系失败: {e}")
+            return False
+    
+    def get_knowledge_graph(self, tenant_id: str, node_types: List[str] = None, 
+                           limit: int = 100) -> Dict:
+        """获取知识图谱数据"""
+        # 构建节点类型过滤条件
+        type_filter = ""
+        if node_types:
+            type_conditions = " OR ".join([f"n.type = '{t}'" for t in node_types])
+            type_filter = f"AND ({type_conditions})"
+        
+        # 获取节点
+        nodes_query = f"""
+        MATCH (n)
+        WHERE n.tenant_id = $tenant_id {type_filter}
+        RETURN n.id as id, n.name as name, n.type as type, 
+               n.description as description, properties(n) as properties
+        LIMIT $limit
+        """
+        
+        # 获取关系
+        relationships_query = """
+        MATCH (source)-[r:KNOWLEDGE_RELATION]->(target)
+        WHERE source.tenant_id = $tenant_id AND target.tenant_id = $tenant_id
+        RETURN source.id as source, target.id as target, 
+               r.type as type, r.weight as weight, 
+               properties(r) as properties
+        LIMIT $limit
+        """
+        
+        try:
+            parameters = {"tenant_id": tenant_id, "limit": limit}
+            
+            nodes_result = self.run_query(nodes_query, parameters)
+            relationships_result = self.run_query(relationships_query, parameters)
+            
+            return {
+                "nodes": nodes_result,
+                "links": relationships_result
+            }
+        except Exception as e:
+            logger.error(f"获取知识图谱失败: {e}")
+            return {"nodes": [], "links": []}
+    
+    def search_knowledge_nodes(self, tenant_id: str, query: str, node_types: List[str] = None,
+                              limit: int = 50) -> List[Dict]:
+        """搜索知识节点"""
+        type_filter = ""
+        if node_types:
+            type_conditions = " OR ".join([f"n.type = '{t}'" for t in node_types])
+            type_filter = f"AND ({type_conditions})"
+        
+        search_query = f"""
+        MATCH (n)
+        WHERE n.tenant_id = $tenant_id 
+        {type_filter}
+        AND (toLower(n.name) CONTAINS toLower($query) 
+             OR toLower(coalesce(n.description, '')) CONTAINS toLower($query))
+        RETURN n.id as id, n.name as name, n.type as type,
+               n.description as description, properties(n) as properties
+        ORDER BY 
+            CASE 
+                WHEN toLower(n.name) = toLower($query) THEN 0
+                WHEN toLower(n.name) STARTS WITH toLower($query) THEN 1
+                ELSE 2
+            END,
+            n.name
+        LIMIT $limit
+        """
+        
+        try:
+            parameters = {
+                "tenant_id": tenant_id,
+                "query": query,
+                "limit": limit
+            }
+            return self.run_query(search_query, parameters)
+        except Exception as e:
+            logger.error(f"搜索知识节点失败: {e}")
+            return []
+    
+    def get_node_relations(self, node_id: str, tenant_id: str, depth: int = 1) -> Dict:
+        """获取节点关系网络"""
+        query = f"""
+        MATCH path = (center {{id: $node_id, tenant_id: $tenant_id}})
+                     -[r:KNOWLEDGE_RELATION*1..{depth}]-(connected)
+        WHERE ALL(node IN nodes(path) WHERE node.tenant_id = $tenant_id)
+        WITH nodes(path) as path_nodes, relationships(path) as path_rels
+        UNWIND path_nodes as node
+        WITH DISTINCT node
+        RETURN node.id as id, node.name as name, node.type as type,
+               node.description as description, properties(node) as properties
+        
+        UNION
+        
+        MATCH (source)-[r:KNOWLEDGE_RELATION]-(target)
+        WHERE source.tenant_id = $tenant_id AND target.tenant_id = $tenant_id
+        AND (source.id = $node_id OR target.id = $node_id 
+             OR source.id IN [n.id FOR n IN nodes((:node {{id: $node_id, tenant_id: $tenant_id}})-[*1..{depth}]-())]
+             OR target.id IN [n.id FOR n IN nodes((:node {{id: $node_id, tenant_id: $tenant_id}})-[*1..{depth}]-())])
+        RETURN source.id as source, target.id as target,
+               r.type as type, r.weight as weight, properties(r) as properties
+        """
+        
+        try:
+            parameters = {
+                "node_id": node_id,
+                "tenant_id": tenant_id
+            }
+            result = self.run_query(query, parameters)
+            
+            # 分离节点和关系
+            nodes = []
+            links = []
+            for record in result:
+                if 'source' in record:  # 关系记录
+                    links.append(record)
+                else:  # 节点记录
+                    nodes.append(record)
+            
+            return {"nodes": nodes, "links": links}
+        except Exception as e:
+            logger.error(f"获取节点关系失败: {e}")
+            return {"nodes": [], "links": []}
+    
+    def get_knowledge_graph_stats(self, tenant_id: str) -> Dict:
+        """获取知识图谱统计信息"""
+        stats_queries = {
+            "total_nodes": """
+                MATCH (n) WHERE n.tenant_id = $tenant_id 
+                RETURN count(n) as count
+            """,
+            "total_links": """
+                MATCH ()-[r:KNOWLEDGE_RELATION]-() 
+                WHERE r.tenant_id = $tenant_id 
+                RETURN count(r) as count
+            """,
+            "node_types": """
+                MATCH (n) WHERE n.tenant_id = $tenant_id 
+                RETURN n.type as type, count(n) as count 
+                ORDER BY count DESC
+            """
+        }
+        
+        try:
+            parameters = {"tenant_id": tenant_id}
+            stats = {}
+            
+            # 获取总节点数
+            result = self.run_query(stats_queries["total_nodes"], parameters)
+            stats["total_nodes"] = result[0]["count"] if result else 0
+            
+            # 获取总连接数
+            result = self.run_query(stats_queries["total_links"], parameters)
+            stats["total_links"] = result[0]["count"] if result else 0
+            
+            # 获取节点类型分布
+            result = self.run_query(stats_queries["node_types"], parameters)
+            stats["node_types"] = result
+            
+            return stats
+        except Exception as e:
+            logger.error(f"获取知识图谱统计失败: {e}")
+            return {
+                "total_nodes": 0,
+                "total_links": 0, 
+                "node_types": []
+            }
+    
+    def delete_knowledge_node(self, node_id: str, tenant_id: str) -> bool:
+        """删除知识节点及其关系"""
+        query = """
+        MATCH (n {id: $node_id, tenant_id: $tenant_id})
+        DETACH DELETE n
+        RETURN count(n) as deleted_count
+        """
+        
+        try:
+            parameters = {"node_id": node_id, "tenant_id": tenant_id}
+            result = self.run_query(query, parameters)
+            deleted = result[0]["deleted_count"] if result else 0
+            
+            if deleted > 0:
+                logger.info(f"成功删除知识节点: {node_id}")
+                return True
+            else:
+                logger.warning(f"知识节点不存在: {node_id}")
+                return False
+        except Exception as e:
+            logger.error(f"删除知识节点失败: {e}")
+            return False
+    
+    def update_knowledge_node(self, node_id: str, tenant_id: str, 
+                            name: str = None, description: str = None,
+                            properties: Dict = None) -> bool:
+        """更新知识节点"""
+        set_clauses = ["n.updated_at = datetime()"]
+        parameters = {"node_id": node_id, "tenant_id": tenant_id}
+        
+        if name is not None:
+            set_clauses.append("n.name = $name")
+            parameters["name"] = name
+        
+        if description is not None:
+            set_clauses.append("n.description = $description")
+            parameters["description"] = description
+        
+        if properties:
+            for key, value in properties.items():
+                set_clauses.append(f"n.{key} = ${key}")
+                parameters[key] = value
+        
+        query = f"""
+        MATCH (n {{id: $node_id, tenant_id: $tenant_id}})
+        SET {", ".join(set_clauses)}
+        RETURN n
+        """
+        
+        try:
+            result = self.run_query(query, parameters)
+            if result:
+                logger.info(f"成功更新知识节点: {node_id}")
+                return True
+            else:
+                logger.warning(f"知识节点不存在: {node_id}")
+                return False
+        except Exception as e:
+            logger.error(f"更新知识节点失败: {e}")
+            return False
+
 # 全局Neo4j客户端实例
 neo4j_client = Neo4jClient()
 

@@ -2,7 +2,8 @@ import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { ThemeSwitch } from '@/components/theme-switch'
-import ViteLogo from '@/assets/vite.svg'
+import { SystemLogoLarge } from '@/components/system-logo'
+import { AdaptiveLogo } from '@/components/adaptive-logo'
 import { UserAuthForm } from './components/user-auth-form'
 
 export default function SignIn2() {
@@ -18,43 +19,48 @@ export default function SignIn2() {
 
       <div className='bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r'>
         <div className='absolute inset-0 bg-zinc-900' />
-        <div className='relative z-20 flex items-center text-lg font-medium'>
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            className='mr-2 h-6 w-6'
-          >
-            <path d='M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3' />
-          </svg>
-          ChatX
+        <div className='relative z-20'>
+          <div className="inline-flex items-center" style={{
+            filter: 'drop-shadow(0 0 15px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 25px rgba(255, 255, 255, 0.25)) drop-shadow(0 0 35px rgba(255, 255, 255, 0.15))'
+          }}>
+            <AdaptiveLogo 
+              size={48} 
+              showText={true} 
+              textClassName="text-xl font-semibold text-white ml-3"
+            />
+          </div>
         </div>
 
-        <img
-          src={ViteLogo}
-          className='relative m-auto'
-          width={301}
-          height={60}
-          alt='Vite'
-        />
+        <div className="relative m-auto flex items-center justify-center min-h-[200px]">
+          <SystemLogoLarge 
+            className="max-h-48 w-auto"
+            alt="ChatX System Logo"
+            fallbackSrc="/placeholder-logo.svg"
+          />
+        </div>
 
         <div className='relative z-20 mt-auto'>
           <blockquote className='space-y-2'>
             <p className='text-lg'>
               &ldquo;{t('auth.testimonial.quote', { 
-                defaultValue: 'This template has saved me countless hours of work and helped me deliver stunning designs to my clients faster than ever before.' 
+                defaultValue: 'This is an AI Chat application template specifically tailored for oneself.' 
               })}&rdquo;
             </p>
-            <footer className='text-sm'>{t('auth.testimonial.author', { defaultValue: 'John Doe' })}</footer>
+            <footer className='text-sm'>{t('auth.testimonial.author', { defaultValue: 'Yan Luohao' })}</footer>
           </blockquote>
         </div>
       </div>
       <div className='lg:p-8'>
         <div className='mx-auto flex w-full flex-col justify-center space-y-2 sm:w-[350px]'>
+          {/* 移动端Logo显示 */}
+          <div className='flex flex-col items-center space-y-6 lg:hidden'>
+            <AdaptiveLogo 
+              size={64} 
+              showText={true} 
+              textClassName="text-3xl font-bold ml-3"
+            />
+          </div>
+          
           <div className='flex flex-col space-y-2 text-left'>
             <h1 className='text-2xl font-semibold tracking-tight'>{t('auth.signInTitle')}</h1>
             <p className='text-muted-foreground text-sm'>

@@ -1,0 +1,133 @@
+<svg width="301" height="301" viewBox="0 0 301 301" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 科技感渐变 -->
+    <linearGradient id="techGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D2FF;stop-opacity:1">
+        <animate attributeName="stop-color" 
+          values="#00D2FF;#3A7BD5;#6B73FF;#9D50BB;#00D2FF" 
+          dur="12s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" style="stop-color:#3A7BD5;stop-opacity:1">
+        <animate attributeName="stop-color" 
+          values="#3A7BD5;#6B73FF;#9D50BB;#00D2FF;#3A7BD5" 
+          dur="12s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+    
+    <!-- 霓虹发光效果 -->
+    <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feColorMatrix type="saturate" values="2"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- 网格图案 -->
+    <pattern id="techPattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <rect width="20" height="20" fill="none"/>
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.1"/>
+    </pattern>
+  </defs>
+  
+  <!-- 背景网格 -->
+  <circle cx="150.5" cy="150.5" r="120" fill="url(#techPattern)" opacity="0.3">
+    <animate attributeName="opacity" values="0.2;0.4;0.2" dur="8s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- 主要六边形背景 -->
+  <polygon points="150.5,40.5 210.5,80.5 210.5,150.5 150.5,190.5 90.5,150.5 90.5,80.5" 
+           fill="url(#techGradient)" 
+           filter="url(#neonGlow)">
+    <animateTransform attributeName="transform" type="rotate" values="0 150.5 115.5;360 150.5 115.5" dur="30s" repeatCount="indefinite"/>
+  </polygon>
+  
+  <!-- 内层六边形 -->
+  <polygon points="150.5,60.5 190.5,90.5 190.5,130.5 150.5,160.5 110.5,130.5 110.5,90.5" 
+           fill="#ffffff" 
+           opacity="0.1">
+    <animateTransform attributeName="transform" type="rotate" values="0 150.5 110.5;-360 150.5 110.5" dur="20s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.05;0.15;0.05" dur="6s" repeatCount="indefinite"/>
+  </polygon>
+  
+  <!-- 科技感聊天界面 -->
+  <g transform="translate(150.5, 110.5)">
+    <!-- 主屏幕框架 -->
+    <rect x="-35" y="-25" width="70" height="50" rx="8" fill="#ffffff" opacity="0.95" filter="url(#neonGlow)">
+      <animate attributeName="opacity" values="0.9;1;0.9" dur="4s" repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- 顶部状态栏 -->
+    <rect x="-30" y="-20" width="60" height="3" rx="1.5" fill="#00D2FF" opacity="0.8">
+      <animate attributeName="fill" values="#00D2FF;#3A7BD5;#6B73FF;#00D2FF" dur="6s" repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- 消息条目 -->
+    <g>
+      <!-- 消息1 -->
+      <rect x="-25" y="-12" width="35" height="4" rx="2" fill="#f0f9ff" opacity="0.9"/>
+      <rect x="-25" y="-12" width="20" height="4" rx="2" fill="#0ea5e9">
+        <animate attributeName="width" values="0;20;0" dur="4s" repeatCount="indefinite"/>
+      </rect>
+      
+      <!-- 消息2 -->
+      <rect x="-10" y="-5" width="30" height="4" rx="2" fill="#f0f9ff" opacity="0.9"/>
+      <rect x="-10" y="-5" width="18" height="4" rx="2" fill="#3b82f6">
+        <animate attributeName="width" values="0;18;0" dur="5s" repeatCount="indefinite"/>
+      </rect>
+      
+      <!-- 消息3 -->
+      <rect x="-25" y="2" width="40" height="4" rx="2" fill="#f0f9ff" opacity="0.9"/>
+      <rect x="-25" y="2" width="25" height="4" rx="2" fill="#6366f1">
+        <animate attributeName="width" values="0;25;0" dur="6s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+    
+    <!-- 输入框 -->
+    <rect x="-30" y="12" width="60" height="8" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1">
+      <animate attributeName="stroke" values="#e2e8f0;#00D2FF;#e2e8f0" dur="3s" repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- 发送按钮 -->
+    <circle cx="20" cy="16" r="3" fill="#00D2FF">
+      <animate attributeName="fill" values="#00D2FF;#3A7BD5;#6B73FF;#00D2FF" dur="4s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="3;3.5;3" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    
+    <!-- AI图标 -->
+    <g transform="translate(16, 16)">
+      <path d="M-1.5 -1.5 L1.5 -1.5 L0 1.5 Z" fill="#ffffff" opacity="0.9">
+        <animateTransform attributeName="transform" type="rotate" values="0 0 0;360 0 0" dur="3s" repeatCount="indefinite"/>
+      </path>
+    </g>
+  </g>
+  
+  <!-- 科技装饰元素 -->
+  <g opacity="0.6">
+    <!-- 环绕线条 -->
+    <circle cx="150.5" cy="115.5" r="80" fill="none" stroke="#00D2FF" stroke-width="1" opacity="0.3" stroke-dasharray="5,5">
+      <animate attributeName="stroke-dashoffset" values="0;10" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.2;0.5;0.2" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    
+    <!-- 数据点 -->
+    <circle cx="80" cy="80" r="2" fill="#00D2FF" opacity="0.8">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="2;3;2" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="220" cy="220" r="2" fill="#3A7BD5" opacity="0.7">
+      <animate attributeName="opacity" values="0.4;0.9;0.4" dur="2.5s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="2;3.5;2" dur="2.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="80" cy="220" r="2" fill="#6B73FF" opacity="0.6">
+      <animate attributeName="opacity" values="0.3;0.8;0.3" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="2;3;2" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="220" cy="80" r="2" fill="#9D50BB" opacity="0.9">
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+  
+</svg>

@@ -69,8 +69,8 @@ export default function UsersManagement() {
   const [isBatchImportOpen, setIsBatchImportOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
-  // 侧边栏状态
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  // 侧边栏状态 - 移动端默认关闭，桌面端默认打开
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   
   // 租户相关状态
   const [availableTenants, setAvailableTenants] = useState<Tenant[]>([])
@@ -99,6 +99,11 @@ export default function UsersManagement() {
   
   // 视图状态
   const [isMobileView, setIsMobileView] = useState(false)
+  
+  // 监听侧边栏状态变化
+  useEffect(() => {
+    // 侧边栏状态已更新
+  }, [isSidebarOpen])
 
   // 检查是否是超级管理员
   const isSuperAdmin = currentUser?.is_superuser || 
@@ -106,16 +111,33 @@ export default function UsersManagement() {
     currentUser?.roles?.includes('system_admin') || 
     false
 
-  // 响应式检测
+  // 响应式检测和侧边栏状态管理
   useEffect(() => {
     const checkMobileView = () => {
-      setIsMobileView(window.innerWidth < 768)
+      const isMobile = window.innerWidth < 768
+      const wasDesktop = !isMobileView && isMobileView !== isMobile
+      
+      setIsMobileView(isMobile)
+      
+      // 当从移动端切换到桌面端时，自动打开侧边栏
+      if (wasDesktop && !isMobile && !isSidebarOpen) {
+        setIsSidebarOpen(true)
+      }
+      
+      // 当从桌面端切换到移动端时，自动关闭侧边栏
+      if (!wasDesktop && isMobile && isSidebarOpen) {
+        setIsSidebarOpen(false)
+      }
     }
 
-    checkMobileView()
+    // 初始化时根据屏幕尺寸设置侧边栏状态
+    const isMobile = window.innerWidth < 768
+    setIsMobileView(isMobile)
+    setIsSidebarOpen(!isMobile) // 桌面端默认打开，移动端默认关闭
+
     window.addEventListener('resize', checkMobileView)
     return () => window.removeEventListener('resize', checkMobileView)
-  }, [])
+  }, [isMobileView, isSidebarOpen])
 
   // 获取可用租户列表
   const fetchAvailableTenants = useCallback(async () => {
@@ -132,24 +154,28 @@ export default function UsersManagement() {
       const tenantsList = Array.isArray(tenants) ? tenants : []
       setAvailableTenants(tenantsList)
       
-      // 如果是超级管理员且还没有选择租户，优先选择当前用户的租户，否则选择第一个租户
+      // Debug logs removed for production
+      
+      // 🎯 只在还没有租户信息时才自动设置
       if (tenantsList.length > 0 && !currentTenantInfo) {
         // 优先查找当前用户的租户
         const currentUserTenant = tenantsList.find(tenant => tenant.id === currentUser?.current_tenant_id)
         if (currentUserTenant) {
+          // User tenant found and set
           setCurrentTenantInfo(currentUserTenant)
         } else {
           // 如果找不到当前用户租户，选择第一个可用租户
+          // Using first available tenant
           setCurrentTenantInfo(tenantsList[0])
         }
       }
-    } catch (error) {
-      console.warn('Failed to fetch tenants:', error)
+    } catch (_error) {
+      // Failed to fetch tenants
       setAvailableTenants([])
     } finally {
       setLoadingTenants(false)
     }
-  }, [isSuperAdmin, currentTenantInfo, currentUser?.current_tenant_id])
+  }, [isSuperAdmin, currentUser?.current_tenant_id, currentTenantInfo]) // 添加正确的依赖
 
   // 初始化非超级管理员用户的租户信息
   useEffect(() => {
@@ -159,8 +185,8 @@ export default function UsersManagement() {
         try {
           const tenantInfo = await tenantAPI.getTenant(currentUser.current_tenant_id!)
           setCurrentTenantInfo(tenantInfo)
-        } catch (error) {
-          console.warn('Failed to fetch tenant info:', error)
+        } catch (_error) {
+          // Failed to fetch tenant info
           // 如果获取失败，创建一个简化的租户信息对象
           const userTenant = {
             id: currentUser.current_tenant_id!,
@@ -226,57 +252,38 @@ export default function UsersManagement() {
         limit: 100
       }
       
-      // 传递租户ID
-      if (isSuperAdmin && currentTenantInfo) {
-        // 超级管理员：使用选中的租户
-        params.tenant_id = currentTenantInfo.id
-      } else if (!isSuperAdmin && currentUser?.current_tenant_id) {
-        // 非超级管理员：使用自己的租户ID
-        params.tenant_id = currentUser.current_tenant_id
+      // 🎯 正确的租户逻辑：
+      // 超级管理员：使用用户选择的租户ID（必须有选择才加载数据）
+      // 租户管理员：使用自己的current_tenant_id
+      const tenantId = isSuperAdmin 
+        ? currentTenantInfo?.id  // 超级管理员必须选择租户
+        : currentUser?.current_tenant_id  // 租户管理员使用固定租户
+
+      if (!tenantId) {
+        // No valid tenant ID, skipping organization loading
+        setOrganizations([])
+        return
       }
+
+      params.tenant_id = tenantId
       
+      // Loading organizations with params
       const orgs = await organizationAPI.getOrganizations(params)
-      // API 直接返回 Organization[] 数组
       const orgsList = Array.isArray(orgs) ? orgs : []
       setOrganizations(orgsList)
+
+      // 如果没有选择组织且有组织列表，选择第一个
+      if (!selectedOrgId && orgsList.length > 0) {
+        setSelectedOrgId(orgsList[0].id)
+      }
       
-    } catch (error) {
-      console.warn('Failed to fetch organizations:', error)
+    } catch (_error) {
+      // Failed to fetch organizations
       setOrganizations([])
     } finally {
       setLoadingOrgs(false)
     }
-  }, [currentTenantInfo, isSuperAdmin, currentUser?.current_tenant_id])
-
-  // 获取用户统计数据
-  const fetchUserStats = useCallback(async () => {
-    try {
-      const params: {
-        tenant_id?: string
-        organization_id?: string
-      } = {}
-
-      // 传递租户ID（动态根据当前用户和租户状态）
-      if (isSuperAdmin) {
-        // 超级管理员：使用选中的租户，如果没有选中则使用自己的租户ID
-        params.tenant_id = currentTenantInfo?.id || currentUser?.current_tenant_id
-      } else if (currentUser?.current_tenant_id) {
-        // 非超级管理员：使用自己的租户ID
-        params.tenant_id = currentUser.current_tenant_id
-      }
-
-      if (selectedOrgId) {
-        params.organization_id = selectedOrgId
-      }
-
-      const stats = await usersAPI.getUserStatistics(params)
-      setUserStats(stats)
-    } catch (error) {
-      console.warn('Failed to fetch user statistics:', error)
-      // 失败时保持默认值，不显示错误toast
-    }
-  }, [selectedOrgId, currentTenantInfo, isSuperAdmin, currentUser?.current_tenant_id])
-
+  }, [isSuperAdmin, currentTenantInfo?.id, currentUser?.current_tenant_id, selectedOrgId])
   // 获取用户列表
   const fetchUsers = useCallback(async (page = 1, size = 20) => {
     try {
@@ -292,14 +299,21 @@ export default function UsersManagement() {
         limit: size
       }
 
-      // 传递租户ID
-      if (isSuperAdmin && currentTenantInfo) {
-        // 超级管理员：使用选中的租户
-        params.tenant_id = currentTenantInfo.id
-      } else if (!isSuperAdmin && currentUser?.current_tenant_id) {
-        // 非超级管理员：使用自己的租户ID
-        params.tenant_id = currentUser.current_tenant_id
+      // 🎯 正确的租户逻辑：
+      // 超级管理员：使用用户选择的租户ID（必须有选择才加载数据）
+      // 租户管理员：使用自己的current_tenant_id
+      const tenantId = isSuperAdmin 
+        ? currentTenantInfo?.id  // 超级管理员必须选择租户
+        : currentUser?.current_tenant_id  // 租户管理员使用固定租户
+
+      if (!tenantId) {
+        // No valid tenant ID, skipping user list loading
+        setUsers([])
+        setTotalUsers(0)
+        return
       }
+
+      params.tenant_id = tenantId
 
       if (searchQuery) {
         params.search = searchQuery
@@ -309,42 +323,161 @@ export default function UsersManagement() {
         params.organization_id = selectedOrgId
       }
 
+      // Loading users with params
       const users = await usersAPI.getUsers(params)
-      
-      // API 直接返回 User[] 数组
       const usersList = Array.isArray(users) ? users : []
       setUsers(usersList)
-      setTotalUsers(usersList.length) // 暂时使用当前页数据长度，实际应该有总数统计
+      setTotalUsers(usersList.length)
 
-    } catch (error) {
-      console.warn('Failed to fetch users:', error)
+    } catch (_error) {
+      // Failed to fetch users
       toast.error('获取用户列表失败')
       setUsers([])
     } finally {
       setLoading(false)
     }
-  }, [searchQuery, selectedOrgId, currentTenantInfo, isSuperAdmin, currentUser?.current_tenant_id])
+  }, [searchQuery, selectedOrgId, currentTenantInfo?.id, currentUser?.current_tenant_id, isSuperAdmin]) // 只保留真正需要的依赖
 
   // 处理租户切换
   const handleTenantSwitch = async (tenant: Tenant) => {
     try {
-      toast.success(`已切换到租户: ${tenant.display_name}`)
+      // Switching to tenant
+      
+      // 🎯 1. 首先更新当前租户信息，确保UI立即更新
       setCurrentTenantInfo(tenant)
+      
+      toast.success(`已切换到租户: ${tenant.display_name}`)
+      
+      // 🎯 2. 使用新的租户ID加载数据
+      const newTenantId = tenant.id
+      
+      // 3. 重置状态
       setCurrentPage(1)
       setSelectedUsers([])
-      // 重置组织选择，等待fetchOrganizations自动选择根组织
       setSelectedOrgId(null)
       setSelectedOrgName('全部用户')
+      setOrganizations([])
+      setUsers([])
       
-      // 重新加载数据
+      // Starting to load new tenant data
+      
+      // 4. 加载新租户的组织列表
+      const orgs = await loadOrganizationsForTenant(newTenantId)
+      
+      // 5. 选择第一个组织（如果有的话）
+      let selectedOrgForStats = null
+      if (orgs && orgs.length > 0) {
+        selectedOrgForStats = orgs[0].id
+        setSelectedOrgId(orgs[0].id)
+        setSelectedOrgName(orgs[0].display_name || orgs[0].name)
+      }
+      
+      // 6. 并行加载用户统计和用户列表
+      // 统计数据显示全租户数据，用户列表可按组织过滤
       await Promise.all([
-        fetchUsers(1, pageSize),
-        fetchOrganizations(),
-        fetchUserStats()
+        loadStatsForSpecificTenant(newTenantId, null),  // 统计全租户数据
+        loadUsersForSpecificTenant(1, pageSize, newTenantId, selectedOrgForStats)
       ])
-    } catch (error) {
-      console.warn('Failed to switch tenant:', error)
+      
+      // Tenant switch completed
+    } catch (_error) {
+      // Failed to switch tenant
       toast.error('租户切换失败')
+    }
+  }
+
+  // 为指定租户加载组织列表
+  const loadOrganizationsForTenant = async (tenantId: string): Promise<Organization[]> => {
+    try {
+      setLoadingOrgs(true)
+      const params = {
+        skip: 0,
+        limit: 100,
+        tenant_id: tenantId
+      }
+      
+      // Loading organization list for specific tenant
+      const orgs = await organizationAPI.getOrganizations(params)
+      const orgsList = Array.isArray(orgs) ? orgs : []
+      setOrganizations(orgsList)
+      return orgsList
+    } catch (_error) {
+      // Failed to fetch organizations for tenant
+      setOrganizations([])
+      return []
+    } finally {
+      setLoadingOrgs(false)
+    }
+  }
+
+  // 为指定租户和组织加载用户列表
+  const loadUsersForSpecificTenant = useCallback(async (page: number, size: number, tenantId: string, orgId: string | null) => {
+    try {
+      setLoading(true)
+      const params: {
+        skip: number
+        limit: number
+        tenant_id: string
+        search?: string
+        organization_id?: string
+      } = {
+        skip: (page - 1) * size,
+        limit: size,
+        tenant_id: tenantId
+      }
+
+      if (searchQuery) {
+        params.search = searchQuery
+      }
+
+      if (orgId) {
+        params.organization_id = orgId
+      }
+
+      // Loading users for specific tenant
+      const users = await usersAPI.getUsers(params)
+      const usersList = Array.isArray(users) ? users : []
+      setUsers(usersList)
+      setTotalUsers(usersList.length)
+    } catch (_error) {
+      // Failed to fetch users for specific tenant
+      toast.error('获取用户列表失败')
+      setUsers([])
+      setTotalUsers(0)
+    } finally {
+      setLoading(false)
+    }
+  }, [searchQuery])
+
+  // 为指定租户和组织加载统计数据
+  const loadStatsForSpecificTenant = async (tenantId: string, orgId: string | null) => {
+    try {
+      const params: {
+        tenant_id: string
+        organization_id?: string
+      } = {
+        tenant_id: tenantId
+      }
+
+      if (orgId) {
+        params.organization_id = orgId
+      }
+
+      // Loading statistics for specific tenant
+      const stats = await usersAPI.getUserStatistics(params)
+      setUserStats(stats)
+    } catch (_error: unknown) {
+      // Failed to fetch user statistics for specific tenant
+      
+      setUserStats({
+        total: 0,
+        active: 0,
+        inactive: 0,
+        new_this_month: 0,
+        super_admin: 0,
+        admin: 0,
+        normal: 0
+      })
     }
   }
 
@@ -385,9 +518,15 @@ export default function UsersManagement() {
       await usersAPI.deleteUser(deletingUser.id)
       toast.success(`用户 ${deletingUser.username} 已删除`)
       setDeletingUser(null)
-      fetchUsers(currentPage, pageSize)
-    } catch (error) {
-      console.warn('Failed to delete user:', error)
+      
+      const tenantId = isSuperAdmin 
+        ? currentTenantInfo?.id 
+        : currentUser?.current_tenant_id
+      if (tenantId) {
+        loadUsersForSpecificTenant(currentPage, pageSize, tenantId, selectedOrgId)
+      }
+    } catch (_error) {
+      // Failed to delete user
       toast.error('删除用户失败')
     } finally {
       setIsProcessing(false)
@@ -402,9 +541,15 @@ export default function UsersManagement() {
         is_active: !user.is_active
       })
       toast.success(`用户 ${user.username} ${user.is_active ? '已停用' : '已启用'}`)
-      fetchUsers(currentPage, pageSize)
-    } catch (error) {
-      console.warn('Failed to toggle user status:', error)
+      
+      const tenantId = isSuperAdmin 
+        ? currentTenantInfo?.id 
+        : currentUser?.current_tenant_id
+      if (tenantId) {
+        loadUsersForSpecificTenant(currentPage, pageSize, tenantId, selectedOrgId)
+      }
+    } catch (_error) {
+      // Failed to toggle user status
       toast.error('修改用户状态失败')
     } finally {
       setIsProcessing(false)
@@ -418,8 +563,8 @@ export default function UsersManagement() {
       // TODO: 实现密码重置功能
       // await usersAPI.resetPassword(user.id)
       toast.info('密码重置功能待实现')
-    } catch (error) {
-      console.warn('Failed to reset password:', error)
+    } catch (_error) {
+      // Failed to reset password
       toast.error('重置密码失败')
     } finally {
       setIsProcessing(false)
@@ -433,8 +578,8 @@ export default function UsersManagement() {
       // TODO: 实现发送验证邮件功能
       // await usersAPI.sendVerificationEmail(user.id)
       toast.info('发送验证邮件功能待实现')
-    } catch (error) {
-      console.warn('Failed to send verification email:', error)
+    } catch (_error) {
+      // Failed to send verification email
       toast.error('发送验证邮件失败')
     } finally {
       setIsProcessing(false)
@@ -453,8 +598,8 @@ export default function UsersManagement() {
       toast.success(`已删除 ${selectedUsers.length} 个用户`)
       setSelectedUsers([])
       fetchUsers(currentPage, pageSize)
-    } catch (error) {
-      console.warn('Failed to batch delete users:', error)
+    } catch (_error) {
+      // Failed to batch delete users
       toast.error('批量删除失败')
     } finally {
       setIsProcessing(false)
@@ -471,8 +616,8 @@ export default function UsersManagement() {
       //   search: searchQuery
       // })
       toast.info('用户数据导出功能待实现')
-    } catch (error) {
-      console.warn('Failed to export users:', error)
+    } catch (_error) {
+      // Failed to export users
       toast.error('导出用户数据失败')
     }
   }
@@ -480,7 +625,6 @@ export default function UsersManagement() {
   // 处理刷新
   const handleRefresh = () => {
     fetchUsers(currentPage, pageSize)
-    fetchUserStats()
     if (isSuperAdmin) {
       fetchAvailableTenants()
     }
@@ -494,53 +638,157 @@ export default function UsersManagement() {
   }
 
   // 处理组织切换
-  const handleOrgChange = (orgId: string | null, orgName: string) => {
+  const handleOrgChange = async (orgId: string | null, orgName: string) => {
+    // Switching organization
+    
+    // 更新状态
     setSelectedOrgId(orgId)
     setSelectedOrgName(orgName)
     setCurrentPage(1)
+    
+    // 移动端切换组织后自动关闭侧边栏
+    if (isMobileView) {
+      setIsSidebarOpen(false)
+    }
+    
+    // 🎯 获取当前租户ID，组织切换后立即重新加载用户列表和统计数据
+    const currentTenantId = isSuperAdmin 
+      ? currentTenantInfo?.id
+      : currentUser?.current_tenant_id
+    
+    if (!currentTenantId) {
+      // No valid tenant ID, skipping organization switch data loading
+      return
+    }
+    
+    try {
+      // Organization switch, reloading data
+      // 用户列表按组织过滤，统计数据保持全租户显示
+      await Promise.all([
+        loadUsersForSpecificTenant(1, pageSize, currentTenantId, orgId),
+        loadStatsForSpecificTenant(currentTenantId, null)  // 统计数据始终显示全租户
+      ])
+    } catch (_error) {
+      // Failed to reload data after organization change
+    }
   }
+
 
   // 处理用户添加成功
   const handleUserAdded = (_user: User) => {
-    fetchUsers(currentPage, pageSize)
+    const tenantId = isSuperAdmin 
+      ? currentTenantInfo?.id 
+      : currentUser?.current_tenant_id
+    if (tenantId) {
+      loadUsersForSpecificTenant(currentPage, pageSize, tenantId, selectedOrgId)
+    }
   }
 
   // 处理用户更新成功
   const handleUserUpdated = (_user: User) => {
     setEditingUser(null)
-    fetchUsers(currentPage, pageSize)
+    const tenantId = isSuperAdmin 
+      ? currentTenantInfo?.id 
+      : currentUser?.current_tenant_id
+    if (tenantId) {
+      loadUsersForSpecificTenant(currentPage, pageSize, tenantId, selectedOrgId)
+    }
   }
 
-  // 初始化数据 - 分别处理超级管理员和普通用户
+  // 统一的数据初始化逻辑
   useEffect(() => {
-    if (isSuperAdmin) {
-      // 超级管理员先加载租户列表
-      fetchAvailableTenants()
-    } else {
-      // 普通用户直接初始化数据
-      if (currentUser?.current_tenant_id) {
-        fetchUsers(currentPage, pageSize)
-        fetchUserStats()
-        fetchOrganizations()
+    if (!currentUser?.id) return
+
+    // Debug info removed for production
+
+    const initializeData = async () => {
+      try {
+        if (isSuperAdmin) {
+          // 超级管理员：先加载租户列表
+          await fetchAvailableTenants()
+          
+          // 超级管理员如果还没选择租户，等待用户选择，不加载数据
+          if (!currentTenantInfo?.id) {
+            // Super admin hasn't selected tenant, waiting for selection
+            return
+          }
+        }
+        
+        // 🎯 检查是否有有效的租户信息来加载数据
+        const tenantId = isSuperAdmin 
+          ? currentTenantInfo?.id  // 超级管理员必须选择租户
+          : currentUser?.current_tenant_id  // 租户管理员使用固定租户
+
+        if (tenantId) {
+          // Initializing data with tenant ID
+          
+          // 1. 加载组织列表
+          const orgs = await loadOrganizationsForTenant(tenantId)
+          
+          // 2. 选择第一个组织（如果有的话）
+          let selectedOrgForData = null
+          if (orgs && orgs.length > 0) {
+            selectedOrgForData = orgs[0].id
+            setSelectedOrgId(orgs[0].id)
+            setSelectedOrgName(orgs[0].display_name || orgs[0].name)
+          }
+          
+          // 3. 并行加载用户统计和用户列表
+          // 统计数据默认显示全租户数据（不传organization_id）
+          // 用户列表可以按组织过滤
+          await Promise.all([
+            loadStatsForSpecificTenant(tenantId, null),  // 统计全租户数据
+            loadUsersForSpecificTenant(currentPage, pageSize, tenantId, selectedOrgForData)
+          ])
+        } else {
+          // No valid tenant ID, skipping data loading
+        }
+      } catch (_error) {
+        // Failed to initialize data
       }
     }
-  }, [isSuperAdmin, currentUser?.current_tenant_id, fetchAvailableTenants, fetchUsers, fetchUserStats, fetchOrganizations, currentPage, pageSize])
 
-  // 超级管理员的数据加载 - 在租户信息确定后
-  useEffect(() => {
-    if (isSuperAdmin && currentTenantInfo) {
-      fetchUsers(currentPage, pageSize)
-      fetchUserStats()
-      fetchOrganizations()
-    }
-  }, [isSuperAdmin, currentTenantInfo, currentPage, pageSize, fetchUsers, fetchUserStats, fetchOrganizations])
+    initializeData()
+  }, [
+    currentUser?.id,
+    currentUser?.current_tenant_id,
+    currentTenantInfo?.id,
+    isSuperAdmin,
+    fetchAvailableTenants,
+    currentPage,
+    pageSize,
+    loadUsersForSpecificTenant
+  ])
 
-  // 当租户信息变化时重新加载组织架构
+  // 分页变化时重新获取数据
   useEffect(() => {
-    if (currentTenantInfo) {
-      fetchOrganizations()
+    const tenantId = isSuperAdmin 
+      ? currentTenantInfo?.id 
+      : currentUser?.current_tenant_id
+      
+    if (currentUser?.id && tenantId) {
+      loadUsersForSpecificTenant(currentPage, pageSize, tenantId, selectedOrgId)
     }
-  }, [currentTenantInfo, fetchOrganizations])
+  }, [currentPage, currentTenantInfo?.id, currentUser?.current_tenant_id, currentUser?.id, isSuperAdmin, loadUsersForSpecificTenant, pageSize, selectedOrgId])
+
+  // 搜索和筛选变化时重新获取数据（防抖）
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // 🎯 确保有有效的租户ID才进行数据加载
+      const tenantId = isSuperAdmin 
+        ? currentTenantInfo?.id 
+        : currentUser?.current_tenant_id
+        
+      if (currentUser?.id && tenantId) {
+        loadUsersForSpecificTenant(1, pageSize, tenantId, selectedOrgId)
+        // 统计数据始终显示全租户数据，不受组织筛选影响
+        loadStatsForSpecificTenant(tenantId, null)
+        setCurrentPage(1)
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery, selectedOrgId, currentUser?.id, isSuperAdmin, currentTenantInfo?.id, currentUser?.current_tenant_id, loadUsersForSpecificTenant, pageSize])
 
   // 自动选择优先级最高的根组织
   useEffect(() => {
@@ -550,17 +798,6 @@ export default function UsersManagement() {
       setSelectedOrgName(firstRootOrg.display_name || firstRootOrg.name)
     }
   }, [selectedOrgId, sortedRootOrganizations])
-
-  // 搜索和筛选变化时重新获取数据
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchUsers(1, pageSize)
-      fetchUserStats()
-      setCurrentPage(1)
-    }, 300)
-
-    return () => clearTimeout(timer)
-  }, [searchQuery, selectedOrgId, fetchUsers, fetchUserStats, pageSize])
 
   return (
     <>
@@ -585,23 +822,38 @@ export default function UsersManagement() {
       </Header>
 
       <Main className="h-[calc(100vh-4rem)]">
-        <div className="flex h-full gap-4">
+        <div className="flex h-full">
           {/* 左侧组织树侧边栏 */}
-          <div className={`${isSidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-background overflow-hidden flex-shrink-0 `}>
-            <div className="h-full overflow-y-auto">
-              <OrganizationTree
-                selectedOrgId={selectedOrgId}
-                onOrgSelect={handleOrgChange}
-                currentTenantId={isSuperAdmin ? currentTenantInfo?.id : undefined}
-                isSuperAdmin={isSuperAdmin}
-                currentUserTenantId={currentUser?.current_tenant_id}
-              />
+          {isSidebarOpen && (
+            <div className={`${
+              isMobileView 
+                ? 'fixed inset-y-0 left-0 z-50 w-80 bg-background border-r shadow-xl' 
+                : 'relative w-80 border-r bg-background'
+            } flex-shrink-0`}>
+              {/* 移动端背景遮罩 */}
+              {isMobileView && (
+                <div 
+                  className="fixed inset-0 bg-black/30 md:hidden z-40"
+                  onClick={() => setIsSidebarOpen(false)}
+                />
+              )}
+              
+              {/* 组织树内容 */}
+              <div className={`h-full overflow-y-auto ${isMobileView ? 'relative z-50' : ''}`}>
+                <OrganizationTree
+                  selectedOrgId={selectedOrgId}
+                  onOrgSelect={handleOrgChange}
+                  currentTenantId={isSuperAdmin ? currentTenantInfo?.id : undefined}
+                  isSuperAdmin={isSuperAdmin}
+                  currentUserTenantId={currentUser?.current_tenant_id}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 右侧主内容区域 */}
-          <div className="flex-1 min-w-0 h-full overflow-y-auto">
-            <div className="space-y-6">
+          <div className="flex-1 min-w-0 h-full overflow-y-auto p-6">
+            <div className="max-w-full mx-auto space-y-6">
               {/* 租户选择器 - 只有超级管理员可见 */}
               {isSuperAdmin && (
                 <TenantSelector
@@ -639,57 +891,65 @@ export default function UsersManagement() {
               />
 
               {/* 用户列表 */}
-              {isMobileView ? (
-                <UserCardList
-                  users={users}
-                  loading={loading}
-                  selectedUsers={selectedUsers}
-                  organizations={organizations}
-                  onUserSelect={handleUserSelect}
-                  onUserEdit={handleUserEdit}
-                  onUserDelete={handleUserDelete}
-                  onUserToggleStatus={handleUserToggleStatus}
-                  onUserResetPassword={handleUserResetPassword}
-                  onUserSendVerification={handleUserSendVerification}
-                  currentUser={currentUser}
-                />
-              ) : (
-                <UserTable
-                  users={users}
-                  loading={loading}
-                  selectedUsers={selectedUsers}
-                  organizations={organizations}
-                  onUserSelect={handleUserSelect}
-                  onSelectAll={handleSelectAll}
-                  onUserEdit={handleUserEdit}
-                  onUserDelete={handleUserDelete}
-                  onUserToggleStatus={handleUserToggleStatus}
-                  onUserResetPassword={handleUserResetPassword}
-                  onUserSendVerification={handleUserSendVerification}
-                  currentUser={currentUser}
-                />
-              )}
+              <div className="bg-card rounded-lg border">
+                {isMobileView ? (
+                  <UserCardList
+                    users={users}
+                    loading={loading}
+                    selectedUsers={selectedUsers}
+                    organizations={organizations}
+                    onUserSelect={handleUserSelect}
+                    onUserEdit={handleUserEdit}
+                    onUserDelete={handleUserDelete}
+                    onUserToggleStatus={handleUserToggleStatus}
+                    onUserResetPassword={handleUserResetPassword}
+                    onUserSendVerification={handleUserSendVerification}
+                    currentUser={currentUser}
+                  />
+                ) : (
+                  <UserTable
+                    users={users}
+                    loading={loading}
+                    selectedUsers={selectedUsers}
+                    organizations={organizations}
+                    onUserSelect={handleUserSelect}
+                    onSelectAll={handleSelectAll}
+                    onUserEdit={handleUserEdit}
+                    onUserDelete={handleUserDelete}
+                    onUserToggleStatus={handleUserToggleStatus}
+                    onUserResetPassword={handleUserResetPassword}
+                    onUserSendVerification={handleUserSendVerification}
+                    currentUser={currentUser}
+                  />
+                )}
+              </div>
 
-              {/* 分页控件 */}
+              {/* 分页控件 - 响应式设计 */}
               {totalUsers > pageSize && (
                 <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
+                  <CardContent className="p-3 md:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>共 {totalUsers} 个用户</span>
-                        <Separator orientation="vertical" className="h-4" />
-                        <span>第 {currentPage} 页，共 {Math.ceil(totalUsers / pageSize)} 页</span>
+                        <span className="whitespace-nowrap">共 {totalUsers} 个用户</span>
+                        <Separator orientation="vertical" className="h-4 hidden sm:block" />
+                        <span className="hidden sm:inline whitespace-nowrap">
+                          第 {currentPage} 页，共 {Math.ceil(totalUsers / pageSize)} 页
+                        </span>
+                        <span className="sm:hidden text-xs">
+                          {currentPage}/{Math.ceil(totalUsers / pageSize)}
+                        </span>
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 justify-center sm:justify-end">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                           disabled={currentPage === 1 || loading}
+                          className="flex-1 sm:flex-none"
                         >
                           <IconChevronLeft size={16} />
-                          上一页
+                          <span className="hidden sm:inline ml-1">上一页</span>
                         </Button>
                         
                         <Button
@@ -697,8 +957,9 @@ export default function UsersManagement() {
                           size="sm"
                           onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalUsers / pageSize), prev + 1))}
                           disabled={currentPage >= Math.ceil(totalUsers / pageSize) || loading}
+                          className="flex-1 sm:flex-none"
                         >
-                          下一页
+                          <span className="hidden sm:inline mr-1">下一页</span>
                           <IconChevronRight size={16} />
                         </Button>
                       </div>
@@ -731,10 +992,10 @@ export default function UsersManagement() {
                   const updatedUser = await usersAPI.updateUser(editingUser.id, userData)
                   toast.success(`用户 ${editingUser.username} 更新成功`)
                   handleUserUpdated(updatedUser)
-                } catch (error) {
-                  console.warn('Failed to update user:', error)
+                } catch (_error) {
+                  // Failed to update user
                   toast.error('更新用户失败')
-                  throw error
+                  throw _error
                 }
               }}
               onCancel={() => setEditingUser(null)}
@@ -771,14 +1032,28 @@ export default function UsersManagement() {
       <RecycleBinDialog
         open={isRecycleBinOpen}
         onOpenChange={setIsRecycleBinOpen}
-        onUserRestored={() => fetchUsers(currentPage, pageSize)}
+        onUserRestored={() => {
+          const tenantId = isSuperAdmin 
+            ? currentTenantInfo?.id 
+            : currentUser?.current_tenant_id
+          if (tenantId) {
+            loadUsersForSpecificTenant(currentPage, pageSize, tenantId, selectedOrgId)
+          }
+        }}
       />
 
       {/* 批量导入对话框 */}
       <BatchImportDialog
         open={isBatchImportOpen}
         onOpenChange={setIsBatchImportOpen}
-        onImportSuccess={() => fetchUsers(currentPage, pageSize)}
+        onImportSuccess={() => {
+          const tenantId = isSuperAdmin 
+            ? currentTenantInfo?.id 
+            : currentUser?.current_tenant_id
+          if (tenantId) {
+            loadUsersForSpecificTenant(currentPage, pageSize, tenantId, selectedOrgId)
+          }
+        }}
       />
     </>
   )

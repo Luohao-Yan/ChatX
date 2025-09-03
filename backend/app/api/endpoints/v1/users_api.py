@@ -122,6 +122,34 @@ async def get_deleted_users(
     return await user_service.get_deleted_users(current_user, skip, limit)
 
 
+@router.get("/stats")
+async def get_user_statistics(
+    tenant_id: Optional[str] = None,
+    organization_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """获取用户统计信息
+    
+    Args:
+        tenant_id: 租户ID（超级管理员可指定，普通管理员将被忽略）
+        organization_id: 组织ID（可选过滤器，不传则统计整个租户）
+        current_user: 当前登录用户
+        user_service: 用户服务
+        
+    Returns:
+        用户统计数据
+        
+    Notes:
+        - 超级管理员可以查看任意租户的统计数据
+        - 普通管理员只能查看自己租户的统计数据
+        - organization_id为可选参数，不传时统计整个租户的数据
+    """
+    return await user_service.get_user_statistics(
+        current_user, tenant_id=tenant_id, organization_id=organization_id
+    )
+
+
 @router.get("/{user_id}", response_model=UserSchema)
 async def get_user(
     user_id: str,
@@ -314,17 +342,6 @@ async def get_user_invitations(
     )
 
 
-@router.get("/stats")
-async def get_user_statistics(
-    tenant_id: Optional[str] = None,
-    organization_id: Optional[str] = None,
-    current_user: User = Depends(get_current_active_user),
-    user_service: UserService = Depends(get_user_service),
-):
-    """获取用户统计信息"""
-    return await user_service.get_user_statistics(
-        current_user, tenant_id=tenant_id, organization_id=organization_id
-    )
 
 
 # ==================== 高级用户管理接口 ====================

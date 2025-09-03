@@ -1,13 +1,12 @@
 import { useState } from 'react'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
   IconUsers,
   IconUserPlus,
   IconUserOff,
   IconTrendingUp,
-  IconChevronDown,
   IconChartBar,
+  IconChevronDown,
 } from '@tabler/icons-react'
 
 interface UserStats {
@@ -56,56 +55,61 @@ export function UserStatsCards({ stats, loading }: UserStatsCardsProps) {
   ]
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="pb-2">
+    <div className="bg-card border rounded-lg shadow-sm">
+      <div className="p-3 border-b">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <IconChartBar className="h-4 w-4 text-primary-foreground" />
+            <div className="w-5 h-5 bg-primary rounded flex items-center justify-center">
+              <IconChartBar className="h-3 w-3 text-primary-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground">用户统计</h3>
+            <h3 className="text-sm font-semibold text-foreground">用户统计</h3>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="h-8 w-8 p-0"
+            className="h-5 w-5 p-0"
           >
             <IconChevronDown 
-              className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} 
+              className={`h-2.5 w-2.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} 
             />
           </Button>
         </div>
-      </CardHeader>
+      </div>
       
       {isExpanded && (
-        <CardContent className="pt-0">
+        <div className="p-3">
           {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="border rounded-lg p-3">
-                  <div className="flex flex-col space-y-2">
-                    <div className="h-3 bg-gray-200 rounded animate-pulse" />
-                    <div className="h-6 bg-gray-200 rounded animate-pulse w-16" />
+                <div key={index} className="bg-muted/30 rounded-lg p-3 border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse flex-shrink-0" />
+                    <div className="space-y-1 flex-1">
+                      <div className="h-3 bg-gray-200 rounded animate-pulse w-14" />
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-10" />
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* 基础统计卡片 - 紧凑布局 */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {statsCards.map((card, index) => (
-                <div key={index} className="border rounded-lg p-3 hover:shadow-sm transition-all duration-200">
+                <div 
+                  key={index} 
+                  className="bg-card rounded-lg p-3 border hover:shadow-md transition-all duration-200 cursor-pointer group hover:border-primary/20"
+                >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-primary/90 transition-colors">
                       <card.icon className="h-4 w-4 text-primary-foreground" />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="space-y-1 flex-1 min-w-0">
                       <p className="text-xs font-medium text-muted-foreground truncate">
                         {card.title}
                       </p>
-                      <p className="text-xl font-bold text-foreground">
-                        {card.value?.toLocaleString() ?? 0}
+                      <p className="text-lg font-bold text-foreground tabular-nums">
+                        {(card.value ?? 0).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -113,8 +117,8 @@ export function UserStatsCards({ stats, loading }: UserStatsCardsProps) {
               ))}
             </div>
           )}
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   )
 }

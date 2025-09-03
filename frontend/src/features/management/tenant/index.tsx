@@ -112,11 +112,9 @@ export default function TenantManagement() {
   const fetchTenants = useCallback(async () => {
     try {
       setLoading(true)
-      console.log('🏢 [TenantManagement] 开始获取租户列表...')
       const tenantsData = await tenantAPI.getTenants({
         search: searchQuery || undefined
       })
-      console.log('🏢 [TenantManagement] 获取到租户数量:', tenantsData.length, tenantsData)
       setTenants(tenantsData)
     } catch (error) {
       console.error('❌ [TenantManagement] 获取租户列表失败:', error)
@@ -152,7 +150,6 @@ export default function TenantManagement() {
 
     try {
       setIsCreating(true)
-      console.log('🏢 [TenantManagement] 创建租户:', createForm)
       
       const newTenant = await tenantAPI.createTenant({
         name: createForm.name,
@@ -247,14 +244,12 @@ export default function TenantManagement() {
     
     try {
       setIsBackingUp(true)
-      console.log('🏢 [TenantManagement] 备份租户:', backupingTenant.id, backupForm)
       
       const backup = await tenantAPI.backupTenant(backupingTenant.id, {
         backup_name: backupForm.backup_name || `${backupingTenant.display_name}_备份`,
         description: backupForm.description
       })
       
-      console.log('✅ [TenantManagement] 租户备份成功:', backup)
       
       // 重置表单
       setBackupForm({ backup_name: '', description: '' })
@@ -275,7 +270,6 @@ export default function TenantManagement() {
     
     try {
       setIsDeleting(true)
-      console.log('🏢 [TenantManagement] 删除租户:', deletingTenant.id)
       
       await tenantAPI.deleteTenant(deletingTenant.id)
       
@@ -298,7 +292,6 @@ export default function TenantManagement() {
     try {
       const backups = await tenantAPI.getTenantBackups(tenantId)
       setTenantBackups(backups)
-      console.log('🏢 [TenantManagement] 加载备份列表:', backups)
     } catch (error) {
       console.error('❌ [TenantManagement] 加载备份列表失败:', error)
       toast.error('加载备份列表失败')
@@ -646,7 +639,8 @@ export default function TenantManagement() {
                           </div>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {tenant.owner_id === 'system' ? '系统' : tenant.owner_id || '未知'}
+                          {tenant.owner_id === 'system' ? '系统' : 
+                           tenant.owner_display_name || tenant.owner_name || '未知'}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(tenant.created_at).toLocaleDateString('zh-CN')}

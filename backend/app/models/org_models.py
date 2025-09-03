@@ -59,7 +59,8 @@ class Organization(Base):
     
     # 数据库索引配置
     __table_args__ = (
-        Index('idx_org_tenant_name', 'tenant_id', 'name', unique=True),
+        Index('idx_org_tenant_parent_name', 'tenant_id', 'parent_id', 'name', unique=True),
+        Index('idx_org_tenant_name_nonunique', 'tenant_id', 'name'),
         Index('idx_org_parent_path', 'parent_id', 'path'),
         Index('idx_org_owner', 'owner_id'),
         Index('idx_org_deleted', 'deleted_at', 'tenant_id'),

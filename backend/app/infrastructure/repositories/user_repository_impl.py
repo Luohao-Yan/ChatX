@@ -355,6 +355,70 @@ class UserRepository(IUserRepository):
             query = query.filter(User.current_tenant_id == tenant_id)
         
         return query.all()
+    
+    def get_user_statistics(self, tenant_id: Optional[str] = None,
+                           organization_id: Optional[str] = None) -> Dict[str, Any]:
+        """获取用户统计信息"""
+        # 构建基础查询
+        query = self.db.query(User)
+        
+        # 添加租户过滤
+        if tenant_id:
+            query = query.filter(User.current_tenant_id == tenant_id)
+        
+        # 添加组织过滤（如果指定）
+        if organization_id:
+            query = query.join(UserOrganization, User.id == UserOrganization.user_id).filter(
+                and_(
+                    UserOrganization.organization_id == organization_id,
+                    UserOrganization.is_active == True
+                )
+            )
+        
+        # 排除已删除的用户
+        query = query.filter(User.deleted_at.is_(None))
+        
+        # 获取所有用户
+        all_users = query.all()
+        
+        # 计算统计数据
+        total = len(all_users)
+        active = len([u for u in all_users if u.is_active])
+        inactive = total - active
+        
+        # 计算本月新增用户（最近30天）
+        one_month_ago = datetime.now(timezone.utc) - timedelta(days=30)
+        new_this_month = len([u for u in all_users if u.created_at and u.created_at >= one_month_ago])
+        
+        # 按角色类型统计
+        super_admin = 0
+        admin = 0
+        normal = 0
+        
+        for user in all_users:
+            if user.is_superuser:
+                super_admin += 1
+            elif user.roles and isinstance(user.roles, list):
+                # 检查是否包含管理员类角色
+                admin_roles = {'admin', 'tenant_admin', 'org_admin', 'system_admin'}
+                user_role_set = set(user.roles) if user.roles else set()
+                if admin_roles.intersection(user_role_set):
+                    admin += 1
+                else:
+                    normal += 1
+            else:
+                # 没有明确角色的用户归为普通用户
+                normal += 1
+        
+        return {
+            "total": total,
+            "active": active,
+            "inactive": inactive,
+            "new_this_month": new_this_month,
+            "super_admin": super_admin,
+            "admin": admin,
+            "normal": normal
+        }
 
 
 class UserSessionRepository(IUserSessionRepository):
@@ -475,64 +539,3 @@ class UserVerificationRepository(IUserVerificationRepository):
         
         return expired_count
     
-    async def get_user_statistics(self, tenant_id: Optional[str] = None,
-                                organization_id: Optional[str] = None) -> Dict[str, Any]:
-        """获取用户统计信息"""
-        # 构建基础查询
-        query = self.db.query(User)
-        
-        # 添加租户过滤
-        if tenant_id:
-            query = query.filter(User.current_tenant_id == tenant_id)
-        
-        # 添加组织过滤（如果指定）
-        if organization_id:
-            query = query.join(UserOrganization).filter(
-                and_(
-                    UserOrganization.organization_id == organization_id,
-                    UserOrganization.is_active == True
-                )
-            )
-        
-        # 排除已删除的用户
-        query = query.filter(User.deleted_at.is_(None))
-        
-        # 获取所有用户
-        all_users = query.all()
-        
-        # 计算统计数据
-        total = len(all_users)
-        active = len([u for u in all_users if u.is_active])
-        inactive = total - active
-        
-        # 计算本月新增用户（最近30天）
-        one_month_ago = datetime.now(timezone.utc) - timedelta(days=30)
-        new_this_month = len([u for u in all_users if u.created_at and u.created_at >= one_month_ago])
-        
-        # 按角色类型统计（需要获取用户角色）
-        super_admin = 0
-        admin = 0
-        normal = 0
-        
-        for user in all_users:
-            # 这里需要查询用户角色，但为了简化，暂时使用is_superuser字段
-            if user.is_superuser:
-                super_admin += 1
-            elif hasattr(user, 'roles') and user.roles:
-                # 如果有角色字段，检查是否包含管理员角色
-                if any(role in ['admin', 'tenant_admin', 'org_admin'] for role in user.roles):
-                    admin += 1
-                else:
-                    normal += 1
-            else:
-                normal += 1
-        
-        return {
-            "total": total,
-            "active": active,
-            "inactive": inactive,
-            "new_this_month": new_this_month,
-            "super_admin": super_admin,
-            "admin": admin,
-            "normal": normal
-        }
