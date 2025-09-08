@@ -575,5 +575,35 @@
       "nameRequired": "连接名称不能为空",
       "endpointInvalid": "请输入有效的URL"
     }
+  },
+  "knowledge": {
+    "organizations": "组织机构管理",
+    "departments": "部门管理", 
+    "webBlogs": "网页/博客知识收藏",
+    "wechat": "微信公众号知识收藏",
+    "graph": "知识图谱",
+    "organizationsDescription": "管理和查看组织机构结构",
+    "departmentsDescription": "管理和查看部门组织架构",
+    "webBlogsDescription": "收藏和管理您的网页、博客等在线知识资源",
+    "wechatDescription": "收藏和管理微信公众号的优质文章和内容",
+    "addNew": "添加新建",
+    "addFavorite": "添加收藏",
+    "quickAdd": "快速添加",
+    "quickAddDescription": "输入网址或使用浏览器扩展一键收藏",
+    "quickFavorite": "快速收藏",
+    "quickFavoriteDescription": "支持微信文章链接、公众号订阅等功能",
+    "statistics": "收藏统计",
+    "totalFavorites": "总收藏数",
+    "todayAdded": "今日新增",
+    "favoritesCount": "收藏文章",
+    "followedAccounts": "关注公众号",
+    "addUrl": "添加网址",
+    "favoriteArticle": "收藏文章",
+    "underDevelopment": "功能开发中",
+    "webUnderDevelopment": "网页知识收藏功能正在开发中，敬请期待...",
+    "wechatUnderDevelopment": "微信公众号知识收藏功能正在开发中，敬请期待...",
+    "searchPlaceholder": "搜索知识收藏...",
+    "searchArticles": "搜索公众号文章...",
+    "filter": "筛选"
   }
 }

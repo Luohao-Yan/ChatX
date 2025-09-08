@@ -5,7 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { DepartmentAPI } from '@/services/api/knowledge'
+import { DepartmentService } from '../services'
 import type {
   Department,
   DepartmentCreateRequest,
@@ -44,7 +44,10 @@ export const useDepartments = (options: UseDepartmentsOptions = {}): UseDepartme
     refetch: refetchList
   } = useQuery({
     queryKey: ['departments', organizationId],
-    queryFn: () => DepartmentAPI.getList(organizationId),
+    queryFn: () => DepartmentService.getDepartments(organizationId),
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
   // 获取部门树
@@ -55,12 +58,15 @@ export const useDepartments = (options: UseDepartmentsOptions = {}): UseDepartme
     refetch: refetchTree
   } = useQuery({
     queryKey: ['departments-tree', organizationId],
-    queryFn: () => DepartmentAPI.getTree(organizationId),
+    queryFn: () => DepartmentService.getDepartmentTree(organizationId),
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
   // 创建部门
   const createMutation = useMutation({
-    mutationFn: DepartmentAPI.create,
+    mutationFn: DepartmentService.createDepartment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] })
       queryClient.invalidateQueries({ queryKey: ['departments-tree'] })
@@ -75,7 +81,7 @@ export const useDepartments = (options: UseDepartmentsOptions = {}): UseDepartme
   // 更新部门
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: DepartmentUpdateRequest }) =>
-      DepartmentAPI.update(id, data),
+      DepartmentService.updateDepartment(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] })
       queryClient.invalidateQueries({ queryKey: ['departments-tree'] })
@@ -89,7 +95,7 @@ export const useDepartments = (options: UseDepartmentsOptions = {}): UseDepartme
 
   // 删除部门
   const deleteMutation = useMutation({
-    mutationFn: DepartmentAPI.delete,
+    mutationFn: DepartmentService.deleteDepartment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] })
       queryClient.invalidateQueries({ queryKey: ['departments-tree'] })
@@ -104,7 +110,7 @@ export const useDepartments = (options: UseDepartmentsOptions = {}): UseDepartme
   // 获取单个部门详情
   const getDepartment = async (id: string): Promise<Department> => {
     try {
-      return await DepartmentAPI.getById(id)
+      return await DepartmentService.getDepartmentById(id)
     } catch (error: any) {
       const errorMessage = error?.response?.data?.detail || '获取部门详情失败'
       toast.error(errorMessage)
@@ -113,9 +119,10 @@ export const useDepartments = (options: UseDepartmentsOptions = {}): UseDepartme
   }
 
   // 获取部门统计信息
-  const getDepartmentStats = async (id: string): Promise<any> => {
+  const getDepartmentStats = async (_id: string): Promise<any> => {
     try {
-      return await DepartmentAPI.getStats(id)
+      // TODO: DepartmentService needs to implement getStats
+      throw new Error('部门统计功能暂未实现')
     } catch (error: any) {
       const errorMessage = error?.response?.data?.detail || '获取部门统计失败'
       toast.error(errorMessage)

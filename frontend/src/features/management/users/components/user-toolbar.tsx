@@ -95,13 +95,10 @@ export function UserToolbar({
               variant="outline" 
               size="sm"
               onClick={onToggleSidebar}
-              className="px-3 h-8"
+              className="px-2 h-8"
               title={isSidebarOpen ? "隐藏组织架构" : "显示组织架构"}
             >
               <IconMenu2 size={16} />
-              <span className="ml-2 text-sm hidden md:inline">
-                {isSidebarOpen ? "隐藏组织架构" : "显示组织架构"}
-              </span>
             </Button>
           )}
           
@@ -167,8 +164,8 @@ export function UserToolbar({
         </div>
       </div>
 
-        {/* 搜索和筛选栏 - 响应式布局 */}
-        <div className="flex flex-col sm:flex-row gap-3">
+      {/* 搜索和筛选栏 - 响应式布局 */}
+      <div className="flex flex-col sm:flex-row gap-3">
           {/* 搜索框 */}
           <div className="relative flex-1 min-w-0">
             <IconSearch size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
@@ -197,31 +194,30 @@ export function UserToolbar({
             <Badge variant="outline" className="text-xs truncate max-w-[120px] sm:max-w-none">
               {selectedOrgName}
             </Badge>
+        </div>
+      </div>
+
+      {/* 批量操作栏 - 响应式布局 */}
+      {selectedUsers.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-primary bg-opacity-10 rounded-lg border border-primary border-opacity-20">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              已选择 {selectedUsers.length} 个用户
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onBatchDelete}
+              className="text-red-600 hover:text-red-700 w-full sm:w-auto"
+            >
+              <IconTrash size={16} className="mr-1" />
+              批量删除
+            </Button>
           </div>
         </div>
-
-        {/* 批量操作栏 - 响应式布局 */}
-        {selectedUsers.length > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">
-                已选择 {selectedUsers.length} 个用户
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onBatchDelete}
-                className="text-red-600 hover:text-red-700 w-full sm:w-auto"
-              >
-                <IconTrash size={16} className="mr-1" />
-                批量删除
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   )
 }

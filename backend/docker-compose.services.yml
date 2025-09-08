@@ -79,9 +79,10 @@ services:
     container_name: ${NEO4J_CONTAINER_NAME:-chatx_neo4j}
     environment:
       NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-chatx_neo4j_password}
-      NEO4J_PLUGINS: '["apoc", "graph-data-science"]'
+      # 🔥 核心修复：移除NEO4J_PLUGINS避免重复安装
       NEO4J_dbms_security_procedures_unrestricted: apoc.*,gds.*
       NEO4J_dbms_security_procedures_allowlist: apoc.*,gds.*
+      # 使用旧版配置项名称（兼容性更好）
       NEO4J_dbms_memory_heap_initial__size: ${NEO4J_HEAP_INITIAL:-512m}
       NEO4J_dbms_memory_heap_max__size: ${NEO4J_HEAP_MAX:-1G}
       NEO4J_dbms_memory_pagecache_size: ${NEO4J_PAGECACHE:-256m}

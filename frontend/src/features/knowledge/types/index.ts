@@ -106,6 +106,7 @@ export interface KnowledgeGraphRequest {
   nodeTypes?: KnowledgeNodeType[]
   searchQuery?: string
   limit?: number
+  [key: string]: any
 }
 
 export interface KnowledgeGraphResponse {
@@ -153,6 +154,7 @@ export interface KnowledgeSearchParams {
   departmentId?: string
   page?: number
   pageSize?: number
+  [key: string]: any
 }
 
 export interface GraphFilterState {

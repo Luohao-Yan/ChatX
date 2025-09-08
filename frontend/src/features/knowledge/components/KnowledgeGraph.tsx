@@ -323,7 +323,7 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
   // 加载状态
   if (loading) {
     return (
-      <div className={`flex items-center justify-center bg-background border rounded-lg min-h-[500px] ${className}`}>
+      <div className={`flex items-center justify-center min-h-[500px] ${className}`}>
         <div className="text-center">
           <IconRefresh className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
           <p className="text-muted-foreground">加载知识图谱...</p>
@@ -335,7 +335,7 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
   // 无数据状态
   if (!data.nodes.length) {
     return (
-      <div className={`flex items-center justify-center bg-background border rounded-lg min-h-[500px] ${className}`}>
+      <div className={`flex items-center justify-center min-h-[500px] ${className}`}>
         <div className="text-center space-y-4">
           <div className="text-lg font-medium text-muted-foreground">暂无数据</div>
           <p className="text-sm text-muted-foreground">当前没有可显示的知识图谱数据</p>

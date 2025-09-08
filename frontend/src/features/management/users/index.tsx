@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 // import { useTranslation } from 'react-i18next' // Commented out until i18n is needed
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -130,14 +130,16 @@ export default function UsersManagement() {
       }
     }
 
-    // 初始化时根据屏幕尺寸设置侧边栏状态
-    const isMobile = window.innerWidth < 768
-    setIsMobileView(isMobile)
-    setIsSidebarOpen(!isMobile) // 桌面端默认打开，移动端默认关闭
-
     window.addEventListener('resize', checkMobileView)
     return () => window.removeEventListener('resize', checkMobileView)
   }, [isMobileView, isSidebarOpen])
+
+  // 初始化侧边栏状态（只在组件挂载时运行一次）
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768
+    setIsMobileView(isMobile)
+    setIsSidebarOpen(!isMobile) // 桌面端默认打开，移动端默认关闭
+  }, []) // 空依赖数组，只在挂载时运行一次
 
   // 获取可用租户列表
   const fetchAvailableTenants = useCallback(async () => {
@@ -221,23 +223,7 @@ export default function UsersManagement() {
     }
   }, [isSuperAdmin, currentUser, currentTenantInfo])
 
-  // 优化的组织选择逻辑 - 使用 useMemo 缓存排序结果
-  const sortedRootOrganizations = useMemo(() => {
-    if (organizations.length === 0) return []
-    
-    // 找出所有根组织（level为0或parent_id为null）
-    const rootOrgs = organizations.filter(org => org.level === 0 || !org.parent_id)
-    
-    // 按优先级降序排序，优先级相同则按名称升序排序
-    return rootOrgs.sort((a, b) => {
-      // 首先按优先级降序排序（数值越大优先级越高）
-      if (a.priority !== b.priority) {
-        return b.priority - a.priority
-      }
-      // 优先级相同时，按名称升序排序
-      return a.name.localeCompare(b.name)
-    })
-  }, [organizations])
+  // 移除自动选择组织的逻辑，让用户主动选择
 
   // 获取组织列表
   const fetchOrganizations = useCallback(async () => {
@@ -272,10 +258,8 @@ export default function UsersManagement() {
       const orgsList = Array.isArray(orgs) ? orgs : []
       setOrganizations(orgsList)
 
-      // 如果没有选择组织且有组织列表，选择第一个
-      if (!selectedOrgId && orgsList.length > 0) {
-        setSelectedOrgId(orgsList[0].id)
-      }
+      // 移除自动选择组织的逻辑，让用户自主选择
+      // 用户可以通过组织树或"全部用户"按钮进行选择
       
     } catch (_error) {
       // Failed to fetch organizations
@@ -283,7 +267,7 @@ export default function UsersManagement() {
     } finally {
       setLoadingOrgs(false)
     }
-  }, [isSuperAdmin, currentTenantInfo?.id, currentUser?.current_tenant_id, selectedOrgId])
+  }, [isSuperAdmin, currentTenantInfo?.id, currentUser?.current_tenant_id])
   // 获取用户列表
   const fetchUsers = useCallback(async (page = 1, size = 20) => {
     try {
@@ -723,15 +707,10 @@ export default function UsersManagement() {
           // Initializing data with tenant ID
           
           // 1. 加载组织列表
-          const orgs = await loadOrganizationsForTenant(tenantId)
+          await loadOrganizationsForTenant(tenantId)
           
-          // 2. 选择第一个组织（如果有的话）
-          let selectedOrgForData = null
-          if (orgs && orgs.length > 0) {
-            selectedOrgForData = orgs[0].id
-            setSelectedOrgId(orgs[0].id)
-            setSelectedOrgName(orgs[0].display_name || orgs[0].name)
-          }
+          // 2. 不自动选择组织，让用户自主选择（默认显示全部用户）
+          const selectedOrgForData = selectedOrgId
           
           // 3. 并行加载用户统计和用户列表
           // 统计数据默认显示全租户数据（不传organization_id）
@@ -757,7 +736,8 @@ export default function UsersManagement() {
     fetchAvailableTenants,
     currentPage,
     pageSize,
-    loadUsersForSpecificTenant
+    loadUsersForSpecificTenant,
+    selectedOrgId
   ])
 
   // 分页变化时重新获取数据
@@ -790,14 +770,8 @@ export default function UsersManagement() {
     return () => clearTimeout(timer)
   }, [searchQuery, selectedOrgId, currentUser?.id, isSuperAdmin, currentTenantInfo?.id, currentUser?.current_tenant_id, loadUsersForSpecificTenant, pageSize])
 
-  // 自动选择优先级最高的根组织
-  useEffect(() => {
-    if (!selectedOrgId && sortedRootOrganizations.length > 0) {
-      const firstRootOrg = sortedRootOrganizations[0]
-      setSelectedOrgId(firstRootOrg.id)
-      setSelectedOrgName(firstRootOrg.display_name || firstRootOrg.name)
-    }
-  }, [selectedOrgId, sortedRootOrganizations])
+  // 不再自动选择组织，让用户主动选择
+  // 用户可以通过组织树选择具体组织，或点击"全部用户"查看所有用户
 
   return (
     <>
@@ -824,31 +798,35 @@ export default function UsersManagement() {
       <Main className="h-[calc(100vh-4rem)]">
         <div className="flex h-full">
           {/* 左侧组织树侧边栏 */}
-          {isSidebarOpen && (
+          {(isSidebarOpen || !isMobileView) && (
             <div className={`${
               isMobileView 
-                ? 'fixed inset-y-0 left-0 z-50 w-80 bg-background border-r shadow-xl' 
-                : 'relative w-80 border-r bg-background'
-            } flex-shrink-0`}>
-              {/* 移动端背景遮罩 */}
-              {isMobileView && (
-                <div 
-                  className="fixed inset-0 bg-black/30 md:hidden z-40"
-                  onClick={() => setIsSidebarOpen(false)}
-                />
-              )}
-              
-              {/* 组织树内容 */}
-              <div className={`h-full overflow-y-auto ${isMobileView ? 'relative z-50' : ''}`}>
-                <OrganizationTree
-                  selectedOrgId={selectedOrgId}
-                  onOrgSelect={handleOrgChange}
-                  currentTenantId={isSuperAdmin ? currentTenantInfo?.id : undefined}
-                  isSuperAdmin={isSuperAdmin}
-                  currentUserTenantId={currentUser?.current_tenant_id}
-                />
-              </div>
+                ? 'fixed inset-y-0 left-0 z-50 w-80 bg-background shadow-xl'
+                : `relative bg-background transition-all duration-300 ease-in-out ${
+                    isSidebarOpen ? 'w-80' : 'w-0'
+                  }`
+            } flex-shrink-0 ${isMobileView ? '' : 'overflow-hidden'}`}>
+            {/* 移动端背景遮罩 */}
+            {isMobileView && isSidebarOpen && (
+              <div 
+                className="fixed inset-0 bg-black/30 md:hidden z-40"
+                onClick={() => setIsSidebarOpen(false)}
+              />
+            )}
+            
+            {/* 组织树内容 */}
+            <div className={`h-full overflow-y-auto ${isMobileView ? 'relative z-50' : ''} ${
+              !isMobileView ? 'w-80' : ''
+            }`}>
+              <OrganizationTree
+                selectedOrgId={selectedOrgId}
+                onOrgSelect={handleOrgChange}
+                currentTenantId={isSuperAdmin ? currentTenantInfo?.id : undefined}
+                isSuperAdmin={isSuperAdmin}
+                currentUserTenantId={currentUser?.current_tenant_id}
+              />
             </div>
+          </div>
           )}
 
           {/* 右侧主内容区域 */}

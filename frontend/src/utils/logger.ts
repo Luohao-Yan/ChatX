@@ -40,7 +40,7 @@ export interface LoggerConfig {
 
 // 默认配置
 const DEFAULT_CONFIG: LoggerConfig = {
-  level: import.meta.env.DEV ? LogLevel.DEBUG : LogLevel.INFO,
+  level: import.meta.env.DEV ? LogLevel.WARN : LogLevel.INFO, // 提高日志级别，减少调试信息
   enableConsole: import.meta.env.DEV,
   enableRemote: import.meta.env.PROD,
   remoteEndpoint: '/api/logs',

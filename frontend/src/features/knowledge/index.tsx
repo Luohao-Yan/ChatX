@@ -3,28 +3,17 @@
  * 按照DDD原则组织的知识管理功能
  */
 
-// 组件导出
-export * from './components'
-
-// Hooks导出
-export * from './hooks'
-
-// 类型导出
+// 类型定义导出
 export * from './types'
 
-// 默认导出
-import { KnowledgeGraph, GraphControls, NodeDetails, GraphLegend } from './components'
-import { useKnowledgeGraph, useOrganizations, useDepartments } from './hooks'
+// 服务层导出
+export * from './services'
 
-export default {
-  // 组件
-  KnowledgeGraph,
-  GraphControls,
-  NodeDetails,
-  GraphLegend,
-  
-  // Hooks
-  useKnowledgeGraph,
-  useOrganizations,
-  useDepartments,
-}
+// 应用服务层(Hooks)导出
+export * from './hooks'
+
+// 组件层导出
+export * from './components'
+
+// 页面层导出
+export * from './pages'

@@ -5,7 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { OrganizationAPI } from '@/services/api/knowledge'
+import { OrganizationService } from '../services'
 import type {
   Organization,
   OrganizationCreateRequest,
@@ -38,7 +38,10 @@ export const useOrganizations = (): UseOrganizationsResult => {
     refetch: refetchList
   } = useQuery({
     queryKey: ['organizations'],
-    queryFn: OrganizationAPI.getList,
+    queryFn: OrganizationService.getOrganizations,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
   // 获取组织机构树
@@ -49,12 +52,15 @@ export const useOrganizations = (): UseOrganizationsResult => {
     refetch: refetchTree
   } = useQuery({
     queryKey: ['organizations-tree'],
-    queryFn: OrganizationAPI.getTree,
+    queryFn: OrganizationService.getOrganizationTree,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
   // 创建组织机构
   const createMutation = useMutation({
-    mutationFn: OrganizationAPI.create,
+    mutationFn: OrganizationService.createOrganization,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizations'] })
       queryClient.invalidateQueries({ queryKey: ['organizations-tree'] })
@@ -69,7 +75,7 @@ export const useOrganizations = (): UseOrganizationsResult => {
   // 更新组织机构
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: OrganizationUpdateRequest }) =>
-      OrganizationAPI.update(id, data),
+      OrganizationService.updateOrganization(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizations'] })
       queryClient.invalidateQueries({ queryKey: ['organizations-tree'] })
@@ -83,7 +89,7 @@ export const useOrganizations = (): UseOrganizationsResult => {
 
   // 删除组织机构
   const deleteMutation = useMutation({
-    mutationFn: OrganizationAPI.delete,
+    mutationFn: OrganizationService.deleteOrganization,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizations'] })
       queryClient.invalidateQueries({ queryKey: ['organizations-tree'] })
@@ -98,7 +104,7 @@ export const useOrganizations = (): UseOrganizationsResult => {
   // 获取单个组织机构详情
   const getOrganization = async (id: string): Promise<Organization> => {
     try {
-      return await OrganizationAPI.getById(id)
+      return await OrganizationService.getOrganizationById(id)
     } catch (error: any) {
       const errorMessage = error?.response?.data?.detail || '获取组织机构详情失败'
       toast.error(errorMessage)

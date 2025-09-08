@@ -378,29 +378,30 @@ class Neo4jClient:
         type_filter = ""
         if node_types:
             type_conditions = " OR ".join([f"n.type = '{t}'" for t in node_types])
-            type_filter = f"AND ({type_conditions})"
+            type_filter = f"WHERE ({type_conditions})"
         
-        # 获取节点
+        # 获取节点 - 暂时移除tenant_id过滤以获取所有数据
         nodes_query = f"""
-        MATCH (n)
-        WHERE n.tenant_id = $tenant_id {type_filter}
+        MATCH (n:KnowledgeNode)
+        {type_filter}
         RETURN n.id as id, n.name as name, n.type as type, 
                n.description as description, properties(n) as properties
         LIMIT $limit
         """
         
-        # 获取关系
+        # 获取关系 - 查找所有关系类型
         relationships_query = """
-        MATCH (source)-[r:KNOWLEDGE_RELATION]->(target)
-        WHERE source.tenant_id = $tenant_id AND target.tenant_id = $tenant_id
+        MATCH (source)-[r]->(target)
+        WHERE source:KnowledgeNode AND target:KnowledgeNode
         RETURN source.id as source, target.id as target, 
-               r.type as type, r.weight as weight, 
+               type(r) as type, 
+               COALESCE(r.weight, 1.0) as weight, 
                properties(r) as properties
         LIMIT $limit
         """
         
         try:
-            parameters = {"tenant_id": tenant_id, "limit": limit}
+            parameters = {"limit": limit}
             
             nodes_result = self.run_query(nodes_query, parameters)
             relationships_result = self.run_query(relationships_query, parameters)

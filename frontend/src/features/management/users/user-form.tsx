@@ -1,4 +1,4 @@
-import { useState, useId, useEffect } from 'react'
+import { useState, useId, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ import { User } from '@/types/entities/user'
 import { organizationAPI, type Organization, type Team } from '@/services/api/organization'
 import { roleAPI, type Role } from '@/services/api/roles'
 import { tenantAPI, type Tenant } from '@/services/api/tenants'
+import { useAuth } from '@/stores/auth'
 
 const userSchema = z.object({
   username: z.string()
@@ -120,6 +121,8 @@ const checkPasswordStrength = (password: string) => {
 }
 
 export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }: UserFormProps) {
+  const { userInfo: currentUser } = useAuth()
+  const isSuperAdmin = currentUser?.is_superuser || false
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Partial<Record<keyof UserFormData, string>>>({})
   const formId = useId() // 生成唯一ID前缀
@@ -161,57 +164,69 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
   const selectedTeam = watch('team_id')
   const selectedRoles = watch('roles')
 
-  // 加载选项数据
+  // 优化：使用useMemo缓存密码强度检查结果，避免重复计算
+  const passwordStrength = useMemo(() => {
+    return checkPasswordStrength(currentPassword || '')
+  }, [currentPassword])
+
+  // 优化：延迟加载数据，减少初始加载时间
   useEffect(() => {
     const loadFormData = async () => {
       try {
         setDataLoading(true)
         
-        // 并行加载所有数据
-        const [tenants, organizations, teams, roles] = await Promise.all([
-          tenantAPI.getTenants().catch(err => {
+        // 根据用户角色加载不同的数据
+        let tenantsPromise = Promise.resolve([])
+        if (isSuperAdmin) {
+          // 超级管理员可以看到所有租户
+          tenantsPromise = tenantAPI.getTenants().catch(err => {
             console.warn('租户数据加载失败:', err)
             return [{
-              id: 'default',
-              name: '默认租户',
-              display_name: '默认租户',
-              description: '系统默认租户'
+              id: currentUser?.current_tenant_id || 'default',
+              name: '当前租户',
+              display_name: '当前租户',
+              description: '当前登录用户的租户'
             }]
-          }),
-          organizationAPI.getOrganizations().catch(err => {
-            console.warn('组织数据加载失败:', err)
-            return []
-          }),
-          organizationAPI.getTeams().catch(err => {
-            console.warn('团队数据加载失败:', err)
-            return []
-          }),
+          })
+        } else {
+          // 普通管理员只能使用当前租户
+          tenantsPromise = Promise.resolve([{
+            id: currentUser?.current_tenant_id || 'default',
+            name: '当前租户',
+            display_name: '当前租户',
+            description: '当前登录用户的租户'
+          }])
+        }
+
+        const [tenants, roles] = await Promise.all([
+          tenantsPromise,
           roleAPI.getRoles().catch(err => {
             console.warn('角色数据加载失败:', err)
             return []
           })
         ])
-
+        
         // 处理租户数据
-        setTenantOptions(tenants.map((tenant: any) => ({
+        const tenantOptions = tenants.map((tenant: any) => ({
           value: tenant.id,
           label: tenant.display_name || tenant.name,
           description: tenant.description
-        })))
+        }))
+        setTenantOptions(tenantOptions)
 
-        // 处理组织数据
-        setOrganizationOptions(organizations.map((org: Organization) => ({
-          value: org.id,
-          label: org.display_name || org.name,
-          description: org.description
-        })))
+        // 如果在编辑模式且用户有租户，设置默认选中的租户
+        if (isEditing && initialData?.tenant_id) {
+          setValue('tenant_id', initialData.tenant_id)
+        } else if (!isEditing && tenantOptions.length === 1) {
+          // 新增用户时，如果只有一个租户选项，自动选中
+          setValue('tenant_id', tenantOptions[0].value)
+        }
 
-        // 处理团队数据
-        setTeamOptions(teams.map((team: Team) => ({
-          value: team.id,
-          label: team.name,
-          description: team.description
-        })))
+        // 初始化组织选项为空，等选择租户后再加载
+        setOrganizationOptions([])
+
+        // 团队数据延迟加载 - 先设置为空，等用户选择组织后再加载
+        setTeamOptions([])
 
         // 处理角色数据
         setRoleOptions(roles.map((role: Role) => ({
@@ -239,7 +254,53 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
     }
 
     loadFormData()
-  }, [])
+  }, [isSuperAdmin, currentUser?.current_tenant_id, isEditing, initialData?.tenant_id, setValue])
+
+  // 根据选中的租户加载组织数据
+  useEffect(() => {
+    if (selectedTenant) {
+      const loadOrganizations = async () => {
+        try {
+          const organizations = await organizationAPI.getOrganizations({ tenant_id: selectedTenant }).catch(() => [])
+          setOrganizationOptions(organizations.map((org: Organization) => ({
+            value: org.id,
+            label: org.display_name || org.name,
+            description: org.description
+          })))
+        } catch (error) {
+          console.warn('加载组织数据失败:', error)
+          setOrganizationOptions([])
+        }
+      }
+      loadOrganizations()
+    } else {
+      setOrganizationOptions([])
+      setValue('organization_id', '') // 清除组织选择
+    }
+  }, [selectedTenant, setValue])
+
+  // 延迟加载团队数据 - 只在用户选择组织时加载
+  useEffect(() => {
+    if (selectedOrganization) {
+      const loadTeams = async () => {
+        try {
+          const teams = await organizationAPI.getTeams({ organization_id: selectedOrganization }).catch(() => [])
+          setTeamOptions(teams.map((team: Team) => ({
+            value: team.id,
+            label: team.name,
+            description: team.description
+          })))
+        } catch (error) {
+          console.warn('加载团队数据失败:', error)
+          setTeamOptions([])
+        }
+      }
+      loadTeams()
+    } else {
+      setTeamOptions([])
+      setValue('team_id', '') // 清除团队选择
+    }
+  }, [selectedOrganization, setValue])
 
   const handleFormSubmit = async (data: UserFormData) => {
     try {
@@ -400,12 +461,12 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
               placeholder={isEditing ? "留空表示不修改密码" : "输入密码"}
             />
             
-            {/* 密码强度指示器 */}
+            {/* 密码强度指示器 - 优化后使用缓存结果 */}
             {currentPassword && !isEditing && (
               <div className="space-y-2">
                 <div className="text-xs text-muted-foreground">密码强度要求：</div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                  {checkPasswordStrength(currentPassword).items.map((item, index) => (
+                  {passwordStrength.items.map((item, index) => (
                     <div key={index} className={`flex items-center gap-1 ${item.met ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
                       <div className={`w-2 h-2 rounded-full ${item.met ? 'bg-green-500' : 'bg-muted-foreground/40'}`}></div>
                       <span>{item.label}</span>
@@ -418,10 +479,10 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
                   </span>
                 </div>
                 <div className="text-xs">
-                  <span className={checkPasswordStrength(currentPassword).score >= 3 ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}>
-                    {checkPasswordStrength(currentPassword).score >= 3 
+                  <span className={passwordStrength.score >= 3 ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}>
+                    {passwordStrength.score >= 3 
                       ? '✓ 密码强度符合要求' 
-                      : `需要至少3种类型 (${checkPasswordStrength(currentPassword).score}/3)`
+                      : `需要至少3种类型 (${passwordStrength.score}/3)`
                     }
                   </span>
                 </div>
@@ -470,28 +531,13 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div className="space-y-2">
-              <Label>部门/团队</Label>
-              <SearchableSelect
-                options={teamOptions}
-                value={selectedTeam ? [selectedTeam] : []}
-                placeholder={teamOptions.length > 0 ? "选择部门" : "加载中..."}
-                searchPlaceholder="搜索部门..."
-                multiple={false}
-                disabled={teamOptions.length === 0}
-                onValueChange={(value) => setValue('team_id', value[0] || '')}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor={`${formId}-phone`}>联系电话</Label>
-              <Input
-                id={`${formId}-phone`}
-                {...register('phone')}
-                placeholder="输入联系电话"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${formId}-phone`}>联系电话</Label>
+            <Input
+              id={`${formId}-phone`}
+              {...register('phone')}
+              placeholder="输入联系电话"
+            />
           </div>
 
           <div className="space-y-2">
@@ -509,6 +555,22 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
             <p className="text-sm text-muted-foreground">
               可选择多个角色，系统将合并所有角色权限
             </p>
+            {/* 角色权限描述 */}
+            {selectedRoles && selectedRoles.length > 0 && (
+              <div className="mt-2 p-2 bg-muted/50 rounded-sm">
+                <div className="text-xs font-medium text-muted-foreground mb-1">角色权限范围：</div>
+                <div className="space-y-1">
+                  {selectedRoles.map(roleId => {
+                    const role = roleOptions.find(opt => opt.value === roleId)
+                    return role ? (
+                      <div key={roleId} className="text-xs">
+                        <span className="font-medium">{role.label}:</span> {role.description || '暂无描述'}
+                      </div>
+                    ) : null
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

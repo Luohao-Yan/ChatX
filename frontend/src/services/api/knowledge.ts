@@ -1,6 +1,6 @@
 /**
- * 知识管理API服务
- * 与其他API服务保持一致的组织结构
+ * 知识图谱API服务
+ * 与后端知识图谱API接口对应
  */
 
 import { http } from '../http'
@@ -8,6 +8,8 @@ import type {
   KnowledgeGraphData,
   KnowledgeGraphRequest,
   KnowledgeGraphResponse,
+  KnowledgeNode,
+  KnowledgeNodeType,
   Organization,
   OrganizationCreateRequest,
   OrganizationUpdateRequest,
@@ -17,6 +19,35 @@ import type {
   KnowledgeSearchParams,
 } from '@/features/knowledge/types'
 
+// ==================== 额外类型定义 ====================
+
+export interface KnowledgeSearchRequest {
+  query: string
+  node_types?: KnowledgeNodeType[]
+  limit?: number
+}
+
+export interface KnowledgeSearchResponse {
+  nodes: KnowledgeNode[]
+  total: number
+}
+
+export interface NodeRelationsRequest {
+  node_id: string
+  depth?: number
+}
+
+export interface NodeRelationsResponse {
+  center_node: KnowledgeNode
+  related_data: KnowledgeGraphData
+}
+
+export interface KnowledgeGraphStats {
+  total_nodes: number
+  total_links: number
+  node_types: { type: KnowledgeNodeType; count: number }[]
+}
+
 // ==================== 知识图谱API ====================
 export class KnowledgeGraphAPI {
   private static readonly BASE_PATH = '/v1/knowledge'
@@ -25,40 +56,72 @@ export class KnowledgeGraphAPI {
    * 获取知识图谱数据
    */
   static async getGraph(params?: KnowledgeGraphRequest): Promise<KnowledgeGraphData> {
-    const response = await http.get<KnowledgeGraphResponse>(`${this.BASE_PATH}/graph`, { 
-      params 
-    })
+    const queryParams = new URLSearchParams()
+    
+    if (params?.nodeTypes) {
+      params.nodeTypes.forEach(type => queryParams.append('node_types', type))
+    }
+    if (params?.searchQuery) {
+      queryParams.append('search_query', params.searchQuery)
+    }
+    if (params?.limit) {
+      queryParams.append('limit', params.limit.toString())
+    }
+
+    const url = `${this.BASE_PATH}/graph${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+    const response = await http.get<KnowledgeGraphResponse>(url)
     return response.data.data
   }
 
   /**
    * 搜索知识节点
    */
-  static async searchNodes(params: KnowledgeSearchParams): Promise<KnowledgeGraphData> {
-    const response = await http.get<{nodes: any[], total: number}>(`${this.BASE_PATH}/graph/search`, {
-      params
-    })
-    // 搜索API返回的是SearchResponse，需要转换为GraphData格式
-    return {
-      nodes: response.data.nodes || [],
-      links: []
+  static async searchNodes(params: KnowledgeSearchParams): Promise<KnowledgeSearchResponse> {
+    const queryParams = new URLSearchParams()
+    
+    if (params.query) {
+      queryParams.append('query', params.query)
     }
-  }
+    if (params.nodeTypes) {
+      params.nodeTypes.forEach(type => queryParams.append('node_types', type))
+    }
+    if (params.pageSize) {
+      queryParams.append('limit', params.pageSize.toString())
+    }
 
-  /**
-   * 获取节点详情
-   */
-  static async getNodeDetails(nodeId: string): Promise<any> {
-    const response = await http.get(`${this.BASE_PATH}/nodes/${nodeId}`)
+    const response = await http.get<KnowledgeSearchResponse>(
+      `${this.BASE_PATH}/graph/search?${queryParams.toString()}`
+    )
     return response.data
   }
 
   /**
-   * 获取节点关联信息
+   * 获取节点关系网络
    */
-  static async getNodeRelations(nodeId: string): Promise<KnowledgeGraphData> {
-    const response = await http.get<KnowledgeGraphResponse>(`${this.BASE_PATH}/nodes/${nodeId}/relations`)
-    return response.data.data
+  static async getNodeRelations(nodeId: string, depth: number = 1): Promise<NodeRelationsResponse> {
+    const queryParams = new URLSearchParams()
+    queryParams.append('depth', depth.toString())
+
+    const response = await http.get<NodeRelationsResponse>(
+      `${this.BASE_PATH}/graph/nodes/${nodeId}/relations?${queryParams.toString()}`
+    )
+    return response.data
+  }
+
+  /**
+   * 获取知识图谱统计信息
+   */
+  static async getGraphStats(): Promise<KnowledgeGraphStats> {
+    const response = await http.get<KnowledgeGraphStats>(`${this.BASE_PATH}/graph/stats`)
+    return response.data
+  }
+
+  /**
+   * 获取节点详情 (已弃用，使用 getNodeRelations 替代)
+   */
+  static async getNodeDetails(nodeId: string): Promise<any> {
+    const response = await http.get(`${this.BASE_PATH}/nodes/${nodeId}`)
+    return response.data
   }
 }
 

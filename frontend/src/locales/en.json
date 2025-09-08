@@ -528,5 +528,35 @@
       "nameRequired": "Connection name is required",
       "endpointInvalid": "Please enter a valid URL"
     }
+  },
+  "knowledge": {
+    "organizations": "Organization Management",
+    "departments": "Department Management", 
+    "webBlogs": "Web/Blog Knowledge Collection",
+    "wechat": "WeChat Knowledge Collection",
+    "graph": "Knowledge Graph",
+    "organizationsDescription": "Manage and view organizational structure",
+    "departmentsDescription": "Manage and view department organizational chart",
+    "webBlogsDescription": "Collect and manage your web pages, blogs and other online knowledge resources",
+    "wechatDescription": "Collect and manage quality articles and content from WeChat public accounts",
+    "addNew": "Add New",
+    "addFavorite": "Add to Favorites",
+    "quickAdd": "Quick Add",
+    "quickAddDescription": "Enter URL or use browser extension for one-click bookmarking",
+    "quickFavorite": "Quick Favorite",
+    "quickFavoriteDescription": "Support WeChat article links, public account subscriptions, etc.",
+    "statistics": "Collection Statistics",
+    "totalFavorites": "Total Favorites",
+    "todayAdded": "Added Today",
+    "favoritesCount": "Favorite Articles",
+    "followedAccounts": "Followed Accounts",
+    "addUrl": "Add URL",
+    "favoriteArticle": "Favorite Article",
+    "underDevelopment": "Under Development",
+    "webUnderDevelopment": "Web knowledge collection feature is under development, coming soon...",
+    "wechatUnderDevelopment": "WeChat public account knowledge collection feature is under development, coming soon...",
+    "searchPlaceholder": "Search knowledge collection...",
+    "searchArticles": "Search public account articles...",
+    "filter": "Filter"
   }
 }

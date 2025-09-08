@@ -1,21 +1,13 @@
 /**
  * 知识管理组件统一导出
+ * 分组导出各个功能模块的组件
  */
 
-export { KnowledgeGraph } from './KnowledgeGraph'
-export { GraphControls } from './GraphControls'
-export { NodeDetails } from './NodeDetails'
-export { GraphLegend } from './GraphLegend'
+// 图谱组件组
+export * from './graph'
 
-// 导入组件用于默认导出
-import { KnowledgeGraph } from './KnowledgeGraph'
-import { GraphControls } from './GraphControls'
-import { NodeDetails } from './NodeDetails'
-import { GraphLegend } from './GraphLegend'
+// 组织管理组件组
+export * from './organization'
 
-export default {
-  KnowledgeGraph,
-  GraphControls, 
-  NodeDetails,
-  GraphLegend,
-}
+// 部门管理组件组
+export * from './department'
