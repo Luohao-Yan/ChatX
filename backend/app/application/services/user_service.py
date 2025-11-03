@@ -15,6 +15,7 @@ from app.schemas.batch_schemas import BatchOperationResponse
 from app.models.user_models import User, UserSession, UserVerification, UserType
 from app.models.org_models import UserOrganization
 from app.infrastructure.securities import security
+from app.core.config import settings
 from app.application.middleware.verification_service import get_verification_service
 from app.application.middleware.session_cache_service import get_session_cache_service
 from app.application.middleware.api_cache_service import get_api_cache_service, cached_api
@@ -287,8 +288,29 @@ class UserService:
             "username": user.username,
             "roles": user.role_list  # 使用property方法获取角色列表
         }
-        access_token = security.create_access_token(subject=user.id, user_data=user_data)
-        refresh_token = security.create_refresh_token(subject=user.id)
+        
+        # 根据rememberMe参数设置不同的token过期时间
+        remember_me = getattr(login_data, 'rememberMe', False)
+        if remember_me:
+            # 记住我：30天过期
+            access_token_expires = timedelta(days=settings.REMEMBER_ME_TOKEN_EXPIRE_DAYS)
+            refresh_token_expires = timedelta(days=settings.REMEMBER_ME_TOKEN_EXPIRE_DAYS)
+            session_expires = timedelta(days=settings.REMEMBER_ME_TOKEN_EXPIRE_DAYS)
+        else:
+            # 正常登录：默认过期时间
+            access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+            refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+            session_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        
+        access_token = security.create_access_token(
+            subject=user.id, 
+            user_data=user_data,
+            expires_delta=access_token_expires
+        )
+        refresh_token = security.create_refresh_token(
+            subject=user.id,
+            expires_delta=refresh_token_expires
+        )
         
         # 5. 创建会话
         # 生成简短的设备ID（取User-Agent的前80个字符作为设备标识）
@@ -302,7 +324,7 @@ class UserService:
             "device_id": device_id,  # 截断后的设备标识
             "user_agent": login_data.device_info,  # 完整的user_agent存储到Text字段
             "ip_address": client_ip,
-            "expires_at": datetime.now(timezone.utc) + timedelta(days=7),
+            "expires_at": datetime.now(timezone.utc) + session_expires,
             "is_active": True,
         }
         
@@ -496,47 +518,173 @@ class UserService:
             limit=limit
         )
     
-    async def update_user(self, user_id: str, update_data: UserUpdate, 
+    async def update_user(self, user_id: str, update_data: UserUpdate,
                          current_user: User) -> Optional[User]:
         """更新用户信息"""
         # 权限检查
         if not self.domain_service.can_user_access_user_data(current_user, user_id):
             raise HTTPException(status_code=403, detail="无权限修改此用户信息")
-        
+
         update_dict = update_data.model_dump(exclude_unset=True)
-        
+
+        # 调试输出
+        logger.info(f"[UserService] 更新用户 {user_id}, 数据: {update_dict}, 当前用户: {current_user.username}")
+
+        # 分离组织和角色相关字段，这些需要特殊处理
+        org_related_fields = {}
+        role_fields = {}
+
+        # 提取组织相关字段
+        for field in ["tenant_id", "organization_id", "team_id"]:
+            if field in update_dict:
+                org_related_fields[field] = update_dict.pop(field)
+
+        # 提取角色字段
+        if "roles" in update_dict:
+            role_fields["roles"] = update_dict.pop("roles")
+
         # 如果要停用用户，需要额外的权限检查
         if "is_active" in update_dict and not update_dict["is_active"]:
             target_user = await self.user_repo.get_by_id(user_id)
             if not target_user:
                 raise HTTPException(status_code=404, detail="用户不存在")
-            
+
             can_disable, error_msg = self.domain_service.can_user_be_disabled(
                 target_user, current_user.id
             )
             if not can_disable:
                 raise HTTPException(status_code=400, detail=error_msg)
-        
+
         # 如果更新密码，需要加密
         if "password" in update_dict:
             update_dict["hashed_password"] = self.domain_service.hash_password(
                 update_dict.pop("password")
             )
-        
-        # 更新数据库
+
+        # 更新基本用户信息
         updated_user = await self.user_repo.update(user_id, update_dict)
-        
+
+        if not updated_user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+
+        # 处理组织相关字段更新
+        if org_related_fields:
+            try:
+                await self._update_user_organization_info(user_id, org_related_fields, current_user)
+            except Exception as e:
+                logger.warning(f"Failed to update organization info for user {user_id}: {e}")
+                # 组织信息更新失败不影响基本信息更新
+
+        # 处理角色更新
+        if role_fields:
+            try:
+                await self._update_user_roles(user_id, role_fields["roles"], current_user)
+            except Exception as e:
+                logger.warning(f"Failed to update roles for user {user_id}: {e}")
+                # 角色更新失败不影响基本信息更新
+
         # 清除用户相关缓存
-        if updated_user:
-            cache_service = await get_api_cache_service()
-            await cache_service.invalidate_user_cache(user_id)
-            
-            # 如果用户状态发生变化，也要清除会话缓存
-            if "is_active" in update_dict and not update_dict["is_active"]:
-                await self.logout_all_devices(user_id)
-        
+        cache_service = await get_api_cache_service()
+        await cache_service.invalidate_user_cache(user_id)
+
+        # 如果用户状态发生变化，也要清除会话缓存
+        if "is_active" in update_dict and not update_dict["is_active"]:
+            await self.logout_all_devices(user_id)
+
+        # 重新获取完整的用户信息（包括更新后的组织和角色）
+        updated_user = await self.user_repo.get_by_id(user_id)
         return updated_user
-    
+
+    async def _update_user_organization_info(self, user_id: str, org_fields: dict, current_user: User) -> None:
+        """更新用户的组织信息"""
+        try:
+            # 如果有租户信息更新，直接更新用户表
+            if "tenant_id" in org_fields:
+                await self.user_repo.update(user_id, {
+                    "current_tenant_id": org_fields["tenant_id"],
+                    "tenant_ids": [org_fields["tenant_id"]]  # 暂时简化处理
+                })
+
+            # 如果有组织相关信息需要更新，处理用户-组织关联
+            if "organization_id" in org_fields:
+                from app.models.org_models import UserOrganization
+
+                # 获取租户ID，优先使用传入的，否则使用当前用户的
+                tenant_id = org_fields.get("tenant_id", current_user.current_tenant_id)
+
+                try:
+                    # 先清除现有的组织关联
+                    self.user_repo.db.query(UserOrganization).filter(
+                        UserOrganization.user_id == user_id
+                    ).delete(synchronize_session=False)
+
+                    # 如果指定了新的组织ID，创建新的关联
+                    if org_fields.get("organization_id"):
+                        user_org = UserOrganization(
+                            user_id=user_id,
+                            organization_id=org_fields["organization_id"],
+                            role="member",  # 默认角色
+                            tenant_id=tenant_id
+                        )
+                        self.user_repo.db.add(user_org)
+
+                    # 提交组织关联更改
+                    self.user_repo.db.commit()
+                    logger.info(f"[UserService] 成功更新用户 {user_id} 的组织信息")
+                except Exception as db_error:
+                    logger.error(f"[UserService] 组织数据库操作失败: {db_error}")
+                    self.user_repo.db.rollback()
+                    # 不抛出异常，让基本信息更新继续
+
+            # 如果有团队信息需要更新，处理用户-团队关联
+            if "team_id" in org_fields and org_fields.get("team_id"):
+                from app.models.org_models import UserTeam
+
+                # 获取租户ID
+                tenant_id = org_fields.get("tenant_id", current_user.current_tenant_id)
+
+                try:
+                    # 先清除现有的团队关联
+                    self.user_repo.db.query(UserTeam).filter(
+                        UserTeam.user_id == user_id
+                    ).delete(synchronize_session=False)
+
+                    # 创建新的团队关联
+                    user_team = UserTeam(
+                        user_id=user_id,
+                        team_id=org_fields["team_id"],
+                        role="member",  # 默认角色
+                        tenant_id=tenant_id
+                    )
+                    self.user_repo.db.add(user_team)
+
+                    # 提交团队关联更改
+                    self.user_repo.db.commit()
+                    logger.info(f"[UserService] 成功更新用户 {user_id} 的团队信息")
+                except Exception as db_error:
+                    logger.error(f"[UserService] 团队数据库操作失败: {db_error}")
+                    self.user_repo.db.rollback()
+                    # 不抛出异常，让基本信息更新继续
+
+        except Exception as e:
+            logger.error(f"Failed to update organization info for user {user_id}: {e}")
+            self.user_repo.db.rollback()
+            # 不要抛出异常，让基本用户信息更新可以继续
+
+    async def _update_user_roles(self, user_id: str, role_ids: list, current_user: User) -> None:
+        """更新用户角色 - 直接更新User表的roles JSON字段"""
+        try:
+            # 用户的角色存储在User表的roles字段中（JSON格式）
+            # 直接更新用户的角色列表
+            await self.user_repo.update(user_id, {
+                "roles": role_ids
+            })
+            logger.info(f"[UserService] 成功更新用户 {user_id} 的角色信息: {role_ids}")
+
+        except Exception as e:
+            logger.error(f"Failed to update roles for user {user_id}: {e}")
+            # 不要抛出异常，让基本用户信息更新可以继续
+
     async def delete_user(self, user_id: str, current_user: User) -> bool:
         """删除用户"""
         # 1. 获取目标用户

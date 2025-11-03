@@ -7,62 +7,62 @@ class IRoleRepository(ABC):
     """角色仓储接口"""
     
     @abstractmethod
-    async def create(self, role_data: dict) -> Role:
+    def create(self, role_data: dict) -> Role:
         """创建角色"""
         pass
     
     @abstractmethod
-    async def get_by_id(self, role_id: int) -> Optional[Role]:
+    def get_by_id(self, role_id: str) -> Optional[Role]:
         """根据ID获取角色"""
         pass
     
     @abstractmethod
-    async def get_by_name(self, name: str, tenant_id: str) -> Optional[Role]:
+    def get_by_name(self, name: str, tenant_id: str) -> Optional[Role]:
         """根据名称获取角色"""
         pass
     
     @abstractmethod
-    async def get_tenant_roles(self, tenant_id: str, include_deleted: bool = False) -> List[Role]:
+    def get_tenant_roles(self, tenant_id: str, include_deleted: bool = False) -> List[Role]:
         """获取租户角色列表"""
         pass
     
     @abstractmethod
-    async def update(self, role_id: int, update_data: dict) -> Optional[Role]:
+    def update(self, role_id: str, update_data: dict) -> Optional[Role]:
         """更新角色"""
         pass
     
     @abstractmethod
-    async def soft_delete(self, role_id: int, deleted_by: int) -> bool:
+    def soft_delete(self, role_id: str, deleted_by: str) -> bool:
         """软删除角色"""
         pass
     
     @abstractmethod
-    async def get_role_hierarchy(self, tenant_id: str) -> List[Dict]:
+    def get_role_hierarchy(self, tenant_id: str) -> List[Dict]:
         """获取角色层级结构"""
         pass
     
     @abstractmethod
-    async def get_user_roles(self, user_id: int) -> List[Role]:
+    def get_user_roles(self, user_id: str) -> List[Role]:
         """获取用户角色列表"""
         pass
     
     @abstractmethod
-    async def assign_user_role(self, user_id: int, role_id: int, assigned_by: int, expires_at=None) -> bool:
+    def assign_user_role(self, user_id: str, role_id: str, assigned_by: str, expires_at=None) -> bool:
         """分配用户角色"""
         pass
     
     @abstractmethod
-    async def revoke_user_role(self, user_id: int, role_id: int) -> bool:
+    def revoke_user_role(self, user_id: str, role_id: str) -> bool:
         """撤销用户角色"""
         pass
     
     @abstractmethod
-    async def get_role_users(self, role_id: int) -> List[Dict]:
+    def get_role_users(self, role_id: str) -> List[Dict]:
         """获取角色用户列表"""
         pass
     
     @abstractmethod
-    async def exists_by_name(self, name: str, tenant_id: str, exclude_id: int = None) -> bool:
+    def exists_by_name(self, name: str, tenant_id: str, exclude_id: str = None) -> bool:
         """检查角色名是否已存在"""
         pass
 
@@ -111,27 +111,27 @@ class IPermissionRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_role_permissions(self, role_id: int) -> List[Permission]:
+    async def get_role_permissions(self, role_id: str) -> List[Permission]:
         """获取角色权限列表"""
         pass
     
     @abstractmethod
-    async def assign_role_permission(self, role_id: int, permission_id: int) -> bool:
+    async def assign_role_permission(self, role_id: str, permission_id: str) -> bool:
         """分配角色权限"""
         pass
-    
+
     @abstractmethod
-    async def revoke_role_permission(self, role_id: int, permission_id: int) -> bool:
+    async def revoke_role_permission(self, role_id: str, permission_id: str) -> bool:
         """撤销角色权限"""
         pass
     
     @abstractmethod
-    async def get_user_permissions(self, user_id: int) -> List[Permission]:
+    async def get_user_permissions(self, user_id: str) -> List[Permission]:
         """获取用户权限（通过角色继承 + 直接分配）"""
         pass
     
     @abstractmethod
-    async def exists_by_name(self, name: str, exclude_id: int = None) -> bool:
+    async def exists_by_name(self, name: str, exclude_id: str = None) -> bool:
         """检查权限名是否已存在"""
         pass
 

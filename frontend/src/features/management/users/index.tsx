@@ -29,7 +29,7 @@ import { RecycleBinDialog } from './recycle-bin-dialog'
 import { BatchImportDialog } from './batch-import-dialog'
 import { TenantSelector } from './components/tenant-selector'
 import { UserStatsCards } from './components/user-stats-cards'
-import { UserToolbar } from './components/user-toolbar'
+import { UserToolbar, StatusFilter } from './components/user-toolbar'
 import { UserTable } from './components/user-table'
 import { UserCardList } from './components/user-card-list'
 import { OrganizationTree } from './components/organization-tree'
@@ -60,6 +60,7 @@ export default function UsersManagement() {
   const [, setSelectedOrgName] = useState('全部用户')
   const [selectedUsers, setSelectedUsers] = useState<User[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   
   // 对话框状态
   const [editingUser, setEditingUser] = useState<User | null>(null)
@@ -106,10 +107,42 @@ export default function UsersManagement() {
   }, [isSidebarOpen])
 
   // 检查是否是超级管理员
-  const isSuperAdmin = currentUser?.is_superuser || 
-    currentUser?.roles?.includes('super_admin') || 
-    currentUser?.roles?.includes('system_admin') || 
+  const isSuperAdmin = currentUser?.is_superuser ||
+    currentUser?.roles?.includes('super_admin') ||
+    currentUser?.roles?.includes('system_admin') ||
     false
+
+  // 筛选用户列表
+  const filteredUsers = users.filter(user => {
+    // 首先按状态筛选
+    switch (statusFilter) {
+      case 'active': {
+        if (!user.is_active) return false
+        break
+      }
+      case 'inactive': {
+        if (user.is_active) return false
+        break
+      }
+      case 'all':
+      default: {
+        // 显示所有用户
+        break
+      }
+    }
+
+    // 然后按搜索查询筛选
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      return (
+        user.username.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query) ||
+        (user.full_name && user.full_name.toLowerCase().includes(query))
+      )
+    }
+
+    return true
+  })
 
   // 响应式检测和侧边栏状态管理
   useEffect(() => {
@@ -866,13 +899,15 @@ export default function UsersManagement() {
                 userStats={userStats}
                 isSidebarOpen={isSidebarOpen}
                 onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
               />
 
               {/* 用户列表 */}
               <div className="bg-card rounded-lg border">
                 {isMobileView ? (
                   <UserCardList
-                    users={users}
+                    users={filteredUsers}
                     loading={loading}
                     selectedUsers={selectedUsers}
                     organizations={organizations}
@@ -886,7 +921,7 @@ export default function UsersManagement() {
                   />
                 ) : (
                   <UserTable
-                    users={users}
+                    users={filteredUsers}
                     loading={loading}
                     selectedUsers={selectedUsers}
                     organizations={organizations}
@@ -968,11 +1003,18 @@ export default function UsersManagement() {
               onSubmit={async (userData) => {
                 try {
                   const updatedUser = await usersAPI.updateUser(editingUser.id, userData)
+
                   toast.success(`用户 ${editingUser.username} 更新成功`)
                   handleUserUpdated(updatedUser)
-                } catch (_error) {
-                  // Failed to update user
-                  toast.error('更新用户失败')
+                } catch (_error: any) {
+
+                  // 提取错误信息
+                  const errorMessage = _error?.response?.data?.detail ||
+                                     _error?.response?.data?.message ||
+                                     _error?.message ||
+                                     '更新用户失败'
+
+                  toast.error(errorMessage)
                   throw _error
                 }
               }}

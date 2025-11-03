@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import Dashboard from '@/features/core/dashboard'
+import AIChat from '@/features/chat/ai-chat'
 
 export const Route = createFileRoute('/_authenticated/')({
-  component: Dashboard,
+  component: AIChat,
 })

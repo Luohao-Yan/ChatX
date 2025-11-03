@@ -211,7 +211,9 @@ export const useAuthStore = create<AuthState>()(devtools(
         // 准备登录数据
         const loginPayload = {
           identifier: credentials.identifier, // 支持邮箱、手机号或用户名
-          password: credentials.password
+          password: credentials.password,
+          rememberMe: credentials.rememberMe || false,
+          device_info: credentials.deviceInfo
         }
 
         // 使用HTTP客户端发送登录请求

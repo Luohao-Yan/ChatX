@@ -84,7 +84,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         identifier: data.identifier, // 后端会自动识别是邮箱、手机号还是用户名
         password: data.password,
         rememberMe: data.rememberMe,
-        deviceInfo: deviceManager.getDeviceInfo(),
+        device_info: deviceManager.getDeviceInfo(),
       }
       
       await login(loginData)

@@ -2,9 +2,18 @@ import redis.asyncio as redis
 from app.core.config import settings
 import json
 from typing import Optional, Any
+from datetime import datetime, date
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    """自定义JSON编码器，处理datetime和date类型"""
+    def default(self, obj):
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        return super().default(obj)
 
 class RedisClient:
     def __init__(self):
@@ -30,12 +39,14 @@ class RedisClient:
         """设置键值对"""
         try:
             if isinstance(value, (dict, list)):
-                value = json.dumps(value, ensure_ascii=False)
-            
+                value = json.dumps(value, ensure_ascii=False, cls=DateTimeEncoder)
+            elif isinstance(value, (datetime, date)):
+                value = value.isoformat()
+
             result = await self.redis_client.set(key, value, ex=expire)
             return result
         except Exception as e:
-            logger.error(f"Redis设置失败 {key}: {e}")
+            logger.error(f"Redis设置失败 {key}: {e}", exc_info=True)
             return False
     
     async def get(self, key: str) -> Optional[Any]:
@@ -94,12 +105,14 @@ class RedisClient:
         """设置键值对并指定过期时间"""
         try:
             if isinstance(value, (dict, list)):
-                value = json.dumps(value, ensure_ascii=False)
-            
+                value = json.dumps(value, ensure_ascii=False, cls=DateTimeEncoder)
+            elif isinstance(value, (datetime, date)):
+                value = value.isoformat()
+
             result = await self.redis_client.setex(key, seconds, value)
             return result
         except Exception as e:
-            logger.error(f"Redis setex失败 {key}: {e}")
+            logger.error(f"Redis setex失败 {key}: {e}", exc_info=True)
             return False
     
     async def ttl(self, key: str) -> int:

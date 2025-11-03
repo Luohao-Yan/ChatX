@@ -1,6 +1,8 @@
 from typing import List, Dict
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
+from app.infrastructure.persistence.database import get_db
 from app.application.services.rbac_service import PermissionApplicationService
 from app.schemas.rbac_schemas import (
     PermissionCreate,
@@ -20,6 +22,7 @@ router = APIRouter()
 async def create_permission(
     permission_data: PermissionCreate,
     current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
     permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
     """创建新权限"""
@@ -34,6 +37,7 @@ async def create_permission(
 async def get_permissions(
     include_deleted: bool = False,
     current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
     permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
     """获取权限列表"""
@@ -45,6 +49,7 @@ async def get_permissions(
 @require_permission(Permissions.PERMISSION_READ)
 async def get_permission_hierarchy(
     current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
     permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
     """获取权限层级结构"""
@@ -56,6 +61,7 @@ async def get_permission_hierarchy(
 async def get_permissions_by_category(
     category: str,
     current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
     permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
     """根据分类获取权限"""
@@ -69,6 +75,7 @@ async def update_permission(
     permission_id: str,
     permission_update: PermissionUpdate,
     current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
     permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
     """更新权限"""
@@ -85,6 +92,7 @@ async def update_permission(
 async def delete_permission(
     permission_id: str,
     current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
     permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
     """删除权限"""
@@ -97,6 +105,7 @@ async def delete_permission(
 async def get_role_permissions(
     role_id: str,
     current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
     permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
     """获取角色权限列表"""
@@ -109,6 +118,7 @@ async def get_role_permissions(
 async def get_user_permissions(
     user_id: str,
     current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
     permission_service: PermissionApplicationService = Depends(get_permission_service),
 ):
     """获取用户权限（通过角色继承）"""

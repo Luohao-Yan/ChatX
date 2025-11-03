@@ -20,6 +20,7 @@ export interface LoginRequest {
   username?: string
   password: string
   device_info?: string
+  rememberMe?: boolean
 }
 
 // 用户信息响应类型

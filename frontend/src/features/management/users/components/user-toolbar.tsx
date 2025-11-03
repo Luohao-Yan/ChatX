@@ -22,6 +22,8 @@ import {
 import { AddUserDialog } from './add-user-dialog'
 import { User } from '@/types/entities/user'
 
+export type StatusFilter = 'all' | 'active' | 'inactive'
+
 interface Organization {
   id: string
   tenant_id: string
@@ -61,6 +63,8 @@ interface UserToolbarProps {
   }
   isSidebarOpen?: boolean
   onToggleSidebar?: () => void
+  statusFilter?: StatusFilter
+  onStatusFilterChange?: (filter: StatusFilter) => void
 }
 
 export function UserToolbar({
@@ -77,7 +81,9 @@ export function UserToolbar({
   onUserAdded,
   userStats,
   isSidebarOpen,
-  onToggleSidebar
+  onToggleSidebar,
+  statusFilter = 'all',
+  onStatusFilterChange
 }: UserToolbarProps) {
 
   const selectedOrgName = selectedOrgId 
@@ -86,62 +92,82 @@ export function UserToolbar({
 
   return (
     <div className="space-y-4">
-      {/* 顶部工具栏 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {/* 侧边栏切换按钮 */}
-          {onToggleSidebar && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={onToggleSidebar}
-              className="px-2 h-8"
-              title={isSidebarOpen ? "隐藏组织架构" : "显示组织架构"}
-            >
-              <IconMenu2 size={16} />
-            </Button>
-          )}
-          
-          <h1 className="text-xl font-semibold">用户管理</h1>
-          
-          {/* 统计徽章 */}
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="px-2 py-1">
-              总计 {userStats.total}
-            </Badge>
-            <Badge variant="outline" className="px-2 py-1 hidden sm:flex">
-              活跃 {userStats.active}
-            </Badge>
-            <Badge variant="outline" className="px-2 py-1 hidden sm:flex">
-              停用 {userStats.inactive}
-            </Badge>
-          </div>
+      {/* 顶部工具栏 - 真正的响应式布局 */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* 侧边栏切换按钮 */}
+        {onToggleSidebar && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onToggleSidebar}
+            className="px-2 h-8 flex-shrink-0"
+            title={isSidebarOpen ? "隐藏组织架构" : "显示组织架构"}
+          >
+            <IconMenu2 size={16} />
+          </Button>
+        )}
+        
+        {/* 标题 */}
+        <h1 className="text-xl font-semibold whitespace-nowrap flex-shrink-0">用户管理</h1>
+        
+        {/* 统计徽章 - 可点击筛选 */}
+        <div className="flex items-center gap-2">
+          <Badge
+            variant={statusFilter === 'all' ? 'default' : 'secondary'}
+            className={`px-2 py-1 text-xs whitespace-nowrap cursor-pointer transition-colors hover:opacity-80 ${
+              statusFilter === 'all' ? 'bg-primary text-primary-foreground' : ''
+            }`}
+            onClick={() => onStatusFilterChange?.('all')}
+          >
+            总计 {userStats.total}
+          </Badge>
+          <Badge
+            variant={statusFilter === 'active' ? 'default' : 'outline'}
+            className={`px-2 py-1 text-xs whitespace-nowrap cursor-pointer transition-colors hover:opacity-80 ${
+              statusFilter === 'active' ? 'bg-primary text-primary-foreground' : ''
+            }`}
+            onClick={() => onStatusFilterChange?.('active')}
+          >
+            活跃 {userStats.active}
+          </Badge>
+          <Badge
+            variant={statusFilter === 'inactive' ? 'default' : 'outline'}
+            className={`px-2 py-1 text-xs whitespace-nowrap cursor-pointer transition-colors hover:opacity-80 ${
+              statusFilter === 'inactive' ? 'bg-primary text-primary-foreground' : ''
+            }`}
+            onClick={() => onStatusFilterChange?.('inactive')}
+          >
+            停用 {userStats.inactive}
+          </Badge>
         </div>
 
-        {/* 右侧操作按钮 */}
-        <div className="flex items-center gap-2">
+        {/* 弹性空间，推动右侧按钮到右边 */}
+        <div className="flex-grow"></div>
+
+        {/* 右侧操作按钮区域 */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={onRefresh}
-            className="h-8 px-3"
+            className="h-8 px-3 flex-shrink-0"
           >
             <IconRefresh size={16} />
-            <span className="ml-2 hidden md:inline">刷新</span>
+            <span className="ml-1 hidden lg:inline">刷新</span>
           </Button>
           
           <AddUserDialog
             onUserAdded={onUserAdded}
             triggerVariant="default"
             triggerSize="sm"
-            className="h-8 px-3"
+            className="h-8 px-3 flex-shrink-0"
           />
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 px-3">
+              <Button variant="outline" size="sm" className="h-8 px-3 flex-shrink-0">
                 <IconSettings size={16} />
-                <span className="ml-1 hidden lg:inline">更多操作</span>
+                <span className="ml-1 hidden xl:inline">更多操作</span>
                 <IconChevronDown size={12} className="ml-1" />
               </Button>
             </DropdownMenuTrigger>

@@ -20,7 +20,7 @@ class RoleRepository(IRoleRepository):
     def __init__(self, db: Session):
         self.db = db
     
-    async def create(self, role_data: dict) -> Role:
+    def create(self, role_data: dict) -> Role:
         """创建角色"""
         role = Role(**role_data)
         self.db.add(role)
@@ -28,18 +28,18 @@ class RoleRepository(IRoleRepository):
         self.db.refresh(role)
         return role
     
-    async def get_by_id(self, role_id: int) -> Optional[Role]:
+    def get_by_id(self, role_id: str) -> Optional[Role]:
         """根据ID获取角色"""
         return self.db.query(Role).filter(Role.id == role_id).first()
     
-    async def get_by_name(self, name: str, tenant_id: str) -> Optional[Role]:
+    def get_by_name(self, name: str, tenant_id: str) -> Optional[Role]:
         """根据名称获取角色"""
         return self.db.query(Role).filter(
             Role.name == name,
             Role.tenant_id == tenant_id
         ).first()
     
-    async def get_tenant_roles(self, tenant_id: str, include_deleted: bool = False) -> List[Role]:
+    def get_tenant_roles(self, tenant_id: str, include_deleted: bool = False) -> List[Role]:
         """获取租户角色列表"""
         query = self.db.query(Role).filter(Role.tenant_id == tenant_id)
         
@@ -48,9 +48,9 @@ class RoleRepository(IRoleRepository):
         
         return query.order_by(Role.level, Role.name).all()
     
-    async def update(self, role_id: int, update_data: dict) -> Optional[Role]:
+    def update(self, role_id: str, update_data: dict) -> Optional[Role]:
         """更新角色"""
-        role = await self.get_by_id(role_id)
+        role = self.get_by_id(role_id)
         if not role:
             return None
         
@@ -63,22 +63,21 @@ class RoleRepository(IRoleRepository):
         self.db.refresh(role)
         return role
     
-    async def soft_delete(self, role_id: int, deleted_by: int) -> bool:
+    def soft_delete(self, role_id: str, deleted_by: str) -> bool:
         """软删除角色"""
-        role = await self.get_by_id(role_id)
+        role = self.get_by_id(role_id)
         if not role:
             return False
         
-        role.is_deleted = True
         role.deleted_at = datetime.now(timezone.utc)
         role.deleted_by = deleted_by
         
         self.db.commit()
         return True
     
-    async def get_role_hierarchy(self, tenant_id: str) -> List[Dict]:
+    def get_role_hierarchy(self, tenant_id: str) -> List[Dict]:
         """获取角色层级结构"""
-        roles = await self.get_tenant_roles(tenant_id)
+        roles = self.get_tenant_roles(tenant_id)
         
         role_dict = {r.id: {
             "id": r.id,
@@ -106,21 +105,21 @@ class RoleRepository(IRoleRepository):
         
         return root_roles
     
-    async def get_user_roles(self, user_id: int) -> List[Role]:
+    def get_user_roles(self, user_id: str) -> List[Role]:
         """获取用户角色列表"""
         return self.db.query(Role).join(
             user_roles, Role.id == user_roles.c.role_id
         ).filter(
             user_roles.c.user_id == user_id,
             Role.is_active == True,
-            Role.is_deleted == False,
+            Role.deleted_at.is_(None),
             or_(
                 user_roles.c.expires_at.is_(None),
                 user_roles.c.expires_at > datetime.now(timezone.utc)
             )
         ).all()
     
-    async def assign_user_role(self, user_id: int, role_id: int, assigned_by: int, expires_at=None) -> bool:
+    def assign_user_role(self, user_id: str, role_id: str, assigned_by: str, expires_at=None) -> bool:
         """分配用户角色"""
         # 检查是否已经分配
         existing = self.db.query(user_roles).filter(
@@ -143,7 +142,7 @@ class RoleRepository(IRoleRepository):
         self.db.commit()
         return True
     
-    async def revoke_user_role(self, user_id: int, role_id: int) -> bool:
+    def revoke_user_role(self, user_id: str, role_id: str) -> bool:
         """撤销用户角色"""
         delete_stmt = user_roles.delete().where(
             and_(
@@ -155,7 +154,7 @@ class RoleRepository(IRoleRepository):
         self.db.commit()
         return result.rowcount > 0
     
-    async def get_role_users(self, role_id: int) -> List[Dict]:
+    def get_role_users(self, role_id: str) -> List[Dict]:
         """获取角色用户列表"""
         return self.db.query(
             User.id,
@@ -168,15 +167,15 @@ class RoleRepository(IRoleRepository):
             user_roles, User.id == user_roles.c.user_id
         ).filter(
             user_roles.c.role_id == role_id,
-            User.is_deleted == False
+            User.deleted_at.is_(None)
         ).all()
     
-    async def exists_by_name(self, name: str, tenant_id: str, exclude_id: int = None) -> bool:
+    def exists_by_name(self, name: str, tenant_id: str, exclude_id: str = None) -> bool:
         """检查角色名是否已存在"""
         query = self.db.query(Role).filter(
             Role.name == name,
             Role.tenant_id == tenant_id,
-            Role.is_deleted == False
+            Role.deleted_at.is_(None)
         )
         
         if exclude_id:
@@ -210,10 +209,10 @@ class PermissionRepository(IPermissionRepository):
     async def get_all_permissions(self, include_deleted: bool = False) -> List[Permission]:
         """获取所有权限"""
         query = self.db.query(Permission)
-        
+
         if not include_deleted:
-            query = query.filter(Permission.is_deleted == False)
-        
+            query = query.filter(Permission.deleted_at.is_(None))
+
         return query.order_by(Permission.category, Permission.resource_type, Permission.action).all()
     
     async def get_permissions_by_category(self, category: str) -> List[Permission]:
@@ -221,7 +220,7 @@ class PermissionRepository(IPermissionRepository):
         return self.db.query(Permission).filter(
             Permission.category == category,
             Permission.is_active == True,
-            Permission.is_deleted == False
+            Permission.deleted_at.is_(None)
         ).order_by(Permission.resource_type, Permission.action).all()
     
     async def update(self, permission_id: int, update_data: dict) -> Optional[Permission]:
@@ -277,38 +276,38 @@ class PermissionRepository(IPermissionRepository):
         
         return list(categories.values())
     
-    async def get_role_permissions(self, role_id: int) -> List[Permission]:
+    async def get_role_permissions(self, role_id: str) -> List[Permission]:
         """获取角色权限列表"""
         return self.db.query(Permission).join(
             role_permissions, Permission.id == role_permissions.c.permission_id
         ).filter(
             role_permissions.c.role_id == role_id,
             Permission.is_active == True,
-            Permission.is_deleted == False
+            Permission.deleted_at.is_(None)
         ).all()
     
-    async def assign_role_permission(self, role_id: int, permission_id: int) -> bool:
+    async def assign_role_permission(self, role_id: str, permission_id: str) -> bool:
         """分配角色权限"""
         # 检查是否已经分配
         existing = self.db.query(role_permissions).filter(
             role_permissions.c.role_id == role_id,
             role_permissions.c.permission_id == permission_id
         ).first()
-        
+
         if existing:
             return False
-        
+
         # 插入新的权限分配
         insert_stmt = role_permissions.insert().values(
             role_id=role_id,
             permission_id=permission_id,
-            created_at=datetime.now(timezone.utc)
+            granted_at=datetime.now(timezone.utc)
         )
         self.db.execute(insert_stmt)
         self.db.commit()
         return True
     
-    async def revoke_role_permission(self, role_id: int, permission_id: int) -> bool:
+    async def revoke_role_permission(self, role_id: str, permission_id: str) -> bool:
         """撤销角色权限"""
         delete_stmt = role_permissions.delete().where(
             and_(
@@ -320,7 +319,7 @@ class PermissionRepository(IPermissionRepository):
         self.db.commit()
         return result.rowcount > 0
     
-    async def get_user_permissions(self, user_id: int) -> List[Permission]:
+    async def get_user_permissions(self, user_id: str) -> List[Permission]:
         """获取用户权限（通过角色继承）"""
         return self.db.query(Permission).join(
             role_permissions, Permission.id == role_permissions.c.permission_id
@@ -329,23 +328,23 @@ class PermissionRepository(IPermissionRepository):
         ).filter(
             user_roles.c.user_id == user_id,
             Permission.is_active == True,
-            Permission.is_deleted == False,
+            Permission.deleted_at.is_(None),
             or_(
                 user_roles.c.expires_at.is_(None),
                 user_roles.c.expires_at > datetime.now(timezone.utc)
             )
         ).distinct().all()
     
-    async def exists_by_name(self, name: str, exclude_id: int = None) -> bool:
+    async def exists_by_name(self, name: str, exclude_id: str = None) -> bool:
         """检查权限名是否已存在"""
         query = self.db.query(Permission).filter(
             Permission.name == name,
-            Permission.is_deleted == False
+            Permission.deleted_at.is_(None)
         )
-        
+
         if exclude_id:
             query = query.filter(Permission.id != exclude_id)
-        
+
         return query.first() is not None
 
 

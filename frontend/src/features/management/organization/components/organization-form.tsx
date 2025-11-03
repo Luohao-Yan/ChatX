@@ -53,14 +53,6 @@ export function OrganizationForm({
   const [loading, setLoading] = useState(false)
   const isEditing = !!organization
   
-  // 调试：组件接收到的参数
-  console.log('[OrganizationForm] 组件初始化:', {
-    hasOrganization: !!organization,
-    organizationId: organization?.id,
-    currentTenantId,
-    hasCurrentTenantId: !!currentTenantId,
-    isEditing
-  })
 
   const form = useForm<OrganizationFormData>({
     resolver: zodResolver(organizationSchema),
@@ -85,40 +77,16 @@ export function OrganizationForm({
     try {
       setLoading(true)
       
-      console.log('[OrganizationForm] 提交组织操作:', {
-        isEditing,
-        submitData,
-        currentTenantId,
-        timestamp: new Date().toISOString()
-      })
-
       if (isEditing) {
-        const result = await organizationAPI.updateOrganization(organization.id, submitData)
-        console.log('[OrganizationForm] 组织更新成功:', {
-          organizationId: organization.id,
-          result,
-          currentTenantId
-        })
+        await organizationAPI.updateOrganization(organization.id, submitData)
         toast.success('组织更新成功')
       } else {
-        const result = await organizationAPI.createOrganization(submitData)
-        console.log('[OrganizationForm] 组织创建成功:', {
-          result,
-          currentTenantId,
-          createdUnderTenant: result?.tenant_id || '未知租户'
-        })
+        await organizationAPI.createOrganization(submitData)
         toast.success('组织创建成功')
       }
       
       onSuccess()
     } catch (error) {
-      console.error('[OrganizationForm] 组织操作失败:', {
-        isEditing,
-        error,
-        currentTenantId,
-        submitData,
-        errorDetails: error instanceof Error ? error.message : '未知错误'
-      })
       toast.error(isEditing ? '组织更新失败' : '组织创建失败')
     } finally {
       setLoading(false)

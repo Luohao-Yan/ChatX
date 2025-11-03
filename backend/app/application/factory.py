@@ -38,4 +38,14 @@ def create_app() -> FastAPI:
     return app
 
 
-__all__ = ["create_app"]
+async def create_rbac_repository():
+    """创建RBAC仓库实例"""
+    from app.infrastructure.repositories.rbac_repository_impl import RBACRepositoryImpl
+    from app.infrastructure.persistence.database import get_async_session
+
+    # 获取数据库会话
+    async with get_async_session() as session:
+        return RBACRepositoryImpl(session)
+
+
+__all__ = ["create_app", "create_rbac_repository"]

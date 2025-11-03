@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -113,10 +113,40 @@ const SidebarMenuCollapsible = ({
   href: string
 }) => {
   const { setOpenMobile } = useSidebar()
+  const menuKey = `sidebar-menu-${item.title}`
+
+  // 检查是否应该基于路由展开
+  const shouldOpenByRoute = checkIsActive(href, item, true)
+
+  // 从localStorage获取保存的状态，如果没有则使用路由判断
+  const getInitialOpen = () => {
+    const saved = localStorage.getItem(menuKey)
+    if (saved !== null) {
+      return saved === 'true'
+    }
+    return shouldOpenByRoute
+  }
+
+  const [isOpen, setIsOpen] = useState(getInitialOpen)
+
+  // 监听路由变化，如果当前路由需要展开且菜单未展开，则自动展开
+  useEffect(() => {
+    if (shouldOpenByRoute && !isOpen) {
+      setIsOpen(true)
+      localStorage.setItem(menuKey, 'true')
+    }
+  }, [shouldOpenByRoute, isOpen, menuKey])
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open)
+    localStorage.setItem(menuKey, open.toString())
+  }
+
   return (
     <Collapsible
       asChild
-      defaultOpen={checkIsActive(href, item, true)}
+      open={isOpen}
+      onOpenChange={handleOpenChange}
       className='group/collapsible'
     >
       <SidebarMenuItem>

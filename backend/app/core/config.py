@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = config("ALGORITHM", default="HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = config("ACCESS_TOKEN_EXPIRE_MINUTES", default=30, cast=int)
     REFRESH_TOKEN_EXPIRE_DAYS: int = config("REFRESH_TOKEN_EXPIRE_DAYS", default=7, cast=int)
+    # 记住我功能的token过期时间
+    REMEMBER_ME_TOKEN_EXPIRE_DAYS: int = config("REMEMBER_ME_TOKEN_EXPIRE_DAYS", default=30, cast=int)
     
     # 数据库设置
     DATABASE_URL: str = config("DATABASE_URL", default="postgresql://chatx_user:chatx_password@localhost:5433/chatx_db")

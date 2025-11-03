@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,10 +10,10 @@ import { Main } from '@/components/layout/main'
 import { HeaderActions } from '@/components/layout/header-actions'
 import { Breadcrumb } from '@/components/layout/breadcrumb'
 import { Input } from '@/components/ui/input'
-import { 
-  IconPlus, 
-  IconEdit, 
-  IconTrash, 
+import {
+  IconPlus,
+  IconEdit,
+  IconTrash,
   IconShield,
   IconLock,
   IconLockOpen,
@@ -46,92 +47,116 @@ import {
 } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
+import { roleAPI, Role, Permission, RoleCreate, RoleUpdate } from '@/services/api/roles'
 
-// 模拟角色数据
-const mockRoles = [
-  {
-    id: '1',
-    name: '系统管理员',
-    code: 'system_admin',
-    description: '拥有系统最高权限，可以管理所有功能',
-    userCount: 2,
-    permissions: ['user_create', 'user_edit', 'user_delete', 'role_manage', 'system_config'],
-    status: 'active',
-    isSystem: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-15'
-  },
-  {
-    id: '2',
-    name: '部门管理员',
-    code: 'dept_admin',
-    description: '管理部门内的用户和基本设置',
-    userCount: 8,
-    permissions: ['user_view', 'user_edit', 'dept_manage'],
-    status: 'active',
-    isSystem: false,
-    createdAt: '2024-01-05',
-    updatedAt: '2024-02-01'
-  },
-  {
-    id: '3',
-    name: '普通用户',
-    code: 'normal_user',
-    description: '系统的基础用户权限',
-    userCount: 185,
-    permissions: ['user_view', 'profile_edit'],
-    status: 'active',
-    isSystem: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-10'
-  },
-  {
-    id: '4',
-    name: '访客用户',
-    code: 'guest_user',
-    description: '临时访问权限，功能受限',
-    userCount: 12,
-    permissions: ['user_view'],
-    status: 'active',
-    isSystem: false,
-    createdAt: '2024-01-20',
-    updatedAt: '2024-02-05'
-  },
-  {
-    id: '5',
-    name: '已停用角色',
-    code: 'disabled_role',
-    description: '已停用的测试角色',
-    userCount: 0,
-    permissions: [],
-    status: 'disabled',
-    isSystem: false,
-    createdAt: '2024-01-10',
-    updatedAt: '2024-01-25'
-  }
-]
-
-// 模拟权限数据
-const mockPermissions = [
-  { id: 'user_view', name: '查看用户', category: '用户管理' },
-  { id: 'user_create', name: '创建用户', category: '用户管理' },
-  { id: 'user_edit', name: '编辑用户', category: '用户管理' },
-  { id: 'user_delete', name: '删除用户', category: '用户管理' },
-  { id: 'role_manage', name: '角色管理', category: '权限管理' },
-  { id: 'dept_manage', name: '部门管理', category: '组织管理' },
-  { id: 'system_config', name: '系统配置', category: '系统管理' },
-  { id: 'profile_edit', name: '编辑个人资料', category: '个人设置' }
-]
+// 扩展角色类型，增加用户统计
+interface RoleWithStats extends Role {
+  user_count?: number
+  permission_count?: number
+  permissions?: Permission[]
+}
 
 export default function RolesManagement() {
   const { t } = useTranslation()
-  const [roles, setRoles] = useState(mockRoles)
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
+
+  // State
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [editingRole, setEditingRole] = useState<any>(null)
-  const [viewingRole, setViewingRole] = useState<any>(null)
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
+  const [editingRole, setEditingRole] = useState<RoleWithStats | null>(null)
+  const [viewingRole, setViewingRole] = useState<RoleWithStats | null>(null)
+
+  // Fetch role permissions when viewing a role
+  const {
+    data: rolePermissions = [],
+    isLoading: rolePermissionsLoading
+  } = useQuery({
+    queryKey: ['role-permissions', viewingRole?.id],
+    queryFn: async () => {
+      if (viewingRole?.id) {
+        return await roleAPI.getRolePermissions(viewingRole.id)
+      }
+      return []
+    },
+    enabled: !!viewingRole?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+
+  // Fetch roles with stats
+  const {
+    data: roles = [],
+    isLoading: rolesLoading,
+    error: rolesError,
+    refetch: refetchRoles
+  } = useQuery({
+    queryKey: ['roles-with-stats'],
+    queryFn: async () => {
+      try {
+        return await roleAPI.getRolesWithStats()
+      } catch (error: any) {
+        toast.error(error?.response?.data?.detail || '获取角色列表失败')
+        throw error
+      }
+    },
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+
+  // Fetch permissions
+  const {
+    data: permissions = [],
+    isLoading: permissionsLoading,
+    error: permissionsError
+  } = useQuery({
+    queryKey: ['permissions'],
+    queryFn: async () => {
+      try {
+        return await roleAPI.getAllPermissions()
+      } catch (error: any) {
+        toast.error(error?.response?.data?.detail || '获取权限列表失败')
+        throw error
+      }
+    },
+    retry: 1,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  })
+
+  // Mutations
+  const createRoleMutation = useMutation({
+    mutationFn: (data: RoleCreate) => roleAPI.createRole(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles-with-stats'] })
+      toast.success('角色创建成功')
+      setIsAddDialogOpen(false)
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || '角色创建失败')
+    },
+  })
+
+  const updateRoleMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: RoleUpdate }) =>
+      roleAPI.updateRole(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles-with-stats'] })
+      toast.success('角色更新成功')
+      setEditingRole(null)
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || '角色更新失败')
+    },
+  })
+
+  const deleteRoleMutation = useMutation({
+    mutationFn: (roleId: string) => roleAPI.deleteRole(roleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles-with-stats'] })
+      toast.success('角色删除成功')
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || '角色删除失败')
+    },
+  })
 
   const breadcrumbItems = [
     { label: t('nav.managementCenter') },
@@ -140,14 +165,14 @@ export default function RolesManagement() {
   ]
 
   // 过滤角色
-  const filteredRoles = roles.filter(role => 
+  const filteredRoles = roles.filter(role =>
     role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    role.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    role.code.toLowerCase().includes(searchQuery.toLowerCase())
+    role.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (role.description || '').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const getStatusBadge = (status: string) => {
-    return status === 'active' ? (
+  const getStatusBadge = (is_active: boolean) => {
+    return is_active ? (
       <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
         激活
       </Badge>
@@ -159,87 +184,105 @@ export default function RolesManagement() {
   }
 
   const handleRefresh = () => {
-    setLoading(true)
-    setTimeout(() => {
-      toast.success('角色列表已刷新')
-      setLoading(false)
-    }, 1000)
+    refetchRoles()
+    toast.success('角色列表已刷新')
   }
 
-  const handleToggleStatus = (role: any) => {
-    if (role.isSystem) {
+  const handleToggleStatus = (role: RoleWithStats) => {
+    if (role.is_system) {
       toast.error('系统角色无法修改状态')
       return
     }
-    
-    const newStatus = role.status === 'active' ? 'disabled' : 'active'
-    setRoles(prev => prev.map(r => 
-      r.id === role.id ? { ...r, status: newStatus } : r
-    ))
-    toast.success(`角色已${newStatus === 'active' ? '启用' : '停用'}`)
+
+    const newStatus = !role.is_active
+    updateRoleMutation.mutate({
+      id: role.id,
+      data: { is_active: newStatus }
+    })
   }
 
-  const handleDeleteRole = (role: any) => {
-    if (role.isSystem) {
+  const handleDeleteRole = (role: RoleWithStats) => {
+    if (role.is_system) {
       toast.error('系统角色无法删除')
       return
     }
-    
-    if (role.userCount > 0) {
+
+    if (role.user_count && role.user_count > 0) {
       toast.error('该角色下还有用户，无法删除')
       return
     }
-    
-    setRoles(prev => prev.filter(r => r.id !== role.id))
-    toast.success('角色已删除')
+
+    deleteRoleMutation.mutate(role.id)
   }
 
   const groupPermissionsByCategory = () => {
-    const grouped: { [key: string]: typeof mockPermissions } = {}
-    mockPermissions.forEach(permission => {
-      if (!grouped[permission.category]) {
-        grouped[permission.category] = []
+    const grouped: { [key: string]: Permission[] } = {}
+    permissions.forEach(permission => {
+      const category = permission.category || permission.group_name || '其他'
+      if (!grouped[category]) {
+        grouped[category] = []
       }
-      grouped[permission.category].push(permission)
+      grouped[category].push(permission)
     })
     return grouped
   }
 
-  const RoleForm = ({ role, onClose }: { role?: any, onClose: () => void }) => {
+  const RoleForm = ({ role, onClose }: { role?: RoleWithStats, onClose: () => void }) => {
     const [formData, setFormData] = useState({
       name: role?.name || '',
-      code: role?.code || '',
+      display_name: role?.display_name || '',
       description: role?.description || '',
-      permissions: role?.permissions || []
+      selectedPermissions: []
     })
 
+    // Fetch role permissions when editing
+    const {
+      data: editRolePermissions = [],
+      isLoading: editPermissionsLoading
+    } = useQuery({
+      queryKey: ['edit-role-permissions', role?.id],
+      queryFn: async () => {
+        if (role?.id) {
+          return await roleAPI.getRolePermissions(role.id)
+        }
+        return []
+      },
+      enabled: !!role?.id,
+    })
+
+    // Update form data when permissions are loaded
+    useEffect(() => {
+      if (editRolePermissions.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          selectedPermissions: editRolePermissions.map(p => p.id)
+        }))
+      }
+    }, [editRolePermissions])
+
     const handleSubmit = () => {
-      if (!formData.name || !formData.code) {
-        toast.error('请填写角色名称和编码')
+      if (!formData.name || !formData.display_name) {
+        toast.error('请填写角色名称和显示名称')
         return
       }
-      
+
       if (role) {
         // 编辑
-        setRoles(prev => prev.map(r => 
-          r.id === role.id ? { ...r, ...formData, updatedAt: new Date().toISOString() } : r
-        ))
-        toast.success('角色更新成功')
+        updateRoleMutation.mutate({
+          id: role.id,
+          data: {
+            display_name: formData.display_name,
+            description: formData.description,
+          }
+        })
       } else {
         // 新增
-        const newRole = {
-          id: Date.now().toString(),
-          ...formData,
-          userCount: 0,
-          status: 'active',
-          isSystem: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-        setRoles(prev => [newRole, ...prev])
-        toast.success('角色创建成功')
+        createRoleMutation.mutate({
+          name: formData.name,
+          display_name: formData.display_name,
+          description: formData.description,
+        })
       }
-      onClose()
     }
 
     return (
@@ -251,16 +294,17 @@ export default function RolesManagement() {
             <Input
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="输入角色名称"
+              placeholder="输入角色名称，如：dept_manager"
               className="mt-1"
+              disabled={!!role} // 编辑时不允许修改角色名称
             />
           </div>
           <div>
-            <label className="text-sm font-medium">角色编码 *</label>
+            <label className="text-sm font-medium">显示名称 *</label>
             <Input
-              value={formData.code}
-              onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
-              placeholder="输入角色编码，如：dept_manager"
+              value={formData.display_name}
+              onChange={(e) => setFormData(prev => ({ ...prev, display_name: e.target.value }))}
+              placeholder="输入显示名称，如：部门管理员"
               className="mt-1"
             />
           </div>
@@ -279,34 +323,38 @@ export default function RolesManagement() {
         <div>
           <h4 className="text-sm font-medium mb-3">权限配置</h4>
           <div className="space-y-4 max-h-64 overflow-y-auto border rounded-lg p-4">
-            {Object.entries(groupPermissionsByCategory()).map(([category, permissions]) => (
+            {(editPermissionsLoading && role) ? (
+              <div className="text-center py-4">加载权限中...</div>
+            ) : (
+              Object.entries(groupPermissionsByCategory()).map(([category, permissions]) => (
               <div key={category}>
                 <h5 className="text-sm font-medium text-muted-foreground mb-2">{category}</h5>
                 <div className="space-y-2 ml-4">
                   {permissions.map(permission => (
                     <div key={permission.id} className="flex items-center space-x-2">
                       <Checkbox
-                        checked={formData.permissions.includes(permission.id)}
+                        checked={formData.selectedPermissions.includes(permission.id)}
                         onCheckedChange={(checked) => {
                           if (checked) {
                             setFormData(prev => ({
                               ...prev,
-                              permissions: [...prev.permissions, permission.id]
+                              selectedPermissions: [...prev.selectedPermissions, permission.id]
                             }))
                           } else {
                             setFormData(prev => ({
                               ...prev,
-                              permissions: prev.permissions.filter(p => p !== permission.id)
+                              selectedPermissions: prev.selectedPermissions.filter(p => p !== permission.id)
                             }))
                           }
                         }}
                       />
-                      <label className="text-sm">{permission.name}</label>
+                      <label className="text-sm">{permission.display_name}</label>
                     </div>
                   ))}
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -314,8 +362,15 @@ export default function RolesManagement() {
           <Button variant="outline" onClick={onClose}>
             取消
           </Button>
-          <Button onClick={handleSubmit}>
-            {role ? '更新' : '创建'}
+          <Button
+            onClick={handleSubmit}
+            disabled={createRoleMutation.isPending || updateRoleMutation.isPending}
+          >
+            {createRoleMutation.isPending || updateRoleMutation.isPending
+              ? '处理中...'
+              : role
+              ? '更新'
+              : '创建'}
           </Button>
         </div>
       </div>
@@ -358,11 +413,11 @@ export default function RolesManagement() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">激活角色</CardTitle>
-              <IconUnlock className="h-4 w-4 text-muted-foreground" />
+              <IconLockOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {roles.filter(r => r.status === 'active').length}
+                {roles.filter(r => r.is_active).length}
               </div>
               <p className="text-xs text-muted-foreground">
                 当前可用角色
@@ -377,7 +432,7 @@ export default function RolesManagement() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {roles.reduce((sum, role) => sum + role.userCount, 0)}
+                {roles.reduce((sum, role) => sum + (role.user_count || 0), 0)}
               </div>
               <p className="text-xs text-muted-foreground">
                 已分配角色的用户
@@ -391,7 +446,7 @@ export default function RolesManagement() {
               <IconLock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockPermissions.length}</div>
+              <div className="text-2xl font-bold">{permissions.length}</div>
               <p className="text-xs text-muted-foreground">
                 系统权限总数
               </p>
@@ -419,8 +474,16 @@ export default function RolesManagement() {
                     className="pl-9"
                   />
                 </div>
-                <Button variant="outline" size="sm" onClick={handleRefresh}>
-                  <IconRefresh size={16} className="mr-2" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={rolesLoading}
+                >
+                  <IconRefresh
+                    size={16}
+                    className={`mr-2 ${rolesLoading ? 'animate-spin' : ''}`}
+                  />
                   刷新
                 </Button>
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -459,7 +522,7 @@ export default function RolesManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading ? (
+                  {rolesLoading || permissionsLoading ? (
                     <TableRow>
                       <TableCell colSpan={8} className="h-32 text-center">
                         加载中...
@@ -480,37 +543,37 @@ export default function RolesManagement() {
                               <IconShield className="h-4 w-4 text-primary" />
                             </div>
                             <div>
-                              <div className="font-medium">{role.name}</div>
+                              <div className="font-medium">{role.display_name}</div>
                               <div className="text-sm text-muted-foreground">
-                                {role.description}
+                                {role.description || '无描述'}
                               </div>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <code className="text-xs bg-muted px-2 py-1 rounded">{role.code}</code>
+                          <code className="text-xs bg-muted px-2 py-1 rounded">{role.name}</code>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <IconUsers className="h-4 w-4 text-muted-foreground" />
-                            <span>{role.userCount}</span>
+                            <span>{role.user_count || 0}</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{role.permissions.length}</Badge>
+                          <Badge variant="outline">{role.permission_count || 0}</Badge>
                         </TableCell>
                         <TableCell>
-                          {getStatusBadge(role.status)}
+                          {getStatusBadge(role.is_active)}
                         </TableCell>
                         <TableCell>
-                          {role.isSystem ? (
+                          {role.is_system ? (
                             <Badge variant="secondary">系统</Badge>
                           ) : (
                             <Badge variant="outline">自定义</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {new Date(role.updatedAt).toLocaleDateString('zh-CN')}
+                          {new Date(role.updated_at || role.created_at).toLocaleDateString('zh-CN')}
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
@@ -525,7 +588,7 @@ export default function RolesManagement() {
                               variant="ghost"
                               size="sm"
                               onClick={() => setEditingRole(role)}
-                              disabled={role.isSystem}
+                              disabled={role.is_system}
                             >
                               <IconEdit size={16} />
                             </Button>
@@ -533,19 +596,19 @@ export default function RolesManagement() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleToggleStatus(role)}
-                              disabled={role.isSystem}
+                              disabled={role.is_system}
                             >
-                              {role.status === 'active' ? (
+                              {role.is_active ? (
                                 <IconLock size={16} className="text-red-600" />
                               ) : (
-                                <IconUnlock size={16} className="text-green-600" />
+                                <IconLockOpen size={16} className="text-green-600" />
                               )}
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteRole(role)}
-                              disabled={role.isSystem || role.userCount > 0}
+                              disabled={role.is_system || (role.user_count && role.user_count > 0)}
                               className="text-red-600 hover:text-red-700"
                             >
                               <IconTrash size={16} />
@@ -594,20 +657,20 @@ export default function RolesManagement() {
                     <p className="text-sm text-muted-foreground">{viewingRole.name}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium">角色编码</label>
-                    <p className="text-sm text-muted-foreground">{viewingRole.code}</p>
+                    <label className="text-sm font-medium">显示名称</label>
+                    <p className="text-sm text-muted-foreground">{viewingRole.display_name}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium">用户数量</label>
-                    <p className="text-sm text-muted-foreground">{viewingRole.userCount} 人</p>
+                    <p className="text-sm text-muted-foreground">{viewingRole.user_count || 0} 人</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium">状态</label>
-                    <div className="mt-1">{getStatusBadge(viewingRole.status)}</div>
+                    <div className="mt-1">{getStatusBadge(viewingRole.is_active)}</div>
                   </div>
                   <div className="col-span-2">
                     <label className="text-sm font-medium">描述</label>
-                    <p className="text-sm text-muted-foreground">{viewingRole.description}</p>
+                    <p className="text-sm text-muted-foreground">{viewingRole.description || '无描述'}</p>
                   </div>
                 </div>
 
@@ -615,24 +678,32 @@ export default function RolesManagement() {
                 <div>
                   <h4 className="text-sm font-medium mb-3">权限列表</h4>
                   <div className="space-y-3 max-h-64 overflow-y-auto border rounded-lg p-4">
-                    {Object.entries(groupPermissionsByCategory()).map(([category, permissions]) => {
-                      const rolePermissions = permissions.filter(p => viewingRole.permissions.includes(p.id))
-                      if (rolePermissions.length === 0) return null
-                      
-                      return (
-                        <div key={category}>
-                          <h5 className="text-sm font-medium text-muted-foreground mb-2">{category}</h5>
-                          <div className="space-y-1 ml-4">
-                            {rolePermissions.map(permission => (
-                              <div key={permission.id} className="flex items-center gap-2">
-                                <IconCheck className="h-3 w-3 text-green-600" />
-                                <span className="text-sm">{permission.name}</span>
-                              </div>
-                            ))}
+                    {rolePermissionsLoading ? (
+                      <div className="text-center py-4">加载中...</div>
+                    ) : rolePermissions.length === 0 ? (
+                      <div className="text-center py-4 text-muted-foreground">该角色暂无权限</div>
+                    ) : (
+                      Object.entries(groupPermissionsByCategory()).map(([category, permissions]) => {
+                        const categoryRolePermissions = permissions.filter(p =>
+                          rolePermissions.some(rp => rp.id === p.id)
+                        )
+                        if (categoryRolePermissions.length === 0) return null
+
+                        return (
+                          <div key={category}>
+                            <h5 className="text-sm font-medium text-muted-foreground mb-2">{category}</h5>
+                            <div className="space-y-1 ml-4">
+                              {categoryRolePermissions.map(permission => (
+                                <div key={permission.id} className="flex items-center gap-2">
+                                  <IconCheck className="h-3 w-3 text-green-600" />
+                                  <span className="text-sm">{permission.display_name}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )
-                    })}
+                        )
+                      })
+                    )}
                   </div>
                 </div>
               </div>

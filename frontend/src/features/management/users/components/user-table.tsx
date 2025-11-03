@@ -279,12 +279,12 @@ export function UserTable({
                           {user.full_name || user.username}
                         </p>
                         {isCurrentUser && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs px-1 py-0 h-4">
                             当前用户
                           </Badge>
                         )}
                         {!user.is_verified && (
-                          <Badge variant="destructive" className="text-xs">
+                          <Badge variant="destructive" className="text-xs px-1 py-0 h-4">
                             未验证
                           </Badge>
                         )}
@@ -310,21 +310,21 @@ export function UserTable({
                 <TableCell>
                   <div className="flex items-center gap-2">
                     {getUserRoleIcon(user.roles)}
-                    <Badge variant={getUserRoleBadgeVariant(user.roles)} className="text-xs">
+                    <Badge variant={getUserRoleBadgeVariant(user.roles)} className="text-xs px-1.5 py-0 h-4">
                       {getUserRoleText(user.roles)}
                     </Badge>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge 
+                  <Badge
                     variant={user.is_active ? 'default' : 'secondary'}
-                    className="text-xs"
+                    className="text-xs px-1.5 py-0 h-4"
                   >
                     <div className="flex items-center gap-1">
                       {user.is_active ? (
-                        <IconUserCheck size={14} />
+                        <IconUserCheck size={10} />
                       ) : (
-                        <IconUserOff size={14} />
+                        <IconUserOff size={10} />
                       )}
                       {user.is_active ? '活跃' : '停用'}
                     </div>

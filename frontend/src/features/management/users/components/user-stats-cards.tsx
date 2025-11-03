@@ -26,22 +26,22 @@ interface UserStatsCardsProps {
 
 export function UserStatsCards({ stats, loading }: UserStatsCardsProps) {
   const [isExpanded, setIsExpanded] = useState(true)
-  
+
   const statsCards = [
     {
-      title: '总用户数',
+      title: '总计',
       value: stats.total,
       icon: IconUsers,
       description: '系统中所有用户'
     },
     {
-      title: '活跃用户',
+      title: '活跃',
       value: stats.active,
       icon: IconUserPlus,
       description: '当前活跃的用户'
     },
     {
-      title: '非活跃用户',
+      title: '停用',
       value: stats.inactive,
       icon: IconUserOff,
       description: '暂时停用的用户'
@@ -96,12 +96,12 @@ export function UserStatsCards({ stats, loading }: UserStatsCardsProps) {
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {statsCards.map((card, index) => (
-                <div 
-                  key={index} 
-                  className="bg-card rounded-lg p-3 border hover:shadow-md transition-all duration-200 cursor-pointer group hover:border-primary/20"
+                <div
+                  key={index}
+                  className="bg-card rounded-lg p-3 border transition-all duration-200"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-primary/90 transition-colors">
+                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
                       <card.icon className="h-4 w-4 text-primary-foreground" />
                     </div>
                     <div className="space-y-1 flex-1 min-w-0">

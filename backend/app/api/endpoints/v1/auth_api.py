@@ -27,6 +27,7 @@ async def login_for_access_token(
             username=login_data.username,
             password=login_data.password,
             device_info=request.headers.get("User-Agent"),
+            rememberMe=login_data.rememberMe,
         )
 
     client_ip = request.client.host if request and request.client else None

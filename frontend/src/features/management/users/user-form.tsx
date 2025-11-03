@@ -14,7 +14,7 @@ import { toast } from 'sonner'
 import { User } from '@/types/entities/user'
 import { organizationAPI, type Organization, type Team } from '@/services/api/organization'
 import { roleAPI, type Role } from '@/services/api/roles'
-import { tenantAPI, type Tenant } from '@/services/api/tenants'
+import { tenantAPI } from '@/services/api/tenants'
 import { useAuth } from '@/stores/auth'
 
 const userSchema = z.object({
@@ -130,7 +130,7 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
   // API数据状态
   const [tenantOptions, setTenantOptions] = useState<SelectOption[]>([])
   const [organizationOptions, setOrganizationOptions] = useState<SelectOption[]>([])
-  const [teamOptions, setTeamOptions] = useState<SelectOption[]>([])
+  const [, setTeamOptions] = useState<SelectOption[]>([])
   const [roleOptions, setRoleOptions] = useState<SelectOption[]>([])
   const [dataLoading, setDataLoading] = useState(true)
 
@@ -161,7 +161,6 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
   const currentPassword = watch('password')
   const selectedTenant = watch('tenant_id')
   const selectedOrganization = watch('organization_id')
-  const selectedTeam = watch('team_id')
   const selectedRoles = watch('roles')
 
   // 优化：使用useMemo缓存密码强度检查结果，避免重复计算
@@ -174,13 +173,12 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
     const loadFormData = async () => {
       try {
         setDataLoading(true)
-        
+
         // 根据用户角色加载不同的数据
-        let tenantsPromise = Promise.resolve([])
+        let tenantsPromise: Promise<any[]>
         if (isSuperAdmin) {
           // 超级管理员可以看到所有租户
-          tenantsPromise = tenantAPI.getTenants().catch(err => {
-            console.warn('租户数据加载失败:', err)
+          tenantsPromise = tenantAPI.getTenants().catch(() => {
             return [{
               id: currentUser?.current_tenant_id || 'default',
               name: '当前租户',
@@ -200,14 +198,19 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
 
         const [tenants, roles] = await Promise.all([
           tenantsPromise,
-          roleAPI.getRoles().catch(err => {
-            console.warn('角色数据加载失败:', err)
-            return []
-          })
+          (async () => {
+            try {
+              const result = await roleAPI.getRoles()
+              return result
+            } catch {
+              toast.error('加载角色数据失败，请重试')
+              return []
+            }
+          })()
         ])
         
         // 处理租户数据
-        const tenantOptions = tenants.map((tenant: any) => ({
+        const tenantOptions = tenants.map((tenant) => ({
           value: tenant.id,
           label: tenant.display_name || tenant.name,
           description: tenant.description
@@ -229,14 +232,26 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
         setTeamOptions([])
 
         // 处理角色数据
-        setRoleOptions(roles.map((role: Role) => ({
+        const processedRoles = roles.map((role: Role) => ({
           value: role.id,
           label: role.display_name || role.name,
           description: role.description
-        })))
+        }))
+        setRoleOptions(processedRoles)
 
-      } catch (error) {
-        console.error('加载表单数据失败:', error)
+        // 为新用户设置默认角色为"普通用户"
+        if (!initialData) {
+          const userRole = roles.find(role =>
+            role.name === 'user' ||
+            role.display_name === '普通用户' ||
+            role.name.toLowerCase().includes('user')
+          )
+          if (userRole) {
+            setValue('roles', [userRole.id])
+          }
+        }
+
+      } catch {
         toast.error('加载表单数据失败，请检查网络连接后重试')
         
         // 设置最小可用选项
@@ -254,21 +269,24 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
     }
 
     loadFormData()
-  }, [isSuperAdmin, currentUser?.current_tenant_id, isEditing, initialData?.tenant_id, setValue])
+  }, [isSuperAdmin, currentUser?.current_tenant_id, isEditing, initialData, setValue])
 
   // 根据选中的租户加载组织数据
   useEffect(() => {
     if (selectedTenant) {
       const loadOrganizations = async () => {
         try {
-          const organizations = await organizationAPI.getOrganizations({ tenant_id: selectedTenant }).catch(() => [])
+          const organizations = await organizationAPI.getOrganizations({ tenant_id: selectedTenant })
           setOrganizationOptions(organizations.map((org: Organization) => ({
             value: org.id,
             label: org.display_name || org.name,
             description: org.description
           })))
         } catch (error) {
-          console.warn('加载组织数据失败:', error)
+          const errorMessage = error && typeof error === 'object' && 'response' in error
+            ? (error.response as any)?.data?.detail || (error as any)?.message || '未知错误'
+            : '未知错误'
+          toast.error('加载组织数据失败: ' + errorMessage)
           setOrganizationOptions([])
         }
       }
@@ -290,8 +308,7 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
             label: team.name,
             description: team.description
           })))
-        } catch (error) {
-          console.warn('加载团队数据失败:', error)
+        } catch {
           setTeamOptions([])
         }
       }
@@ -327,19 +344,18 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
         delete submitData.password
       }
 
+
       await onSubmit(submitData)
     } catch (error) {
-      console.error('Form submission error:', error)
-      
       // 处理API返回的错误信息
       if (error && typeof error === 'object') {
-        const apiError = error as any
+        const apiError = error as Record<string, unknown>
         
         // 尝试从多个可能的位置获取错误数据
         const errorSources = [
-          apiError.response?.data,  // HTTP响应数据
-          apiError.data,            // RequestError.data
-          apiError                  // 直接在错误对象上
+          (apiError as any)?.response?.data,  // HTTP响应数据
+          (apiError as any)?.data,            // RequestError.data
+          apiError                            // 直接在错误对象上
         ]
         
         let errorMessage = ''
@@ -369,9 +385,9 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
         
         if (errorMessage) {
           toast.error(errorMessage)
-        } else if (apiError.response?.status === 400) {
+        } else if ((apiError as any)?.response?.status === 400) {
           toast.error('请检查输入的信息是否正确')
-        } else if (apiError.response?.status === 409) {
+        } else if ((apiError as any)?.response?.status === 409) {
           toast.error('用户名或邮箱已存在')
         } else {
           toast.error('操作失败，请稍后重试')
@@ -522,7 +538,7 @@ export function UserForm({ initialData, onSubmit, onCancel, isEditing = false }:
               <SearchableSelect
                 options={organizationOptions}
                 value={selectedOrganization ? [selectedOrganization] : []}
-                placeholder={organizationOptions.length > 0 ? "选择组织" : "加载中..."}
+                placeholder={organizationOptions.length > 0 ? "选择组织" : (selectedTenant ? "暂无组织" : "请先选择租户")}
                 searchPlaceholder="搜索组织..."
                 multiple={false}
                 disabled={organizationOptions.length === 0}

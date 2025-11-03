@@ -39,9 +39,15 @@ export interface UserUpdateRequest {
   email?: string
   full_name?: string
   nickname?: string
-  organization_id?: string
-  roles?: string[]
+  password?: string
+  phone?: string
   is_active?: boolean
+  is_verified?: boolean
+  // 组织和权限相关字段
+  tenant_id?: string
+  organization_id?: string
+  team_id?: string
+  roles?: string[]
 }
 
 export interface UserStatistics {

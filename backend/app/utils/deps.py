@@ -16,6 +16,7 @@ from app.application.services.rbac_service import (
     PermissionApplicationService,
     UserPermissionApplicationService,
 )
+from app.application.services.cached_rbac_service import CachedRoleApplicationService
 from app.infrastructure.repositories.user_repository_impl import (
     UserRepository,
     UserSessionRepository,
@@ -186,6 +187,13 @@ def get_role_service(db: Session = Depends(get_db)) -> RoleApplicationService:
     """获取角色服务实例 - 依赖注入工厂"""
     role_repo = RoleRepository(db)
     return RoleApplicationService(role_repo)
+
+
+def get_cached_role_service(db: Session = Depends(get_db)) -> CachedRoleApplicationService:
+    """获取带缓存的角色服务实例 - 依赖注入工厂"""
+    role_repo = RoleRepository(db)
+    permission_repo = PermissionRepository(db)
+    return CachedRoleApplicationService(role_repo, permission_repo)
 
 
 def get_permission_service(

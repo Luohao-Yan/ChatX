@@ -33,12 +33,18 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     password: Optional[str] = None
     is_active: Optional[bool] = None
+    is_verified: Optional[bool] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
     bio: Optional[str] = None
     urls: Optional[List[Dict[str, str]]] = None
     date_of_birth: Optional[datetime] = None
     preferred_language: Optional[str] = None
+    # 组织和权限相关字段
+    tenant_id: Optional[str] = None
+    organization_id: Optional[str] = None
+    team_id: Optional[str] = None
+    roles: Optional[List[str]] = None
 
 
 class UserProfile(BaseModel):
@@ -147,6 +153,7 @@ class LoginRequest(BaseModel):
     username: Optional[str] = None   # 保持向后兼容
     password: str
     device_info: Optional[str] = None
+    rememberMe: Optional[bool] = False  # 30天内自动登录
     
     @model_validator(mode='after')
     def validate_login_identifier(self):
